@@ -1,0 +1,57 @@
+---
+/**
+ * Feature section — copy left, plugins demo right.
+ *
+ * See docs/feature-section.md. The card is step `content` and its height comes
+ * from `16/9`, so the section fills about half a screen: enough to read from a
+ * distance, not so much that the scroll stalls.
+ *
+ * Depth is the two nested radii — card, then the well inside the demo — and
+ * hairlines. There are no shadow tokens in this system.
+ */
+import Container from "@/components/Container.astro";
+import { PluginsDemo } from "@/components/plugins-demo/PluginsDemo";
+---
+
+<section id="features" class="py-24">
+  <Container width="content">
+    <div
+      class="grid items-center gap-12 rounded-[var(--radius-xl)] border border-hairline bg-card p-8 lg:aspect-[16/9] lg:min-h-[560px] lg:grid-cols-12 lg:p-14"
+    >
+      <div class="lg:col-span-5">
+        <!--
+          Heading and body are one optical block: same size, separated by weight
+          and ink alone. A size jump here would turn a sentence into a headline
+          plus a subtitle, which is a louder shape than this section needs.
+        -->
+        <p class="text-[22px] leading-snug sm:text-[26px]">
+          <span class="font-medium text-ink"
+            >Plugins connect Jarvis to the tools you already use.</span
+          >{" "}
+          <span class="text-body"
+            >Sign in once, and it can read your mail, find a file or start the
+            music. When a connection stops working, it tells you which one and
+            why.</span
+          >
+        </p>
+
+        <!--
+          A real link, and the one thing in this section that is focusable — the
+          demo beside it is aria-hidden and every control in it is tabIndex -1.
+          Ink, not an accent: docs/design.md retired the borrowed hue.
+        -->
+        <a
+          href="#docs"
+          class="mt-6 inline-flex items-center gap-2 text-[16px] font-medium text-ink underline-offset-4 hover:underline"
+        >
+          See every plugin
+          <span aria-hidden="true">&#8594;</span>
+        </a>
+      </div>
+
+      <div class="lg:col-span-7 lg:h-full">
+        <PluginsDemo client:visible />
+      </div>
+    </div>
+  </Container>
+</section>
