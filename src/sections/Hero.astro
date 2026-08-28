@@ -1,22 +1,32 @@
 ---
 /**
  * The hero — one viewport tall, with the demo stage cropped at the bottom.
- * See docs/hero.md; this is the skeleton, the interactive stage lands later.
+ * See docs/hero.md.
+ *
+ * Vertical structure is a three-row grid, not a flex column with justify-end:
+ * flex pushed the whole block to the bottom and left a dead field above the
+ * headline. The rows are nav / copy / stage, and only the stage row flexes, so
+ * the copy keeps its position near the top at any viewport height.
+ *
+ * Spacing above the copy is in `svh`, so the proportions hold on a short laptop
+ * screen and a tall monitor alike. Target at 1440x900: headline top ~13%,
+ * CTAs ~31%, stage top ~37%.
  */
 import Container from "@/components/Container.astro";
+import DemoStage from "@/components/demo/DemoStage";
 ---
 
-<section class="relative flex min-h-svh flex-col overflow-hidden">
+<section class="grid min-h-svh grid-rows-[auto_auto_1fr] overflow-hidden">
   <!-- Nav sits on the `full` step: background edge to edge, content inside. -->
   <header class="sticky top-0 z-30 h-16 border-b border-hairline bg-canvas">
     <Container width="content" class="flex h-16 items-center justify-between">
       <span class="text-[18px] font-semibold text-ink">Personal Jarvis</span>
-      <nav class="flex items-center gap-6 text-[14px] font-medium text-body">
+      <nav class="flex items-center gap-7 text-[14px] font-medium text-body">
         <a href="#features" class="hover:text-ink">Features</a>
         <a href="#docs" class="hover:text-ink">Docs</a>
         <a
           href="#install"
-          class="rounded-md bg-ink px-5 py-3 text-on-ink hover:bg-ink-active"
+          class="rounded-full bg-ink px-5 py-2.5 text-on-ink transition-colors hover:bg-ink-active"
         >
           Download
         </a>
@@ -24,25 +34,25 @@ import Container from "@/components/Container.astro";
     </Container>
   </header>
 
-  <div class="flex flex-1 flex-col items-center justify-end pb-12 pt-20">
+  <div class="pt-[6svh]">
     <Container width="prose">
       <h1
-        class="text-balance text-center leading-[1.05] tracking-[-2.16px]"
-        style="font-size: clamp(2rem, 6vw, 4.5rem)"
+        class="text-center text-balance leading-[1.05] tracking-[-2px]"
+        style="font-size: clamp(2.25rem, 4vw, 3.5rem)"
       >
-        Speak to your computer, and it does the work
+        Speak to your computer and it does the work
       </h1>
 
       <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
         <a
           href="#install"
-          class="rounded-md bg-ink px-5 py-3 text-center text-[14px] font-medium text-on-ink hover:bg-ink-active"
+          class="inline-flex min-h-[44px] items-center justify-center rounded-full bg-ink px-6 text-[15px] font-medium text-on-ink transition-colors hover:bg-ink-active"
         >
           Download for Windows
         </a>
         <a
           href="#docs"
-          class="rounded-md border border-hairline-strong bg-card px-5 py-3 text-center text-[14px] font-medium text-ink"
+          class="inline-flex min-h-[44px] items-center justify-center rounded-full border border-hairline-strong bg-card px-6 text-[15px] font-medium text-ink transition-colors hover:border-ink"
         >
           Read the docs
         </a>
@@ -54,16 +64,9 @@ import Container from "@/components/Container.astro";
     The stage overruns the section edge and the section clips it. The cut-off
     border is the scroll cue — see docs/hero.md, "The crop".
   -->
-  <Container width="content" class="shrink-0">
-    <div
-      class="translate-y-8 overflow-hidden rounded-lg border border-hairline bg-card"
-      style="aspect-ratio: 16/10"
-      aria-hidden="true"
-    >
-      <div class="h-full w-full bg-canvas-soft"></div>
+  <Container width="content" class="pt-6">
+    <div class="overflow-hidden rounded-2xl border border-hairline">
+      <DemoStage client:load />
     </div>
-    <p class="sr-only">
-      Interactive demo with two windows: the main workspace and a voice panel.
-    </p>
   </Container>
 </section>

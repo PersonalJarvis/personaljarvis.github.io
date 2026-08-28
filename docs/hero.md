@@ -12,14 +12,30 @@ The hero fills exactly one viewport: `min-height: 100svh`. **Not `100vh`** — o
 iOS the address bar slides in on scroll and the section changes height mid-
 animation. The section has `overflow: hidden`.
 
-Order from the top:
+The section is a **three-row grid**, `grid-rows-[auto_auto_1fr]`:
 
 1. Nav — 64px, sticky, `full` step for the background
-2. Free space — `flex-1`, at least 80px
-3. Headline — `prose` step
-4. CTAs — 32px below the headline
-5. Free space — 48px
-6. Demo stage — `content` step, **cropped** at the bottom
+2. Copy — headline on `prose`, CTAs 32px under it
+3. Demo stage — `content` step, takes the remaining row, **cropped** at the bottom
+
+**Not a flex column with `justify-end`.** That pushes the whole block to the
+bottom of the viewport and leaves a dead field above the headline — the copy
+ends up past the middle of the screen, which is what this layout is for.
+
+Spacing above the copy is in `svh`, so the proportions hold on a short laptop
+and a tall monitor alike.
+
+### Target proportions
+
+Measured at 1440x900. These are the numbers to check a change against:
+
+| Element | Top edge |
+|---|---|
+| Headline | ~13% of viewport height |
+| CTAs | ~31% |
+| Stage top | ~37% |
+
+The stage runs past the bottom edge; about a quarter of it is never visible.
 
 ### The crop
 
@@ -45,9 +61,11 @@ page continues. Roughly a fifth of the stage should disappear under the edge.
 - First filled (ink on cream, per `design.md`), second outline or ghost
 - Below 640px they stack, each at full `prose` width
 
-**Note on shape:** `design.md` sets buttons to `--radius-md` (8px) — a compact
-developer dialect. The hero uses that radius, not a pill. Where the original
-spec said "pill", the design system wins; one shape language, not two.
+**Shape:** pill (`rounded-full`), at least 44px tall, at least 24px of
+horizontal padding, at least 15px type. The hero is the one place that overrides
+`design.md`'s 8px button radius — a hero CTA is read from across the room, and
+the maintainer chose the pill here deliberately (2026-08-28). Everywhere else
+on the site the 8px radius still applies.
 
 ---
 
@@ -203,25 +221,29 @@ known one.
 ## Skeleton
 
 ```astro
-<section class="relative flex min-h-svh flex-col overflow-hidden">
-  <Nav />
+<section class="grid min-h-svh grid-rows-[auto_auto_1fr] overflow-hidden">
+  <header class="sticky top-0 z-30 h-16 border-b border-hairline bg-canvas">
+    <Container width="content" class="flex h-16 items-center justify-between">
+      …
+    </Container>
+  </header>
 
-  <div class="flex flex-1 flex-col items-center justify-end pb-12">
+  <div class="pt-[6svh]">
     <Container width="prose">
-      <h1 class="text-balance text-center leading-[1.05]">…</h1>
-      <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-        <Button variant="primary">…</Button>
-        <Button variant="secondary">…</Button>
-      </div>
+      <h1 class="text-center text-balance leading-[1.05]">…</h1>
+      <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">…</div>
     </Container>
   </div>
 
-  <Container width="content" class="shrink-0">
-    <DemoStage client:visible class="translate-y-8" />
+  <Container width="content" class="pt-6">
+    <div class="overflow-hidden rounded-2xl border border-hairline">
+      <DemoStage client:load />
+    </div>
   </Container>
 </section>
 ```
 
-`translate-y-8` plus the section's `overflow-hidden` produces the crop. The
-stage is the one React island on the page — `client:visible`, so its JavaScript
-loads only when it scrolls into view; everything around it ships as plain HTML.
+The stage row is `1fr`, so it takes whatever height is left and runs past the
+section's bottom edge, where `overflow-hidden` clips it. The stage is the one React island on the page — `client:load`, because it sits above
+the fold and its first frame is the point; everything around it ships as plain
+HTML.

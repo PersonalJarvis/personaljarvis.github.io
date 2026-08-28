@@ -50,6 +50,23 @@
   --stage-edit: #c0a8dd;     /* lavender */
   --stage-done: #c08532;     /* gold     */
 
+  /* --- App mockup --------------------------------------------------------
+   * The product's OWN colours, read from the running app so the hero demo is
+   * a clone and not an impression. The app is dark; that is the point — one
+   * dark window on the cream canvas is the single elevated element this
+   * system allows (docs/design.md, "Depth").
+   *
+   * Do not "harmonise" these with the site palette. They drift only when the
+   * app's own theme drifts.
+   */
+  --app-bg: #0b0b09;
+  --app-card: #17170f;
+  --app-muted: #1f1f18;
+  --app-fg: #f6f6f3;
+  --app-fg-muted: #97948c;
+  --app-border: #302f28;
+  --app-radius: 12px;
+
   /* --- Semantic ----------------------------------------------------------- */
   --success: #1f8a65;
   --error: #cf2d56;
