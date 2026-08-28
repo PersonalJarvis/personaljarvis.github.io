@@ -26,7 +26,7 @@ checkout as `website/` so one folder holds both projects.
 
 **`docs/layout.md` governs every section of this site.** Read it before writing
 any markup. It is not a style suggestion; it is the layout contract, and
-`scripts/check-layout.mjs` enforces the mechanical half of it.
+`scripts/check-style.mjs` enforces the mechanical half of it.
 
 The short version:
 
@@ -49,7 +49,7 @@ The short version:
 - **Tuning is two numbers**, changed in the two owner files and nowhere else:
   `prose` 672px (narrower: 576px) and `content` 1280px (wider: 1440px).
 
-Run `npm run check:layout` before you commit. A violation fails the build. If
+Run `npm run check:style` before you commit. A violation fails the build. If
 an exception is genuinely right, mark the line `layout-allow: <why>` — a reason
 is mandatory, because "why" is the only thing that makes an exception
 reviewable.

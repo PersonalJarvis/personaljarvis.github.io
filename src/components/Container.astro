@@ -1,0 +1,21 @@
+---
+/**
+ * The only place a content width is decided, Astro side — the default for
+ * static markup, since it ships no JavaScript. Reach for Container.tsx only
+ * inside a React island.
+ *
+ * See docs/layout.md.
+ */
+import { widths, type ContainerWidth } from "@/lib/widths";
+
+interface Props {
+  width?: ContainerWidth;
+  class?: string;
+}
+
+const { width = "content", class: className = "" } = Astro.props;
+---
+
+<div class={`mx-auto w-full ${widths[width]} ${className}`.trim()}>
+  <slot />
+</div>

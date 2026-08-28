@@ -206,7 +206,7 @@ wraps nowhere and proves nothing — test with a real one.)
 - Horizontal padding on a section on top of the container — padding lives in the container alone
 - `100vh` for section-filling heights. Always `100svh`, or iOS pushes the address bar into the layout
 
-`scripts/check-layout.mjs` enforces this list. It runs in CI and as a
+`scripts/check-style.mjs` enforces this list. It runs in CI and as a
 pre-commit hook; a violation fails the build.
 
 ---

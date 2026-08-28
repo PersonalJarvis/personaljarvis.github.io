@@ -1,0 +1,108 @@
+/*
+ * Design tokens — the single source of truth for colour, type and rhythm.
+ *
+ * See docs/design.md for the reasoning behind each group. Never inline a hex
+ * value in a component; reach for a token or add one here.
+ *
+ * Provenance: the scale, rhythm and hairline-depth approach are adapted from a
+ * reference system the maintainer supplied. Everything brand-bearing in that
+ * reference (its accent colour, its licensed typeface, its wordmark) belonged
+ * to another product and is deliberately NOT carried over. See docs/design.md
+ * § "What this is not".
+ */
+
+:root {
+  /* --- Surface -----------------------------------------------------------
+   * Warm cream, never pure white. The paper half of "ink and paper".
+   */
+  --canvas: #f7f7f4;
+  --canvas-soft: #fafaf7;
+  --surface-card: #ffffff;
+  --surface-strong: #e6e5e0;
+
+  /* --- Ink ---------------------------------------------------------------
+   * Warm near-black, never #000. Also the primary action colour: the CTA is
+   * ink on cream, which is why this system needs no borrowed accent hue.
+   */
+  --ink: #26251e;
+  --ink-active: #3a382e;
+  --body: #5a5852;
+  --muted: #807d72;
+  --muted-soft: #a09c92;
+  --on-ink: #f7f7f4;
+
+  /* --- Hairlines ---------------------------------------------------------
+   * All depth in this system comes from 1px lines and white-on-cream
+   * contrast. There are no shadow tokens on purpose.
+   */
+  --hairline: #e6e5e0;
+  --hairline-soft: #efeee8;
+  --hairline-strong: #cfcdc4;
+
+  /* --- Agent timeline ----------------------------------------------------
+   * The one place colour is allowed to carry meaning, mirroring the stages
+   * the product actually has. Scoped to timeline visualisations — never as
+   * general status colours, never as decoration.
+   */
+  --stage-thinking: #dfa88f; /* peach    */
+  --stage-grep: #9fc9a2;     /* mint     */
+  --stage-read: #9fbbe0;     /* blue     */
+  --stage-edit: #c0a8dd;     /* lavender */
+  --stage-done: #c08532;     /* gold     */
+
+  /* --- Semantic ----------------------------------------------------------- */
+  --success: #1f8a65;
+  --error: #cf2d56;
+
+  /* --- Type --------------------------------------------------------------
+   * One sans for display and body, one mono for every code surface. Display
+   * stays at weight 400 with negative tracking — the editorial voice depends
+   * on it. Bold display is the single fastest way to lose this look.
+   */
+  --font-sans: "Inter", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --text-display-mega: 72px;
+  --text-display-lg: 36px;
+  --text-display-md: 26px;
+  --text-display-sm: 22px;
+  --text-title-md: 18px;
+  --text-title-sm: 16px;
+  --text-body: 16px;
+  --text-body-sm: 14px;
+  --text-caption: 13px;
+  --text-caption-upper: 11px;
+  --text-code: 13px;
+
+  --tracking-display-mega: -2.16px;
+  --tracking-display-lg: -0.72px;
+  --tracking-display-md: -0.325px;
+  --tracking-display-sm: -0.11px;
+  --tracking-caption-upper: 0.88px;
+
+  /* --- Rhythm ------------------------------------------------------------
+   * 4px base unit. Section spacing is 80px — the generous editorial pacing
+   * is not decoration, it is what makes the cream canvas read as calm.
+   */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-base: 16px;
+  --space-md: 20px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+  --space-section: 80px;
+
+  /* --- Radius ------------------------------------------------------------- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;   /* buttons, inputs */
+  --radius-lg: 12px;  /* cards, panes    */
+  --radius-xl: 16px;  /* rare            */
+  --radius-pill: 9999px;
+}
+
+/* Dark mode is not defined yet. When it is, redefine the tokens above inside
+ * `@media (prefers-color-scheme: dark)` and `:root[data-theme="dark"]` — never
+ * give a colour its only definition inside one of those blocks. */

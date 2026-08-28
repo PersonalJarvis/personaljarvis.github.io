@@ -1,0 +1,52 @@
+/*
+ * The one stylesheet every page pulls in.
+ *
+ * Order matters: Tailwind first, then our tokens, then the layout primitives
+ * that use them.
+ */
+@import "tailwindcss";
+@import "./tokens.css";
+@import "./layout.css";
+
+/* Expose the design tokens to Tailwind so `bg-canvas`, `text-ink` and friends
+ * exist as utilities instead of every component reaching for arbitrary values. */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-canvas-soft: var(--canvas-soft);
+  --color-card: var(--surface-card);
+  --color-strong: var(--surface-strong);
+  --color-ink: var(--ink);
+  --color-ink-active: var(--ink-active);
+  --color-body: var(--body);
+  --color-muted: var(--muted);
+  --color-muted-soft: var(--muted-soft);
+  --color-on-ink: var(--on-ink);
+  --color-hairline: var(--hairline);
+  --color-hairline-soft: var(--hairline-soft);
+  --color-hairline-strong: var(--hairline-strong);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+}
+
+body {
+  background: var(--canvas);
+  color: var(--body);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  color: var(--ink);
+  /* Display stays at 400 with negative tracking — the editorial voice depends
+   * on it. See docs/design.md. */
+  font-weight: 400;
+}
+
+code, pre, kbd, samp {
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+}
