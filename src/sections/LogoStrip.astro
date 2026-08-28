@@ -1,0 +1,81 @@
+---
+/**
+ * The provider strip — the marks of the model providers Jarvis runs on.
+ *
+ * Layout follows the bar under the hero on the reference site, measured rather
+ * than eyeballed: equal cells in one grid, 10px apart, 64px tall on a phone and
+ * 100px from md up, and no ornament beyond that. See docs/LOGOS.md.
+ *
+ * Two things deviate from that reference, both on purpose and both recorded in
+ * docs/LOGOS.md: the cells carry a hairline (this system's own card treatment),
+ * and each mark gets its own height instead of one shared value — see the
+ * `height` field below.
+ */
+import Container from "@/components/Container.astro";
+
+import { AnthropicMark } from "@/components/logos/AnthropicMark";
+import { AntigravityMark } from "@/components/logos/AntigravityMark";
+import { CartesiaMark } from "@/components/logos/CartesiaMark";
+import { ElevenLabsMark } from "@/components/logos/ElevenLabsMark";
+import { GeminiMark } from "@/components/logos/GeminiMark";
+import { GoogleCloudMark } from "@/components/logos/GoogleCloudMark";
+import { GroqMark } from "@/components/logos/GroqMark";
+import { NvidiaMark } from "@/components/logos/NvidiaMark";
+import { OllamaMark } from "@/components/logos/OllamaMark";
+import { OpenAiMark } from "@/components/logos/OpenAiMark";
+import { OpenRouterMark } from "@/components/logos/OpenRouterMark";
+import { XaiMark } from "@/components/logos/XaiMark";
+
+/**
+ * `height` is an optical value, not a measurement. Marks of equal box height
+ * do not read as equal size: a sparse one (the Ollama outline) looks smaller
+ * than a solid one (the ElevenLabs bars) at the same height.
+ *
+ * These numbers were derived rather than guessed. Each mark was rendered and
+ * its ink area sampled; perceived size tracks the square root of that area, so
+ * the height that equalises it is `current × median ÷ own`. The raw result is
+ * damped to roughly two thirds, because a mark that is sparse *and* wide
+ * (Ollama again) would otherwise grow physically larger than its neighbours
+ * and trade one imbalance for another.
+ *
+ * They are literal Tailwind classes on purpose: the scanner only generates
+ * utilities it can read as strings in the source, so an interpolated
+ * `h-[${n}px]` would silently produce no CSS at all.
+ */
+const marks = [
+  { name: "Anthropic Claude", Mark: AnthropicMark, height: "h-[27px]" },
+  { name: "OpenAI", Mark: OpenAiMark, height: "h-[27px]" },
+  { name: "Google Gemini", Mark: GeminiMark, height: "h-[29px]" },
+  { name: "Google Cloud Vertex AI", Mark: GoogleCloudMark, height: "h-[25px]" },
+  { name: "xAI Grok", Mark: XaiMark, height: "h-[31px]" },
+  { name: "OpenRouter", Mark: OpenRouterMark, height: "h-[25px]" },
+  { name: "NVIDIA", Mark: NvidiaMark, height: "h-[27px]" },
+  { name: "Groq", Mark: GroqMark, height: "h-[31px]" },
+  { name: "Ollama", Mark: OllamaMark, height: "h-[34px]" },
+  { name: "ElevenLabs", Mark: ElevenLabsMark, height: "h-[24px]" },
+  { name: "Antigravity", Mark: AntigravityMark, height: "h-[27px]" },
+  { name: "Cartesia", Mark: CartesiaMark, height: "h-[26px]" },
+];
+---
+
+<section aria-labelledby="providers-label" class="py-20">
+  <Container width="content">
+    <p
+      id="providers-label"
+      class="text-center text-[11px] font-semibold uppercase tracking-[0.88px] text-muted"
+    >
+      Runs on any of these
+    </p>
+
+    <ul class="mt-6 grid grid-cols-3 gap-[10px] sm:grid-cols-4 lg:grid-cols-6">
+      {
+        marks.map(({ name, Mark, height }) => (
+          <li class="flex h-16 items-center justify-center rounded-md border border-hairline bg-card px-4 md:h-[100px]">
+            <Mark className={`${height} w-auto text-ink`} />
+            <span class="sr-only">{name}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </Container>
+</section>
