@@ -1,0 +1,86 @@
+/*
+ * Content widths — the single source of truth.
+ *
+ * Three steps, no fourth: prose (text), content (media), full (backgrounds).
+ * See docs/layout.md for the reasoning; scripts/check-layout.mjs enforces it.
+ *
+ * Tuning: change --w-prose or --w-content here and in the width map in
+ * src/components/Container.tsx. Nowhere else.
+ */
+
+:root {
+  --w-prose: 672px;
+  --w-content: 1280px;
+  --gutter: 24px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 32px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Container
+ * ------------------------------------------------------------------------ */
+
+.container {
+  width: 100%;
+  max-width: var(--w-content);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.container--prose {
+  max-width: var(--w-prose);
+}
+
+/* Backgrounds and dividers only — never text, never controls. */
+.container--full {
+  max-width: none;
+  padding-inline: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Full-bleed grid
+ *
+ * An alternative to nesting containers: children pick a named column instead
+ * of carrying their own width. The outer columns keep a minimum of one gutter
+ * so nothing touches the screen edge, and prose sits centred inside content
+ * rather than flush left — a page with two different centres reads as broken.
+ * ------------------------------------------------------------------------ */
+
+.layout {
+  --rail: calc((var(--w-content) - var(--w-prose)) / 2); /* 304px */
+
+  display: grid;
+  grid-template-columns:
+    [full-start] minmax(var(--gutter), 1fr)
+    [content-start] minmax(0, var(--rail))
+    [prose-start] minmax(0, var(--w-prose)) [prose-end]
+    minmax(0, var(--rail)) [content-end]
+    minmax(var(--gutter), 1fr) [full-end];
+}
+
+.layout > * {
+  grid-column: prose;
+}
+
+.layout > .wide {
+  grid-column: content;
+}
+
+.layout > .full-bleed {
+  grid-column: full;
+}
+
+/* ---------------------------------------------------------------------------
+ * Section heights
+ *
+ * svh, not vh: on iOS the address bar collapses on scroll, and vh is measured
+ * against the collapsed viewport, so a 100vh hero jumps as the bar animates.
+ * ------------------------------------------------------------------------ */
+
+.section-full-height {
+  min-height: 100svh;
+}

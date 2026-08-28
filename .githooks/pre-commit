@@ -1,0 +1,8 @@
+#!/bin/sh
+# Layout gate — docs/layout.md is a contract, so it is checked, not trusted.
+# Bypass is possible with --no-verify; doing so without a reason is a defect.
+if command -v node >/dev/null 2>&1; then
+  node "$(git rev-parse --show-toplevel)/scripts/check-layout.mjs" --quiet || exit 1
+else
+  echo "layout gate skipped: node not on PATH" >&2
+fi

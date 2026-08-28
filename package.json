@@ -1,0 +1,8 @@
+{
+  "name": "personal-jarvis-website",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check:layout": "node scripts/check-layout.mjs"
+  }
+}
