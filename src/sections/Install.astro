@@ -131,11 +131,11 @@ function segments(body: string) {
           <p class="eyebrow uppercase text-muted">Getting started</p>
           <h2 class="headline mt-4 text-balance">How to install Jarvis</h2>
 
-          <div class="mt-10 grid gap-12 lg:grid-cols-12">
+          <div class="mt-8 grid gap-12 lg:grid-cols-12">
             <ol class="relative lg:col-span-6" data-steps>
               {
                 steps.map((step, i) => (
-                  <li class="step relative pl-10 [&:not(:last-child)]:mb-10" data-step>
+                  <li class="step relative pl-10 [&:not(:last-child)]:mb-8" data-step>
                     {/*
                       The connecting hairline, drawn as one segment PER GAP rather
                       than as a single line down the list. A single line is spanned
@@ -143,14 +143,14 @@ function segments(body: string) {
                       step's body — several lines below the last badge — so it ran
                       on past the final number into empty space. A segment knows
                       where it has to stop: it starts at its own badge's bottom
-                      edge and reaches exactly one step gap down (`-bottom-10`
-                      against `mb-10`), to the top of the next badge. The last step has no gap under it and therefore
+                      edge and reaches exactly one step gap down (`-bottom-8`
+                      against `mb-8`), to the top of the next badge. The last step has no gap under it and therefore
                       draws nothing.
                     */}
                     {i < steps.length - 1 && (
                       <span
                         aria-hidden="true"
-                        class="absolute -bottom-10 left-3 top-6 w-px bg-hairline"
+                        class="absolute -bottom-8 left-3 top-6 w-px bg-hairline"
                       />
                     )}
 
@@ -191,64 +191,47 @@ function segments(body: string) {
             </div>
           </div>
         </div>
+
+        {/*
+          THE CLOSING BAND IS PART OF THE PINNED SCREEN. It sat after the track
+          and only arrived once the pin let go, which meant the screen the
+          reader was held on never showed the end of the page (maintainer,
+          2026-08-29: "the box belongs in that viewport too").
+
+          It hangs straight off the frame's bottom rule — no gap, the same join
+          as before — and it needs no Container of its own: it is already on the
+          content column, inside the one the sticky child carries. Nesting a
+          second `content` Container here would apply the gutter and the
+          max-width twice and pull the band 32px inside the rails.
+
+          Sharp corners, flat ink, no gradient. It breaks with everything above
+          it on purpose. On this palette the accent IS the ink — docs/design.md
+          keeps one action colour and no borrowed hue — so the band is paper and
+          its type is the page floor, 18.5:1, well past AA.
+        */}
+        <div
+          class="cta flex shrink-0 flex-col justify-between gap-6 rounded-none bg-ink p-8 text-on-ink md:min-h-[200px] md:flex-row md:items-center md:p-8"
+        >
+          <div>
+            <h2 class="headline text-balance leading-tight">
+              Talk to your computer.<br />It does the thing.
+            </h2>
+            <p class="cta-sub mt-4 opacity-70">
+              Apache 2.0, running on your own machine. Bring the AI subscription
+              you already pay for, or an API key, or nothing at all and keep it
+              offline.
+            </p>
+          </div>
+
+          <a
+            href={`${REPO}#install`}
+            class="action inline-flex h-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-on-ink px-6 font-medium text-ink transition-opacity hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-ink"
+          >
+            Install Personal Jarvis
+          </a>
+        </div>
       </Container>
     </div>
-  </div>
-
-  {/*
-    The line the band hangs off. The frame's own bottom rule closes the steps
-    while they are pinned; this one closes the track, and the band sits
-    straight on it.
-  */}
-  <Container width="content">
-    <div class="section-rule"></div>
-  </Container>
-
-  {/*
-    The closing band, inside the section rather than after it.
-
-    It used to be a sibling of the section, and that is what produced the hole
-    the maintainer photographed: the steps claimed a whole viewport and centred
-    ~800px of content in it, so the leftover height fell as dead space BELOW
-    the last step — and the band began under all of it. Inside the section the
-    same leftover height is spent instead of wasted: `flex-1` hands it to the
-    steps, the band is pinned to the bottom of the viewport, and the two read
-    as one closing screen.
-
-    The gap over the band is a gap, not a join — the same relationship the
-    reference (meuze.ai) has between its bordered block and the band beneath
-    it. The tail under it is what keeps the band from sitting on the very edge
-    of the screen.
-
-    Sharp corners, flat ink, no gradient. It breaks with everything above it on
-    purpose. On this palette the accent IS the ink — docs/design.md keeps one
-    action colour and no borrowed hue — so the band is paper and its type is
-    the page floor, 18.5:1, well past AA.
-  */}
-  <div class="install-close">
-    <Container width="content">
-      <div
-        class="cta flex flex-col justify-between gap-8 rounded-none bg-ink p-8 text-on-ink md:min-h-[220px] md:flex-row md:items-center md:p-10"
-      >
-        <div>
-          <h2 class="headline text-balance leading-tight">
-            Talk to your computer.<br />It does the thing.
-          </h2>
-          <p class="cta-sub mt-4 opacity-70">
-            Apache 2.0, running on your own machine. Bring the AI subscription
-            you already pay for, or an API key, or nothing at all and keep it
-            offline.
-          </p>
-        </div>
-
-        <a
-          href={`${REPO}#install`}
-          class="action inline-flex h-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-on-ink px-6 font-medium text-ink transition-opacity hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-ink"
-        >
-          Install Personal Jarvis
-        </a>
-      </div>
-    </Container>
   </div>
 </section>
 
@@ -272,7 +255,10 @@ function segments(body: string) {
     position: sticky;
     top: 0;
     height: 100svh;
-    padding-block: var(--space-xl);
+    /* Tighter than VoiceSwitch's, because this screen carries two blocks: the
+       frame and the band under it. Every pixel here is a pixel the steps do
+       not get. */
+    padding-block: var(--space-lg);
     overflow: hidden;
   }
 
@@ -298,22 +284,7 @@ function segments(body: string) {
     flex-direction: column;
     justify-content: center;
     border-block: 1px solid var(--rule);
-    padding-block: var(--space-lg);
-  }
-
-  /* NOTHING above the band: it hangs off the rule that closes the steps, the
-     way every other block on this site hangs off its own rule. A gap was tried
-     — the reference has one — and the maintainer struck it out on sight
-     (2026-08-29), because our band is a filled block rather than a floating
-     card: the space read as a hole between the steps and the end of the page,
-     not as air around a card.
-
-     Below it, the tail keeps the band off the bottom edge of the screen and
-     opens the distance to the legal foot underneath. Whatever the removed gap
-     freed goes to the steps, not back into these numbers: `flex-1` grows only
-     Block A. */
-  .install-close {
-    padding-block: 0 clamp(1.25rem, 2.75svh, 2rem);
+    padding-block: var(--space-base);
   }
 
   .eyebrow {
@@ -401,12 +372,15 @@ function segments(body: string) {
    *   narrow    under 1280px the steps column is narrow enough that the four
    *             bodies wrap to five and six lines, and the frame is taller
    *             than any window
-   *   short     measured, not assumed: the frame's natural height runs 950px
-   *             at 1280 wide to 972px at 2560 (the root scale grows with the
-   *             viewport), plus 64px of padding on the sticky child — so the
-   *             pin needs about 1040px of window and gives up below it. Under
-   *             that the frame would be shorter than its content, and the
-   *             sticky child clips what will not fit
+   *   short     TWO bands, because what the screen needs depends on how wide
+   *             it is: the root scale grows with the viewport, so the same
+   *             content is taller on a wide monitor. Measured — frame plus
+   *             band plus the child's padding — it needs 994px of window at
+   *             1280 wide, 1024px at 1920 and 1213px at 2560. Hence 1060px
+   *             below 2000px wide and 1230px above it, each with a margin over
+   *             the measurement. Below those the frame would be shorter than
+   *             its content and the sticky child clips what will not fit —
+   *             which is the bottom of step 4
    *   calm      prefers-reduced-motion. A section that holds the page still
    *             is exactly what that setting is asking not to happen
    *
@@ -414,7 +388,7 @@ function segments(body: string) {
    * JS cannot disagree about which mode the section is in — a mismatch leaves
    * a scrub driving a section that no longer has a track.
    */
-  @media (max-width: 1279px), (max-height: 1039px), (prefers-reduced-motion: reduce) {
+  @media (max-width: 1279px), (max-height: 1059px), (min-width: 2000px) and (max-height: 1229px), (prefers-reduced-motion: reduce) {
     [data-track] {
       height: auto;
     }
@@ -426,13 +400,8 @@ function segments(body: string) {
       overflow: visible;
     }
 
-    /* Nothing is pinned, so there is no box for a perimeter to be the
-       perimeter of. The section keeps the rule at its top and the one the band
-       hangs from, like every other section on the page. */
-    [data-frame] {
-      border-block: 0;
-      padding-block: 0;
-    }
+    /* The frame KEEPS its two rules here. Pinned or not, the band hangs off
+       the bottom one — take it away and the band floats. */
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -478,7 +447,7 @@ function segments(body: string) {
     const items = Array.from(list.querySelectorAll<HTMLElement>("[data-step]"));
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     const loose = window.matchMedia(
-      "(max-width: 1279px), (max-height: 1039px), (prefers-reduced-motion: reduce)",
+      "(max-width: 1279px), (max-height: 1059px), (min-width: 2000px) and (max-height: 1229px), (prefers-reduced-motion: reduce)",
     );
 
     if (!reduce.matches && items.length > 0) {

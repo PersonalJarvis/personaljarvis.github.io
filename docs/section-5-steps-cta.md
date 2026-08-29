@@ -58,7 +58,7 @@ naming what proves it.
 | Block A's padding | `clamp(1.5rem, 2.6svh, 3rem)`, a floor rather than a fixed amount |
 | Width | step `content` |
 | Columns | **6/12 steps left, 6/12 artwork right** |
-| Step spacing | 40px between blocks |
+| Step spacing | 32px between blocks |
 | Number badge | 24×24px, radius 4px, `--font-mono` |
 | Install box | step `content`'s left column, ~105px tall — header 33px, two command lines |
 | Connecting line | 1px, `--hairline`, one segment per gap |
@@ -139,18 +139,40 @@ sticky child, and `track - viewport` of scrolling as the running length.
 | Element | Value |
 |---|---|
 | Track | `400svh` — three screens of pinned scrolling, 75svh per step |
-| Sticky child | `100svh`, `var(--space-xl)` padding, `overflow: hidden` |
-| Frame | `border-block: 1px solid var(--rule)`, `var(--space-lg)` padding, content centred |
-| Pin drops out at | `(max-width: 1279px), (max-height: 1039px), (prefers-reduced-motion: reduce)` |
+| Sticky child | `100svh`, `var(--space-lg)` padding, `overflow: hidden`. It carries the frame AND the band |
+| Frame | `border-block: 1px solid var(--rule)`, `var(--space-base)` padding, content centred |
+| Pin drops out at | `(max-width: 1279px), (max-height: 1059px), (min-width: 2000px) and (max-height: 1229px), (prefers-reduced-motion: reduce)` |
 
-**Where the height threshold comes from.** The frame's natural height is 950px
-at 1280 wide and 972px at 2560 — the root scale grows with the viewport — plus
-64px of padding on the sticky child. So the pin needs about 1040px of window,
-and below that it gives up rather than clipping: the sticky child hides
-overflow, so a frame shorter than its content loses the bottom of step 4.
+### The band is part of the pinned screen
 
-Measure that again whenever anything is added to a step. It is the one number
-in this file that a copy change can invalidate.
+**Block B rides inside the sticky child, under the frame.** It used to come
+after the track, so the screen the reader was held on never showed the end of
+the page — the maintainer's words: *"the box belongs in that viewport too"*
+(2026-08-29). The pinned screen is now frame plus band: the steps, the rule
+that closes them, and the close hanging straight off it.
+
+It needs no `Container` of its own. It already sits on the content column,
+inside the one the sticky child carries; a second `content` Container there
+applies the gutter and the max-width a second time and pulls the band 32px
+inside the rails.
+
+**Where the height thresholds come from.** What the screen needs depends on how
+WIDE it is, because the root scale grows with the viewport and the same content
+is taller on a big monitor. Measured, frame plus band plus the child's padding:
+
+| Viewport width | Window height the pinned screen needs |
+|---|---|
+| 1280px | 994px |
+| 1920px | 1024px |
+| 2560px | 1213px |
+
+Hence two bands rather than one number: 1060px below 2000px wide, 1230px above
+it, each with a margin over the measurement. Below them the pin gives up rather
+than clipping — the sticky child hides overflow, so a frame shorter than its
+content loses the bottom of step 4 and nobody would see it go.
+
+Measure all three again whenever anything is added to a step or to the band.
+They are the numbers in this file a copy change can invalidate.
 
 **The progress comes from `spanProgress`** in `src/lib/scrollSpan.ts` — the
 same function the section marker and the voice wipe measure with. Three things
@@ -286,12 +308,12 @@ Three things about the mark are decisions, not defaults:
 | Element | Value |
 |---|---|
 | Width | step `content` — rail to rail, exactly like Block A |
-| Height | 220px desktop, `auto` under 768px |
+| Height | 200px desktop, `auto` under 768px |
 | Corners | **sharp**, `border-radius: 0` |
 | Ground | the accent, full bleed |
-| Padding | 40px, 32px under 768px |
-| Space above | **0** — the band hangs off the rule that closes Block A |
-| Space below | `clamp(1.25rem, 2.75svh, 2rem)` — the tail off the screen edge, and the distance to the legal foot |
+| Padding | 32px |
+| Space above | **0** — the band hangs off the frame's bottom rule |
+| Space below | the sticky child's own `var(--space-lg)` — the tail off the screen edge |
 
 ## Build
 
