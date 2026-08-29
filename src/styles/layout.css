@@ -2,16 +2,42 @@
  * Content widths — the single source of truth.
  *
  * Three steps, no fourth: prose (text), content (media), full (backgrounds).
- * See docs/layout.md for the reasoning; scripts/check-layout.mjs enforces it.
+ * See docs/layout.md for the reasoning; scripts/check-style.mjs enforces it.
  *
- * Tuning: change --w-prose or --w-content here and in the width map in
- * src/components/Container.tsx. Nowhere else.
+ * THE FORMULA, and why it is shaped like this:
+ *
+ *   max(<floor>, <share>vw)  clamped by the viewport minus its gutters
+ *
+ * A fixed pixel maximum alone produces the intended "middle two quarters" at
+ * exactly ONE screen width. Go wider — a 5K monitor, or a browser at 50% zoom,
+ * which doubles the CSS viewport — and the same box shrinks to a quarter, then
+ * a sixth, and the page reads as a narrow ribbon in an empty field.
+ *
+ * A bare percentage alone is the opposite failure: 50vw is 195px on a phone,
+ * which is unreadable.
+ *
+ * `max()` of the two takes whichever is larger, so the floor governs small and
+ * medium screens and the share governs large ones. There is no breakpoint to
+ * maintain and no width where the layout jumps.
+ *
+ * Tuning: change --w-prose or --w-content here. Nowhere else.
  */
 
 :root {
-  --w-prose: 672px;
-  --w-content: 1280px;
   --gutter: 24px;
+
+  /* The share of the viewport the content column takes once the screen is wide
+   * enough for the share to beat the floor. 50% is the two middle quarters. */
+  --content-share: 50vw;
+  --prose-share: 26vw;
+
+  --w-content: min(100% - 2 * var(--gutter), max(1280px, var(--content-share)));
+  --w-prose: min(100% - 2 * var(--gutter), max(672px, var(--prose-share)));
+
+  /* Type scales with the viewport too, so a wide screen gets a bigger page
+   * rather than the same page with more empty space around it. Everything
+   * sized in rem follows this automatically. */
+  font-size: clamp(16px, 10px + 0.35vw, 22px);
 }
 
 @media (min-width: 768px) {
@@ -21,22 +47,28 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Container
+ * Container — the only place a width is decided
  * ------------------------------------------------------------------------ */
 
-.container {
+.container-content,
+.container-prose,
+.container-full {
   width: 100%;
-  max-width: var(--w-content);
   margin-inline: auto;
+}
+
+.container-content {
+  max-width: var(--w-content);
   padding-inline: var(--gutter);
 }
 
-.container--prose {
+.container-prose {
   max-width: var(--w-prose);
+  padding-inline: var(--gutter);
 }
 
 /* Backgrounds and dividers only — never text, never controls. */
-.container--full {
+.container-full {
   max-width: none;
   padding-inline: 0;
 }
@@ -51,7 +83,8 @@
  * ------------------------------------------------------------------------ */
 
 .layout {
-  --rail: calc((var(--w-content) - var(--w-prose)) / 2); /* 304px */
+  /* Half the difference between the two steps, so prose lands centred. */
+  --rail: calc((var(--w-content) - var(--w-prose)) / 2);
 
   display: grid;
   grid-template-columns:

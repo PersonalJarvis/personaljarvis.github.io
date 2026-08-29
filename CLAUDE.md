@@ -30,24 +30,31 @@ any markup. It is not a style suggestion; it is the layout contract, and
 
 The short version:
 
-- **Three width steps, no fourth.** `prose` (672px) for headlines, body copy,
-  CTAs and forms. `content` (1280px) for images, screenshots, cards, grids and
-  demos. `full` (100%) for background colours, gradients and dividers **only** —
-  never text, never controls.
-- **One container decides width.** `src/components/Container.tsx` and
+- **Three width steps, no fourth.** `prose` — `max(672px, 26vw)` — for
+  headlines, body copy, CTAs and forms. `content` — `max(1280px, 50vw)` — for
+  images, screenshots, cards, grids and demos. `full` (100%) for background
+  colours, gradients and dividers **only** — never text, never controls.
+- **The goal is the "middle two quarters":** on a wide screen the outer two
+  quarters stay empty and the middle two carry the content. A fixed pixel width
+  hits that at exactly one screen size and degrades into a ribbon on anything
+  wider; a bare percentage is 195px on a phone. `max()` of the two is what makes
+  it hold everywhere.
+- **One container decides width.** `src/lib/widths.ts` and
   `src/styles/layout.css` are the only files allowed to name a raw width. A
   section never sets its own `max-width`.
 - **Padding lives in the container.** 24px per side, 32px from `md` up. Never
   add horizontal padding to a section on top of it.
-- **No viewport-relative content widths.** No `vw`, no percentage
-  `max-width` (except the legitimate `max-width: 100%` on fluid children). Fixed
-  pixel maxima give the same result on a phone and on a 4K monitor; `50vw` gives
-  195px on one and 1920px on the other.
+- **Never a bare viewport unit for a width.** A share is only allowed with a
+  pixel floor under it, as in the two steps above. `50vw` alone gives 195px on a
+  phone.
 - **`100svh`, never `100vh`.** On iOS the address bar collapses on scroll and
   `vh` is measured against the collapsed viewport, so a `100vh` hero jumps
   while the bar animates.
-- **Tuning is two numbers**, changed in the two owner files and nowhere else:
-  `prose` 672px (narrower: 576px) and `content` 1280px (wider: 1440px).
+- **Type scales with the viewport too**, via the root font size and a
+  floor-plus-share `clamp()` on display type — a wide screen gets a bigger page,
+  not the same page with more empty space.
+- **Tuning is four numbers**, all in `src/styles/layout.css`: the two shares
+  (`--prose-share`, `--content-share`) and the two floors.
 
 Run `npm run check:style` before you commit. A violation fails the build. If
 an exception is genuinely right, mark the line `layout-allow: <why>` — a reason
