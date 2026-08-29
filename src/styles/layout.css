@@ -148,12 +148,13 @@
  * `proximity`, NOT `mandatory`, and that is not a preference:
  *
  *   - `mandatory` means the scroll position must ALWAYS be on a snap point.
- *     Two sections here are taller than the window — the pinned voice section
- *     is three screens, install is four — and the only snap point either of
- *     them has is its own top edge. Under `mandatory` the browser pulls the
- *     reader back to that edge every time they try to scroll INSIDE one, and
- *     the rest of the section cannot be reached at all. It is not a value to
- *     tune; it is unusable on a page whose sections are not all one screen.
+ *     Three sections here are taller than the window — the pinned voice
+ *     section is three screens, stargazers nearly two, install just over one —
+ *     and the only snap point any of them has is its own top edge. Under
+ *     `mandatory` the browser pulls the reader back to that edge every time
+ *     they try to scroll INSIDE one, and the rest of the section cannot be
+ *     reached at all. It is not a value to tune; it is unusable on a page
+ *     whose sections are not all one screen.
  *   - `proximity` snaps only when a gesture ENDS near a boundary and leaves
  *     every other scroll position alone. Tall sections scroll freely, and
  *     carrying on scrolling always crosses a boundary.
@@ -162,11 +163,37 @@
  * gesture cannot cross, which is a full-page slideshow — a different thing
  * from a page read at the reader's own pace.
  *
+ * THE SNAP POINT IS A 1px MARKER AT THE SECTION'S TOP, NOT THE SECTION BOX.
+ * That reads as an indirection and it is the difference between a page that
+ * settles and a page that fights back. `proximity` is not the whole story the
+ * paragraph above tells: a snap area TALLER than the snapport is its own case
+ * in the spec, where every scroll position at which the area covers the window
+ * is a valid snap position and the browser keeps the reader inside that range.
+ * Three sections here are taller than the window — voice is three screens,
+ * stargazers nearly two, install just over one — so the voice section's
+ * covering range runs from its top to two screens further down, and the far
+ * end of it is exactly where the pinned picture has finished. A reader who
+ * scrolls in short bursts and lets go anywhere in that section's last screen
+ * is pulled straight back to that end: the gesture nets zero, the picture
+ * re-pins, and the only way out is one gesture long enough to clear the whole
+ * magnet. Measured in Chrome on 2026-08-29 at a 1249px window: three wheel
+ * notches from the end of the pin travelled 1064px and landed back where they
+ * started, and the same gesture with `scroll-snap-type: none` kept all 1064.
+ *
+ * A 1px pseudo-element cannot be taller than the window, so it has one snap
+ * position and no covering range, and its top edge IS the section's top edge —
+ * the same boundary the section box was offering, without the trap. It draws
+ * nothing and is out of flow, so it is not a flex or grid item and no section's
+ * layout can see it.
+ *
  * WHY ONE SELECTOR RATHER THAN A CLASS PER SECTION. The snap points are the
  * section boundaries, which is a fact about the page's structure and not a
  * decision each section makes. A class would be a hand-maintained copy of that
  * fact, and the section that forgets it is the one boundary the page runs past
- * — invisible in review and hard to attribute afterwards.
+ * — invisible in review and hard to attribute afterwards. The same argument
+ * rules out marking the tall sections by hand: "taller than the window" is a
+ * fact about a rendered page at one window size, not something a section can
+ * declare, and the section that gets it wrong is a trap nobody can attribute.
  *
  * THE FOOTER IS NOT A SNAP POINT, and it gets none because it is not a
  * `<section>`. It is a quarter of a screen at the very bottom, so its top edge
@@ -187,8 +214,24 @@ html {
   scroll-snap-type: y proximity;
 }
 
+/* The marker is positioned against the section, so the section has to be its
+ * containing block. Every section already carries `relative` in its own markup;
+ * saying it here is what keeps the next one from having to — and an absolutely
+ * positioned marker that escaped to the initial containing block would put a
+ * snap point at the top of the document instead of at the section's own edge. */
 body > section {
+  position: relative;
+}
+
+body > section::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: 1px;
+  block-size: 1px;
   scroll-snap-align: start;
+  pointer-events: none;
 }
 
 /* A reader who asked for less motion asked for exactly this: the page does not

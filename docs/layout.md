@@ -238,21 +238,41 @@ four steps, a quarter of the track each. Its numbers are in
 
 The page snaps. Let go of the wheel near a boundary and it settles with that
 section's top edge on the top of the window — a beat of a pause, so a section
-is read whole instead of being crossed halfway. Two declarations, both in
+is read whole instead of being crossed halfway. Three declarations, all in
 `src/styles/layout.css`, and nothing per section:
 
 ```css
-html          { scroll-snap-type: y proximity; }
-body > section { scroll-snap-align: start; }
+html                   { scroll-snap-type: y proximity; }
+body > section         { position: relative; }
+body > section::before { scroll-snap-align: start; }  /* 1px, invisible, top edge */
 ```
 
+**The snap point is a 1px marker at the section's top, not the section box.**
+A snap area *taller than the window* is its own case in the spec: every scroll
+position at which the area covers the window counts as a valid snap position,
+and the browser holds the reader inside that range. The voice section's
+covering range runs from its top to two screens further down, and the far end
+of it is exactly where the pinned picture has finished — so a reader who
+scrolls in short bursts and lets go anywhere in that section's last screen is
+pulled straight back to that end. The gesture nets zero, the picture re-pins,
+and the only way out is one gesture long enough to clear the whole magnet.
+Measured in Chrome on 2026-08-29 at a 1249px window: three wheel notches from
+the end of the pin travelled 1064px and landed back where they started, and the
+same gesture with `scroll-snap-type: none` kept all 1064. A 1px pseudo-element
+cannot be taller than the window, so it has one snap position and no covering
+range, and its top edge *is* the section's top edge — the same boundary the
+section box was offering, without the trap. It draws nothing and is out of
+flow, so it is not a flex or grid item and no section's layout can see it. The
+`position: relative` is what keeps it positioned against its own section rather
+than escaping to the top of the document.
+
 **`proximity`, never `mandatory`.** `mandatory` means the scroll position must
-always be on a snap point. Two sections here are taller than the window — the
-pinned voice section is three screens, install is four — and the only snap
-point either has is its own top edge, so `mandatory` drags the reader back to
-that edge every time they scroll *inside* one and the rest of the section
-cannot be reached. It is not a value to tune down; it is unusable on a page
-whose sections are not all one screen tall.
+always be on a snap point. Three sections here are taller than the window — the
+pinned voice section is three screens, stargazers nearly two, install just over
+one — and the only snap point any of them has is its own top edge, so
+`mandatory` drags the reader back to that edge every time they scroll *inside*
+one and the rest of the section cannot be reached. It is not a value to tune
+down; it is unusable on a page whose sections are not all one screen tall.
 
 **No `scroll-snap-stop: always`.** It turns every boundary into a wall a single
 gesture cannot cross. That is a full-page slideshow, which is a different thing
@@ -261,7 +281,10 @@ from a page read at the reader's own pace.
 **One selector, not a class per section.** The snap points are the section
 boundaries — a fact about the page's structure, not a decision each section
 makes. A class is a hand-maintained copy of that fact, and the section that
-forgets it is the one boundary the page runs past.
+forgets it is the one boundary the page runs past. The same argument rules out
+marking the tall sections by hand to keep them out of the trap above: "taller
+than the window" is a fact about a rendered page at one window size, not
+something a section can declare.
 
 **The footer is not a snap point**, and gets none because it is not a
 `<section>`. It is a quarter-screen at the very bottom, so its top edge lies
