@@ -271,56 +271,219 @@ than its padding box, so a border there overshoots both rails and the joint
 reads as a cross instead of a corner. Vertical padding moves onto the same
 element, so the line marks the boundary rather than floating below it.
 
-The first section after the hero gets none, or there are two lines under the
-nav.
+The **hero** gets none — its top edge is the nav, and a rule there would be a
+second line directly under the nav's own border. Every section below it gets
+one, the strip under the hero included: that boundary is a full viewport away
+from the nav, so nothing doubles, and without a rule the strip reads as spilling
+out of the hero.
 
 ### Vertical dividers between columns
 
 Optional, in two-column sections. Use `gap: 1px` on a grid with a coloured
 ground, not `border-right` — the same technique as the logo cells.
 
-### The scroll marker
+### The section marker
 
-A small square on the **left** rail showing how far down the page the reader is.
+A small square per section, walking that section's own perimeter. It says two
+things at once: how far the reader is through **this** section, and how much of
+it is left.
 
-- 8×8px, filled `var(--ink)`, no rounding
-- Centred on the 1px line: `left: -4.5px`. An absolutely positioned child is
-  placed against its ancestor's *padding* box, which starts on the inner edge
-  of the rail, so half the square alone leaves it a pixel off the line
-- `top` is the scroll fraction of `100% - 8px`, not of `100%`: at a flat 100%
-  the square's top edge is the bottom edge of the screen and the marker
-  disappears exactly where the reader is meant to see it arrive
-- The fraction is written to `--scroll-progress` on `<html>`, not on a chrome
-  element — it describes the document, and inheritance carries it to whichever
-  layer draws the marker
-- The fraction is measured inside a `requestAnimationFrame`, never in the
-  scroll handler — `scrollHeight` and `innerHeight` both force layout, and
-  doing that per scroll event ties the page's frame rate to the wheel
+> Implemented in `src/components/SectionTrack.astro`; the path and its timing
+> in `src/lib/sectionTrack.ts`; the box in `src/styles/layout.css`.
+
+**It replaced a single marker that rode the left rail for the whole document**
+(2026-08-29). That one answered "how far through the page", which is a question
+the reader is not asking while they are inside a section, and it said nothing
+about the section they were actually in. Two markers on one rail disagreeing
+about what "how far" means is worse than either alone, so there is now exactly
+one kind and `PageChrome` draws only the rails.
+
+#### The path
+
+An SVG `<path>` in a `viewBox="0 0 100 100"` with `preserveAspectRatio="none"`,
+so the box stretches to whatever the section is and no pixel is ever computed:
+
+```
+M 0 0 V 100 H 100 V 120     enter top-left,  leave down the right rail
+M 100 0 V 100 H 0 V 120     enter top-right, leave down the left rail
+```
+
+The square is placed with `getPointAtLength(progress × totalLength)`, which
+gives the corners for free.
+
+**The side alternates down the page — the serpentine. Odd sections — the 1st,
+3rd, 5th — run down the LEFT rail, even ones down the RIGHT**, counted over the
+sections that carry a marker rather than over every section on the page: the
+hero has none and is not a link in the chain. A marker that always ran
+down the left rail would leave every section at the bottom-right corner and
+enter the next one at the top-left: a jump the full width of the column at every
+boundary. Mirrored, each section's exit corner sits directly above the next
+section's entry corner, and the page reads as one line folded back and forth.
+The side is assigned from **document order at runtime**, not from a prop — a
+section inserted in the middle would otherwise break the chain silently.
+
+**The path length is the pacing.** 100 + 100 + 20 = 220, so the marker spends
+45% of the section's scroll on the entry rail, 45% on the closing rule and 9% on
+the tail. Nothing else times it, and anything that has to line up with it reads
+its milestones back out of that ratio rather than carrying its own numbers —
+`VoiceSwitch`'s wipe does exactly this.
+
+**The tail runs 20% past the box**, down the rail the next section enters on,
+and fades out along the way. A marker that stopped dead in its exit corner would
+read as the page ending there; the tail hands the reader over instead, and the
+fade keeps it from standing on top of the next section's own square.
+
+#### The box it walks
+
+The tracked box is **what the reader sees the section as**, which is not always
+the `<section>` element:
+
+| Section | Box | Progress from |
+|---|---|---|
+| ordinary | the `<section>` — its top edge *is* its rule, its bottom edge the next one | itself |
+| sticky (`VoiceSwitch`) | the pinned frame, one viewport tall | the tall track, `[data-scroll-span]` |
+
+A three-screen section would otherwise put the marker's halfway point a screen
+and a half below the fold. A section that pins a child therefore has to **close
+its own box** with a hairline top and bottom — the rails give it the other two —
+or the square crosses an edge that is not drawn.
+
+`SectionTrack` reaches the rails through a `Container`, so pass **`nested`**
+when the host box is already on the `content` column. A `content` Container
+inside another one applies *both* of its jobs twice — the gutter, and a
+max-width that is itself "100% minus two gutters" — and the marker ends up a
+gutter inside the rail, which reads as a rendering fault rather than as a
+missing prop. With `nested` the layer takes the `full` step, which is the step
+that means "whatever the parent is".
+
+#### The rest
+
+- 8×8px, filled `var(--ink)`, no rounding, moved with `translate3d`
+- **Position from `getBoundingClientRect()` every frame, never a stored
+  `offsetTop`.** An offset captured once is wrong after the first image that
+  lands, island that hydrates or window that changes size, and a marker placed
+  from a stale one drifts off its rail with no event to blame
+- **`transform`, never `top`/`left`** — a transform is a compositor move, `top`
+  is a layout change on every frame of every scroll
+- **No CSS transition on the position.** The movement *is* the scrolling; a
+  transition makes the square chase the reader down the page and land after they
+  have stopped, which reads as lag rather than as animation. This is also why
+  `prefers-reduced-motion` needs no case here — there is no animation to reduce
+- Recomputed on `resize`, and through a `ResizeObserver` on the driver: a resize
+  moves every corner at once, and a section that grows makes the same scroll
+  position a different fraction of it
+- Centred on the 1px lines, which lie just *inside* the box on its left and
+  right and just below it at the bottom. Both corrections are linear in the
+  point's own coordinate — the x nudge runs +0.5 to −0.5 across the box, the y
+  nudge is +0.5 everywhere — so they are one term each and not a case per corner
+- Progress comes from `spanProgress` in `src/lib/scrollSpan.ts`, shared with
+  everything else that scrubs on scroll, measured inside a
+  `requestAnimationFrame` — `getBoundingClientRect` forces layout, and doing
+  that per scroll event ties the page's frame rate to the wheel
+- **One rAF for the whole page**, and nothing measures while its section is off
+  screen
+- `z-index: 20`: above the cards, which have surfaces of their own and would
+  bury it, and below the nav at 30, which is opaque — a marker passing *through*
+  the nav would read as a bug rather than as chrome
 - `aria-hidden="true"` — decorative, with no navigation function
-- `prefers-reduced-motion`: stays visible, loses the position transition
+- Hidden below 768px, where the rails are
 
-**It rides its own layer, at `z-index: 20`, in front of the content.** The
-rails are meant to be interrupted by a card; the marker is not. It is the
-reader's position on the page, and a position indicator that disappears for the
-length of a section indicates nothing.
+**The path is never stroked.** The rails and the rules already draw this
+rectangle; a second line on top would either double the hairline or sit half a
+pixel beside it and read as a rendering fault.
 
-That takes a **second** `.page-chrome` element rather than a z-index on the
-marker itself: `position: fixed` plus a negative z-index opens a stacking
-context, and a child never paints outside its ancestor's. Both layers are drawn
-by the same `Container`, so they cannot drift apart. The front copy carries the
-same rail border at the same width, only **transparent** — the marker is placed
-against that border's padding box, and dropping it would move the square a
-pixel off the line.
-
-20 and not higher: the nav band is sticky at 30 and opaque by necessity, and a
-marker passing *through* it would read as a bug rather than as chrome. At the
-very top of the page the marker therefore still sits behind the nav; it clears
-it after about fifty pixels of scroll. That is the one place it is expected to
-be hidden.
+**The CSS is in `layout.css`, not in a scoped block in the component.** The
+layer's edges come from a `Container`, and `Container` does not spread the rest
+of its props onto its root element, so Astro's scope attribute never reaches it:
+a scoped `.section-track__column { height: 100% }` silently fails to match, the
+box collapses to zero height, and the marker parks in a corner forever.
 
 `PageChrome` is rendered **once**, in the root layout. A rail assembled from one
 segment per section is a rail with seams, and the seams are the first thing the
 eye finds on a long page.
+
+---
+
+## A bounded section
+
+The default boundary is one line per section: `.section-rule` opens a section
+flush with its top edge and the next section's rule closes it. A **bounded**
+section draws both of its own lines instead and holds them a fixed distance
+inside its own edges, so it reads as a framed band — empty space, line, the
+section, line, empty space.
+
+Reach for it when a section is meant to stand apart from its neighbours as a
+single framed object. Everything else keeps the plain rule; `.section-rule` is
+shared by five sections and is not to be redefined for one of them.
+
+```astro
+<section id="…" class="relative flex min-h-svh flex-col">
+  <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
+    <div class="section-bounds section-bounds--fill">
+      <SectionTrack nested />
+      …the section…
+    </div>
+  </Container>
+</section>
+```
+
+| Class | Element | Job |
+|---|---|---|
+| `.section-inset` | the `Container` | Holds the band `--section-inset` inside the section's top and bottom edges |
+| `.section-bounds` | the block inside it | Draws both hairlines; **is the marker's tracked box** |
+| `.section-bounds--fill` | the same block | Takes the section's leftover height — only for a section that has a height of its own |
+
+### The inset is a share
+
+```css
+--section-inset: clamp(32px, 7svh, 80px);
+```
+
+63px at a 900px viewport, the full 80px from about 1143px up, and a 32px floor
+below about 457px. A fixed 80px is generous framing on a desktop window and a
+sixth of the whole thing on a laptop in landscape; the floor keeps the frame
+from vanishing on a short window and the ceiling keeps it from eating a
+one-screen section's budget on a tall one.
+
+**It costs vertical budget, and a one-screen section has to pay for it twice.**
+At 1440×900 the band is 126px shorter than the section. Any cap that is
+computed from the viewport — such as section 6's
+`--stage-cap: clamp(190px, calc(100svh - 548px), 460px)` — must add `2 ×
+--section-inset` to its chrome figure, or the section overflows its screen.
+
+### The marker has to be re-pointed at the band
+
+`SectionTrack` walks the perimeter of the positioned box it is dropped into.
+Leave it on the `<section>` while the rules move inward and the square rides an
+inset *above* the top line and the same distance *below* the bottom one, which
+reads as a rendering fault rather than as a wrong prop. So the track layer goes
+inside `.section-bounds`, and because that block already sits on the content
+column it takes **`nested`** — a `content` Container inside another one applies
+its gutter and its max-width a second time and puts the marker 32px inside the
+rail.
+
+Two things follow, and both are silent when they are broken:
+
+- **`.section-bounds` carries no inline padding and no inline border.** The
+  track layer is `position: absolute; inset: 0`, so it is laid against that
+  block's *padding* box, and the rails stand on the Container's content edges.
+  Inline padding pulls the tracked box off the rails. Vertical padding is free —
+  the padding box keeps its full height between the two rules — so the
+  section's own breathing room goes there as usual.
+- **The two lines are drawn by different means, and that is deliberate.** The
+  marker is placed by its top-left corner with a flat +0.5px correction in y,
+  which assumes the closing line lies just *below* the tracked box and the
+  opening line just *inside* its top — exactly how an ordinary section is
+  built. So the bottom line is a `border-bottom` (a border sits outside the
+  padding box, at `[height, height+1]`, and the marker's centre lands on it) and
+  the top line is a 1px `::before` at `[0, 1]` inside it. A `border-top` would
+  sit one pixel higher and the marker would enter the section a pixel below its
+  own opening line. The two are identical for the line and only the marker can
+  tell them apart.
+
+`VoiceSwitch.astro`'s pinned frame is the same idea arrived at from the other
+direction: it is a framed box because the section is three screens tall, and it
+hosts `<SectionTrack nested />` for exactly this reason.
 
 ---
 
@@ -361,12 +524,28 @@ nothing — test with a real one.)
 - Horizontal padding on a section on top of the container — padding lives in the container alone
 - `100vh` for section-filling heights. Always `100svh`, or iOS pushes the address bar into the layout
 - Rails per section instead of once in the root layout
-- The scroll marker in the rails' own `z-index: -1` layer, where every card
+- A section marker in the rails' own `z-index: -1` layer, where every card
   with a surface paints over it
+- A second scroll indicator alongside the section markers — one page-long
+  marker and one per section disagree about what "how far" means
+- `SectionTrack` without `nested` inside a box that is already on the `content`
+  column, which stands the marker a gutter inside both rails
+- A sticky section that pins a child without closing its own box top and
+  bottom, leaving the marker to cross an edge that is not drawn
+- A section marker whose path does **not** alternate side, which jumps the full
+  width of the column at every boundary
+- A CSS transition on the marker's position, which makes it lag the scroll
+- Marker positions from stored `offsetTop` values, which go stale on every
+  layout change
 - Rail positions from recomputed pixel values instead of the `Container`
 - An opaque background on a section, which paints over the rails. The page
   colour belongs on `<body>`
 - Scroll maths in the scroll handler with no `requestAnimationFrame`
+- A bounded section whose `<SectionTrack />` still sits on the `<section>`.
+  The marker then walks a box the reader cannot see, an inset outside both
+  drawn lines
+- Inline padding or an inline border on `.section-bounds`, which takes the
+  marker's tracked box off the rails
 
 `scripts/check-style.mjs` enforces this list. It runs as a pre-commit hook; a
 violation fails the build. The two owner files — `src/styles/layout.css` and

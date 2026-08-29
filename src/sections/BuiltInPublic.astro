@@ -31,6 +31,7 @@
  * only how the brief happened to spell it.
  */
 import Container from "@/components/Container.astro";
+import SectionTrack from "@/components/SectionTrack.astro";
 import { GitHubMark } from "@/components/logos/GitHubMark";
 import { YouTubeMark } from "@/components/logos/YouTubeMark";
 
@@ -130,7 +131,7 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
 <section
   id="built-in-public"
   aria-labelledby="bip-heading"
-  class="flex min-h-svh flex-col"
+  class="relative flex min-h-svh flex-col"
   data-bip
   data-active={FEATURED.id}
   data-active-uploaded={FEATURED.uploaded}
@@ -143,6 +144,8 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
     line marks where the section begins and the block floats in the leftover
     height.
   */}
+  <SectionTrack />
+
   <Container width="content">
     <div class="section-rule"></div>
   </Container>

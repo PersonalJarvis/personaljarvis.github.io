@@ -11,10 +11,12 @@
  * See docs/feature-section.md.
  */
 import Container from "@/components/Container.astro";
+import SectionTrack from "@/components/SectionTrack.astro";
 import { SkillsDemo } from "@/components/skills-demo/SkillsDemo";
 ---
 
-<section id="skills">
+<section id="skills" class="relative">
+  <SectionTrack />
   <Container width="content">
     <!--
       The rule sits INSIDE the container so it starts and ends on a rail, and

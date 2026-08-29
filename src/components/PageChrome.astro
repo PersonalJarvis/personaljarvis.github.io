@@ -1,27 +1,26 @@
 ---
 /**
- * Page chrome — the two rails and the scroll marker.
+ * Page chrome — the two rails.
  *
  * Rendered ONCE, in the root layout. Never per section: a rail assembled from
  * one segment per section is a rail with seams, and the seams are the first
  * thing the eye finds on a long page.
  *
- * TWO layers, not one. The rails belong behind the content, the marker in
- * front of it — and a single element cannot be both. `position: fixed` with a
- * negative `z-index` opens a stacking context, so a child of the rail layer is
- * trapped behind the content no matter what z-index it carries. Both layers
- * draw the same box through the same Container, so the marker's offset stays
- * valid in either one.
- *
  * The rails stand on the edges of the `content` step and get there through the
  * Container itself rather than a recomputed pixel value, so they cannot drift
- * from the width formula. Everything else — the layer each one sits in, the
- * marker geometry, the breakpoint below which they disappear — is in
- * src/styles/layout.css next to that formula.
+ * from the width formula. Everything else — the layer they sit in and the
+ * breakpoint below which they disappear — is in src/styles/layout.css next to
+ * that formula.
+ *
+ * THERE IS NO MARKER HERE ANY MORE. A single square walking the whole document
+ * used to ride the left rail from this file. It was replaced on 2026-08-29 by a
+ * marker per section — SectionTrack.astro — which walks the section's own
+ * perimeter and says both how far the reader is through THIS section and how
+ * much of it is left. Two indicators on the same rail disagreeing about what
+ * "how far" means is worse than either alone, so this one went. See
+ * docs/layout.md § "The section marker".
  *
  * Decorative only: aria-hidden, pointer-events: none, no navigation function.
- *
- * See docs/layout.md § "Page chrome: rails and the scroll marker".
  */
 import Container from "@/components/Container.astro";
 ---
@@ -31,52 +30,3 @@ import Container from "@/components/Container.astro";
     <div class="page-chrome__rails"></div>
   </Container>
 </div>
-
-<div class="page-chrome page-chrome--marker" aria-hidden="true">
-  <Container width="content" class="page-chrome__column">
-    <div class="page-chrome__rails">
-      <span class="page-chrome__marker"></span>
-    </div>
-  </Container>
-</div>
-
-<script>
-  /**
-   * Scroll progress as a plain 0..1 number on the document element. CSS turns
-   * it into a position, so the only thing crossing the language boundary is
-   * the fraction itself. It goes on <html> rather than on one of the two
-   * chrome layers because it describes the document, and inheritance then
-   * carries it to whichever layer ends up drawing the marker.
-   *
-   * The read happens inside a requestAnimationFrame, not in the scroll handler:
-   * scrollHeight and innerHeight both force layout, and doing that on every
-   * scroll event ties the page's frame rate to the wheel. Inside rAF the
-   * browser is about to lay out anyway, and the pending frame is cancelled when
-   * a second event arrives before it runs, so a burst of events costs one
-   * measurement rather than forty.
-   */
-  const root = document.documentElement;
-  let frame = 0;
-
-  const measure = () => {
-    const scrollable = root.scrollHeight - window.innerHeight;
-    const progress = scrollable > 0 ? window.scrollY / scrollable : 0;
-    root.style.setProperty("--scroll-progress", String(progress));
-  };
-
-  const schedule = () => {
-    cancelAnimationFrame(frame);
-    frame = requestAnimationFrame(measure);
-  };
-
-  measure();
-  addEventListener("scroll", schedule, { passive: true });
-  addEventListener("resize", schedule, { passive: true });
-
-  // The page grows as islands hydrate and images land, and a taller page
-  // means the same scrollY is a smaller fraction. Without this the marker
-  // sits wrong until the reader scrolls.
-  if ("ResizeObserver" in window) {
-    new ResizeObserver(schedule).observe(root);
-  }
-</script>

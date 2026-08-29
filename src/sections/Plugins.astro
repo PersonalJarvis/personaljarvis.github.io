@@ -10,10 +10,12 @@
  * hairlines. There are no shadow tokens in this system.
  */
 import Container from "@/components/Container.astro";
+import SectionTrack from "@/components/SectionTrack.astro";
 import { PluginsDemo } from "@/components/plugins-demo/PluginsDemo";
 ---
 
-<section id="features">
+<section id="features" class="relative">
+  <SectionTrack />
   <Container width="content">
     <!--
       The rule runs rail to rail because it sits INSIDE the container: the

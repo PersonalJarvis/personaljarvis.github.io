@@ -25,6 +25,7 @@
  * a COLOUR, which silently leaves every heading at body size.
  */
 import Container from "@/components/Container.astro";
+import SectionTrack from "@/components/SectionTrack.astro";
 import { TurningMark } from "@/components/mark/TurningMark";
 import { REPO } from "@/lib/install";
 
@@ -74,7 +75,9 @@ function segments(body: string) {
 }
 ---
 
-<section id="install" class="section-full-height flex flex-col">
+<section id="install" class="section-full-height relative flex flex-col">
+  <SectionTrack />
+
   <Container width="content">
     <div class="section-rule"></div>
   </Container>

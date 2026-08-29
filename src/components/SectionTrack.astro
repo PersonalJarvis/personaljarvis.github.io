@@ -1,0 +1,189 @@
+---
+/**
+ * The section marker — one small square walking a section's own perimeter.
+ *
+ * It answers a different question from the rails: the rails say where the
+ * column is, this says how far the reader is through THIS section and how much
+ * of it is left. Down one rail, along the rule that closes the section, then on
+ * down the OTHER rail into the section below. See docs/layout.md
+ * § "The section marker" and src/lib/sectionTrack.ts for the path itself.
+ *
+ * WHICH RAIL IT WALKS IS NOT THIS COMPONENT'S TO DECIDE, and it is not a prop
+ * either. Consecutive sections alternate — the serpentine — so the side is a
+ * function of a section's POSITION among the tracked sections, and a prop would
+ * mean every section carrying a hand-maintained answer that silently goes wrong
+ * the moment one is inserted, removed or reordered. The client script counts
+ * `[data-section-track]` in document order and writes the `d` it derives, which
+ * is the one place that ordering is knowable. The markup below therefore ships
+ * a placeholder path: it is never stroked and the marker is parked off-screen
+ * until the first frame, so nothing of it is ever seen.
+ *
+ * WHERE TO PUT IT. Drop it inside the box the reader sees the section AS, and
+ * give that box `position: relative`. For an ordinary section that is the
+ * `<section>` element, whose top edge IS its horizontal rule and whose bottom
+ * edge is the next one. For a section that pins a sticky child — VoiceSwitch —
+ * it is the pinned frame, because the section element itself is three screens
+ * tall and a marker halfway down it would be halfway off the screen.
+ *
+ * WHERE THE PROGRESS COMES FROM. The nearest `[data-scroll-span]` ancestor, or
+ * the section itself. Those differ for exactly the same reason: a sticky
+ * section is driven by its tall track, not by the box being drawn.
+ *
+ * ITS CSS IS IN src/styles/layout.css, NOT IN A SCOPED BLOCK HERE. The layer's
+ * two edges come from a `Container`, and Container does not spread the rest of
+ * its props onto its root element — so Astro's scope attribute never reaches
+ * it, a scoped `.section-track__column { height: 100% }` never matches, and the
+ * box collapses to zero height with the marker parked in a corner forever. The
+ * page chrome's rules live in that file for the same reason.
+ *
+ * `nested` IS NOT OPTIONAL WHEN IT APPLIES. The layer reaches the two rails
+ * through a `Container`, and a `content` Container inside another one applies
+ * BOTH of its jobs a second time — the gutter, and a max-width that is itself
+ * "100% minus two gutters". The marker then rides a line 32px inside the rail,
+ * which reads as a rendering fault rather than as a wrong prop. Pass `nested`
+ * whenever the host box is already on the content column — the pinned frame
+ * is — and the layer takes the `full` step instead, which is the width step
+ * that means "whatever the parent is". A decorative tracing box with no content
+ * of its own is exactly what `full` is for.
+ *
+ * Decorative: aria-hidden, pointer-events: none, no navigation function.
+ */
+import Container from "@/components/Container.astro";
+import { trackPath } from "@/lib/sectionTrack";
+
+interface Props {
+  /** True when the host box already sits on the content column. */
+  nested?: boolean;
+}
+
+const { nested = false } = Astro.props;
+---
+
+<div class="section-track" aria-hidden="true" data-section-track>
+  <Container width={nested ? "full" : "content"} class="section-track__column">
+    <div class="section-track__box">
+      {/*
+        The path is geometry, not decoration — it is never stroked. The rails
+        and the horizontal rules already draw this rectangle; a second line on
+        top of them would either double the hairline or, worse, sit half a pixel
+        beside it and read as a rendering fault.
+      */}
+      <svg
+        class="section-track__svg"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        focusable="false"
+      >
+        <path d={trackPath("left")} fill="none" stroke="none"></path>
+      </svg>
+
+      <span class="section-track__marker"></span>
+    </div>
+  </Container>
+</div>
+
+<script>
+  import { TURN_DOWN, sideForIndex, trackPath } from "@/lib/sectionTrack";
+  import { spanProgress } from "@/lib/scrollSpan";
+
+  /* Half the 8px square. The marker is placed by its top-left corner. */
+  const HALF = 4;
+
+  /* One rAF for the whole page, not one per section. Each loop would force its
+   * own layout read, and a page with six sections would then measure six
+   * rectangles a frame whether or not any of them is on screen. */
+  const tracks = Array.from(document.querySelectorAll<HTMLElement>("[data-section-track]"))
+    .map((layer, index) => {
+      const box = layer.querySelector<HTMLElement>(".section-track__box")!;
+      const path = layer.querySelector<SVGPathElement>("path")!;
+      const marker = layer.querySelector<HTMLElement>(".section-track__marker")!;
+      /* The serpentine. `index` is this section's place in document order among
+       * the sections that carry a marker, which is the only place that order is
+       * known — the component itself cannot see its own siblings, and a prop
+       * per section is a hand-maintained answer that goes wrong the moment the
+       * page is reordered. Written before getTotalLength below reads it. */
+      path.setAttribute("d", trackPath(sideForIndex(index)));
+      /* The tall track for a sticky section, the section itself otherwise. */
+      const driver = layer.closest<HTMLElement>("[data-scroll-span]") ?? layer.closest("section");
+      return driver ? { box, path, marker, driver, length: 0, placed: -1, onScreen: false } : null;
+    })
+    .filter((t): t is NonNullable<typeof t> => t !== null);
+
+  if (tracks.length > 0) {
+    /* getTotalLength is a measurement of the path in its own user units, so it
+     * is the same 220 for every section and survives any resize. Read once. */
+    for (const track of tracks) track.length = track.path.getTotalLength();
+
+    /* Nothing measures or paints while its section is off screen. The margin is
+     * generous on the bottom so the marker is already in place by the time the
+     * section's first pixel arrives, and past the top by the length of the
+     * tail, which hangs below the box. */
+    const watcher = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const track = tracks.find((t) => t.box === entry.target);
+          if (track) track.onScreen = entry.isIntersecting;
+        }
+      },
+      { rootMargin: "300px" },
+    );
+    for (const track of tracks) watcher.observe(track.box);
+
+    const place = (track: (typeof tracks)[number]) => {
+      const progress = spanProgress(track.driver.getBoundingClientRect(), window.innerHeight);
+      /* A sub-pixel move is a repaint nobody can see. */
+      if (Math.abs(progress - track.placed) < 0.0004) return;
+      track.placed = progress;
+
+      const point = track.path.getPointAtLength(progress * track.length);
+      const { width, height } = track.box.getBoundingClientRect();
+
+      /* The rails and the rules are 1px lines lying just INSIDE the tracked box
+       * on its left and right and just below it at the bottom, so the square is
+       * centred on the line rather than on the box edge. Both corrections are
+       * linear in the point's own coordinate, which is what makes them one term
+       * each instead of a case per corner: the x nudge runs +0.5 to -0.5 across
+       * the box, the y nudge is +0.5 everywhere. Drop them and the marker sits
+       * a pixel off the line it is meant to ride, which is visible. */
+      const x = (point.x / 100) * width + 0.5 - point.x / 100 - HALF;
+      const y = (point.y / 100) * height + 0.5 - HALF;
+
+      track.marker.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      /* Past the exit corner the marker is on the tail, hanging below this
+       * section and over the top of the next one — on the same rail the next
+       * section enters on, which is what makes the hand-off read as continuous.
+       * It stays visible for that reason, but the next section's own marker is
+       * standing on that rail too, so it fades out along the tail rather than
+       * running the whole way down beside it. */
+      track.marker.style.opacity =
+        progress <= TURN_DOWN
+          ? "1"
+          : String(1 - (progress - TURN_DOWN) / (1 - TURN_DOWN));
+    };
+
+    let frame = 0;
+    const loop = () => {
+      frame = requestAnimationFrame(loop);
+      for (const track of tracks) if (track.onScreen) place(track);
+    };
+
+    /* A resize moves every corner and every line, so nothing may be trusted. */
+    const invalidate = () => {
+      for (const track of tracks) {
+        track.placed = -1;
+        track.length = track.path.getTotalLength();
+      }
+    };
+    addEventListener("resize", invalidate, { passive: true });
+
+    /* The page grows as islands hydrate and images land, and a taller section
+     * means the same scroll position is a different fraction of it. */
+    if ("ResizeObserver" in window) {
+      const grown = new ResizeObserver(invalidate);
+      for (const track of tracks) grown.observe(track.driver);
+    }
+
+    frame = requestAnimationFrame(loop);
+    addEventListener("pagehide", () => cancelAnimationFrame(frame), { once: true });
+  }
+</script>

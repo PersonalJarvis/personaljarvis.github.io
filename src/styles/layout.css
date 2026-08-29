@@ -136,7 +136,7 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Page chrome — two rails, the horizontal rules, and the scroll marker
+ * Page chrome — two rails and the horizontal rules
  *
  * The gutters are made visible: two hairlines standing on the edges of the
  * `content` step, running the whole page rather than restarting per section.
@@ -174,33 +174,6 @@
   border-inline: 1px solid var(--hairline);
 }
 
-/* The marker's own layer — the same box, in FRONT of the content.
- *
- * The rails are meant to be interrupted by a card; the marker is not. It is
- * the reader's position on the page, and a position indicator that disappears
- * for the length of a section indicates nothing. So it rides a second copy of
- * the chrome that sits above ordinary content instead of behind it.
- *
- * It cannot simply be lifted out of the layer above with a z-index of its own:
- * `position: fixed` plus a negative z-index opens a stacking context, and a
- * child never paints outside its ancestor's. Hence two elements.
- *
- * 20, not higher: the nav band is sticky at 30 and opaque by necessity, and
- * the marker passing THROUGH it would read as a bug rather than as chrome. It
- * still disappears behind the nav for the first fifty pixels of scroll, which
- * is the one place it is expected to.
- *
- * Its rails carry the same border at the same width, only transparent: the
- * marker is placed against their padding box, so dropping the border here
- * would move that box a pixel outward and the square off the line it rides. */
-.page-chrome--marker {
-  z-index: 20;
-}
-
-.page-chrome--marker .page-chrome__rails {
-  border-color: transparent;
-}
-
 /* Below the container's own breakpoint there are no gutters left to draw in. */
 @media (max-width: 767px) {
   .page-chrome {
@@ -208,34 +181,76 @@
   }
 }
 
-/* The scroll marker — an 8px square riding the left rail, centred on the 1px
- * line. `--scroll-progress` is a plain number between 0 and 1, written onto
- * <html> by the component's script from inside a requestAnimationFrame and
- * inherited from there.
+/* ---------------------------------------------------------------------------
+ * The section marker
  *
- * -4.5px, not -3.5px: an absolutely positioned child is placed against its
- * ancestor's PADDING box, which starts on the inner edge of the rail, so the
- * line's centre is at -0.5px and the square's left edge is 4px further left
- * again. Offsetting by half the square alone leaves the marker sitting a
- * pixel off the line it is meant to ride.
+ * One small square per section, walking that section's own perimeter: down the
+ * left rail, along the rule that closes the section, then on down the right
+ * rail into the section below. It replaced a single marker that rode the left
+ * rail for the length of the whole document (2026-08-29) — that one said how
+ * far through the PAGE the reader was and nothing about the section they were
+ * actually in, and two markers on one rail disagreeing about what "how far"
+ * means is worse than either alone.
  *
- * The travel is `100% - 8px` rather than a flat 100%, so the square is fully
- * inside the viewport at both ends: at 100% of the height its top edge would
- * be the bottom edge of the screen and the marker would vanish exactly where
- * the reader is meant to see it arrive. */
-.page-chrome__marker {
+ * The path, the pacing and the placement are in src/components/SectionTrack.astro
+ * and src/lib/sectionTrack.ts. Only the box lives here, beside the width
+ * formula it is measured against.
+ *
+ * WHY NOT A SCOPED BLOCK IN THE COMPONENT. The layer's two edges come from a
+ * Container, and Container does not spread the rest of its props onto its root
+ * element, so Astro's scope attribute never reaches it. A scoped
+ * `.section-track__column { height: 100% }` silently fails to match, the box
+ * collapses to zero height, and the marker parks in a corner. The page chrome's
+ * rules are here for the same reason.
+ *
+ * z-index 20: above the cards, which have surfaces of their own and would
+ * otherwise bury the square, and below the sticky nav at 30, which is opaque —
+ * a marker passing THROUGH the nav reads as a bug rather than as chrome.
+ * ------------------------------------------------------------------------ */
+
+.section-track {
   position: absolute;
-  left: -4.5px;
-  top: calc(var(--scroll-progress, 0) * (100% - 8px));
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.section-track__column,
+.section-track__box {
+  height: 100%;
+}
+
+.section-track__box {
+  position: relative;
+}
+
+.section-track__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Parked off screen until the first frame places it. Without this the square
+ * paints in the top-left corner of every section for one frame on load, and a
+ * page of markers flashing at once is the first thing anyone sees. */
+.section-track__marker {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 8px;
   height: 8px;
   background: var(--ink);
-  transition: top 100ms linear;
+  transform: translate3d(-100px, -100px, 0);
+  will-change: transform;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .page-chrome__marker {
-    transition: none;
+/* Below the container's own breakpoint there are no gutters left to draw in,
+ * which is also where the rails disappear. */
+@media (max-width: 767px) {
+  .section-track {
+    display: none;
   }
 }
 
@@ -253,4 +268,143 @@
 
 .section-rule {
   border-top: 1px solid var(--hairline);
+}
+
+/* ---------------------------------------------------------------------------
+ * Bounded section — a band framed by two rules, inset from the section's edges
+ *
+ * The ordinary arrangement draws one line per boundary: `.section-rule` opens a
+ * section flush with its top edge, and the NEXT section's rule closes it. A
+ * BOUNDED section draws both of its own lines and holds them a fixed distance
+ * inside its own top and bottom edges, so it reads as a framed band — empty
+ * space, line, the section, line, empty space.
+ *
+ * It is additive on purpose. `.section-rule` is used by five sections and
+ * changing what it means underneath them is how one section's redesign breaks
+ * four others. Reach for this only when a section is meant to sit inside its
+ * own frame; the plain rule stays the default.
+ *
+ * The whole pattern is two classes on two elements that are already in the
+ * markup — the Container, and the block inside it:
+ *
+ *   <section class="flex min-h-svh flex-col">
+ *     <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
+ *       <div class="section-bounds section-bounds--fill">
+ *         <SectionTrack nested />
+ *         ...the section...
+ *       </div>
+ *     </Container>
+ *   </section>
+ *
+ * See docs/layout.md § "A bounded section".
+ * ------------------------------------------------------------------------ */
+
+:root {
+  /* How far the two rules stand inside the section's own top and bottom edges.
+   *
+   * A share, not a constant: 80px is generous framing on a desktop window and
+   * a sixth of the whole section on a laptop in landscape. Both ends are
+   * clamped for the same reason the width formula clamps both ends — the floor
+   * keeps the frame from vanishing on a short window, the ceiling keeps it
+   * from eating a one-screen section's budget on a tall one.
+   *
+   * 7svh resolves to 63px at a 900px viewport, reaches the 80px ceiling from
+   * about 1143px up, and hits the 32px floor below about 457px. A bounded
+   * section that is exactly one screen tall therefore loses 2 x that number of
+   * vertical budget — 126px at 1440x900 — and whatever it sizes against a
+   * viewport-derived cap has to account for it. `svh`, never `vh`: this is a
+   * height and the iOS address bar would otherwise animate it.
+   */
+  --section-inset: clamp(var(--space-xl), 7svh, var(--space-section));
+}
+
+/* The inset itself, on the Container that already wraps the band.
+ *
+ * WHY PADDING HERE RATHER THAN A MARGIN ON THE BAND. A margin on the band
+ * collapses straight out through the top of an ordinary block section, lands
+ * between the two sections instead of inside this one, and the top line does
+ * not move at all — the gap silently becomes the previous section's. Padding
+ * on the element that is already there cannot collapse and costs no extra
+ * element. Vertical padding on the Container is fine; the rule docs/layout.md
+ * forbids is HORIZONTAL padding outside the container's own gutter.
+ */
+.section-inset {
+  padding-block: var(--section-inset);
+}
+
+/* The band: the box the two rules bound, and the box the marker walks.
+ *
+ * THIS ELEMENT IS THE MARKER'S TRACKED BOX. SectionTrack measures whatever
+ * positioned box it is dropped into, so if the rules move inward and the
+ * marker still tracks the <section>, the square rides an inset above the top
+ * line and the same distance below the bottom one — which reads as a rendering
+ * fault, not as a wrong prop. The track layer therefore goes INSIDE this
+ * element, and because this element already sits on the content column the
+ * layer takes the `nested` step (see SectionTrack.astro: a `content` Container
+ * inside another one applies its gutter and its max-width a second time and
+ * puts the marker 32px inside the rail).
+ *
+ * NO INLINE PADDING OR BORDER ON THIS ELEMENT, EVER. The track layer is
+ * `position: absolute; inset: 0`, so it is laid against this element's PADDING
+ * box; the two rails stand on the Container's content edges. Inline padding
+ * here pulls the tracked box off the rails and the marker rides down the
+ * middle of the section. Vertical padding is free — the padding box keeps its
+ * full height between the two rules — so the section's own breathing room goes
+ * here as usual.
+ *
+ * WHY THE TWO LINES ARE DRAWN BY DIFFERENT MEANS. They are not symmetric in
+ * the box model, and the marker's half-pixel correction is what decides it.
+ * SectionTrack places the square by its top-left corner and adds a flat +0.5
+ * in y, which assumes the closing line lies just BELOW the tracked box and the
+ * opening line just INSIDE its top — exactly how an ordinary section is built,
+ * where `.section-rule` is the first child (inside) and the next section's
+ * rule closes it (below).
+ *
+ *   - Bottom: `border-bottom`. A border sits OUTSIDE the padding box, so the
+ *     line occupies [height, height + 1] of the tracked box and the marker's
+ *     centre lands on it exactly.
+ *   - Top: a 1px `::before` INSIDE the padding box, at [0, 1]. A `border-top`
+ *     would sit one pixel above the padding box, and the marker would enter
+ *     the section a pixel below its own opening line. The two positions are
+ *     visually identical for the line; only the marker can tell them apart.
+ *
+ * An inset 1px shadow would be the shorter spelling of that top line. It is
+ * banned outright by the style gate — this system's depth is hairlines only —
+ * so the pseudo-element is not a preference, it is the available tool.
+ *
+ * `position: relative` is what makes this the track layer's containing block.
+ * The host <section> no longer needs it for the marker.
+ *
+ * `min-height: 0` is carried by the base rather than the modifier because it
+ * is inert outside a flex parent and the missing link in a flex chain is the
+ * defect that keeps recurring (docs/layout.md § "A section that is one
+ * viewport and still scrolls").
+ */
+.section-bounds {
+  position: relative;
+  min-height: 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.section-bounds::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: 1px;
+  background: var(--hairline);
+  pointer-events: none;
+}
+
+/* The band fills what the section has left over.
+ *
+ * Only for a section with a height of its own — `min-h-svh` or
+ * `.section-full-height`. Without it the band wraps its content and the bottom
+ * rule stops where the text stops instead of standing an inset above the
+ * section's bottom edge, which is the whole point of the frame. It is a
+ * modifier and not part of the base because a bounded band in an auto-height
+ * section is a legitimate use and must not grab space from its siblings.
+ */
+.section-bounds--fill {
+  flex: 1 1 auto;
 }
