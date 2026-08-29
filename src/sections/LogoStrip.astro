@@ -28,6 +28,7 @@
  * it grew — which is exactly how this strip first read as too small.
  */
 import Container from "@/components/Container.astro";
+import SectionTrack from "@/components/SectionTrack.astro";
 import { marks } from "@/components/logos/marks";
 
 /** Cells in the row at the widest breakpoint, and marks stacked in each. */
@@ -96,30 +97,40 @@ const visibility = [
 ];
 ---
 
-<section aria-labelledby="connects-label" class="py-20">
+<section aria-labelledby="connects-label" class="relative">
+  <SectionTrack />
   <Container width="content">
-    <p id="connects-label" class="eyebrow">Everything Jarvis connects</p>
+    <!--
+      The rule that separates this strip from the hero above it. It sits
+      INSIDE the container, so it starts and ends exactly on the two rails
+      instead of overshooting them by a gutter a side. The section's own
+      vertical padding moved onto it for the same reason every other section
+      does it: the line has to mark the boundary, not float below it.
+    -->
+    <div class="section-rule py-20">
+      <p id="connects-label" class="eyebrow">Everything Jarvis connects</p>
 
-    <ul
-      class="mt-8 grid grid-cols-3 gap-[10px] sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-8"
-      style={`--cycle:${CYCLE_S}s`}
-    >
-      {
-        columns.map((stack, c) => (
-          <li class={`cell ${visibility[c]}`}>
-            {stack.map(({ name, Mark, rem }, r) => (
-              <span
-                class="surface"
-                style={`--delay:${startAt(c, r).toFixed(2)}s; --mark:${rem}rem`}
-              >
-                <Mark className="mark" />
-                <span class="sr-only">{name}</span>
-              </span>
-            ))}
-          </li>
-        ))
-      }
-    </ul>
+      <ul
+        class="mt-8 grid grid-cols-3 gap-[10px] sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-8"
+        style={`--cycle:${CYCLE_S}s`}
+      >
+        {
+          columns.map((stack, c) => (
+            <li class={`cell ${visibility[c]}`}>
+              {stack.map(({ name, Mark, rem }, r) => (
+                <span
+                  class="surface"
+                  style={`--delay:${startAt(c, r).toFixed(2)}s; --mark:${rem}rem`}
+                >
+                  <Mark className="mark" />
+                  <span class="sr-only">{name}</span>
+                </span>
+              ))}
+            </li>
+          ))
+        }
+      </ul>
+    </div>
   </Container>
 </section>
 
