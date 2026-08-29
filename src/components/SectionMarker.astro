@@ -271,6 +271,12 @@
     const endOf = (i: number, top: number) =>
       spans[i].pinned ? pointOn(tracks[i], 1) : onTheLine(tracks[i], spans[i], top);
 
+    /** The height a section rests the square at: the top of its band. */
+    const restOf = (i: number) => {
+      const reading = window.innerHeight * READING_SHARE;
+      return spans[i].pinned ? reading : reading - spans[i].crossing / 2;
+    };
+
     const place = (top: number) => {
       const index = ownerAt(top);
       const span = spans[index];
@@ -285,15 +291,11 @@
         point = span.pinned
           ? pointOn(tracks[index], (top - span.enter) / Math.max(1, span.leave - span.enter))
           : onTheLine(tracks[index], span, top);
-      } else {
-        /* THE GAP: dead scrolling that belongs to no section's box, and the
-         * square glides across it from where this section left it to where the
-         * next one takes it. Between two ordinary sections those two are the
-         * same rail and, unless their bands differ in height, the same point —
-         * so there is usually nothing at all to see. Where one of the two is
-         * PINNED there is: its end of the joint is a corner of a frame rather
-         * than a point in the band, and the glide is what keeps the square on
-         * screen while that frame is arriving or leaving. */
+      } else if (!span.pinned && !next.pinned) {
+        /* THE GAP BETWEEN TWO ORDINARY SECTIONS is dead scrolling on one rail,
+         * and both sides of it are a point in a band on that rail. Usually the
+         * same point, and then there is nothing to see; where the two bands are
+         * different heights, the square eases from one to the other. */
         const gap = span.hand - span.leave;
         const across = gap > 0 ? Math.min(1, (top - span.leave) / gap) : 1;
         const from = endOf(index, top);
@@ -302,6 +304,32 @@
           x: from.x + (to.x - from.x) * across,
           y: from.y + (to.y - from.y) * across,
         };
+      } else {
+        /* A GAP WITH A PINNED FRAME ON ONE SIDE OF IT, and the square spends it
+         * ON THAT FRAME'S OWN RULE rather than in the air between the two.
+         *
+         * The distances here are not small. A pinned section leaves the square
+         * in the bottom corner of its frame, 1012px down a 1249px window, and
+         * the section below takes it 687px higher up in its band — so something
+         * has to cover that ground. Interpolating between the two points sent
+         * the square climbing a bare rail against the scroll, which is exactly
+         * what it looks like: a marker drifting upwards for no reason while the
+         * reader goes down ("der Bug, dass es bei der Sektion nach oben geht",
+         * maintainer, 2026-08-29).
+         *
+         * It covers the same ground stuck to the corner of the frame that is
+         * leaving — which is climbing the window at precisely that speed,
+         * because it is being scrolled away — and stops in the band when it
+         * gets there. The rise is then something the reader can see the reason
+         * for. Arriving is the mirror image: the square sits on the opening
+         * rule of the frame coming up, which is the line it just turned onto,
+         * and rides it into place.
+         */
+        const from = endOf(index, top);
+        const to = startOf(index + 1);
+        const rest = restOf(index + 1);
+        const y = from.y >= rest ? from.y : to.y <= rest ? to.y : rest;
+        point = { x: from.y >= rest ? from.x : to.x, y };
       }
 
       dot.style.transform = `translate3d(${point.x - HALF}px, ${point.y - HALF}px, 0)`;

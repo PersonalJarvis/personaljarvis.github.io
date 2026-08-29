@@ -765,10 +765,22 @@ tile the document: a band is held `--section-inset` inside its section, a pinned
 frame stops a whole viewport before its track does, and the hero's box ends 80px
 above the logo strip's opening rule. Between two ordinary sections both sides of
 that gap are the same rail at the same height, so the square simply carries on
-where it already is. Where one of the two is **pinned**, its end of the joint is
-a corner of a frame rather than a point on the reading line, and the square
-glides from one to the other over the scrolling between them — which is what
-keeps it on screen while a pinned frame is arriving or leaving.
+where it already is.
+
+**Where one of the two is pinned, the square spends the gap ON THAT FRAME'S OWN
+RULE.** The distances here are not small: a pinned section leaves the square in
+the bottom corner of its frame, 1012px down a 1249px window, and the section
+below takes it 687px higher up in its band. Gliding between the two points sent
+it climbing a bare rail against the scroll, which is exactly what it looked
+like — a marker drifting upwards for no reason while the reader went down
+("der Bug, dass es bei der Sektion nach oben geht", maintainer, 2026-08-29).
+
+It covers the same ground stuck to the corner of the frame that is **leaving**,
+which is climbing the window at precisely that speed because it is being
+scrolled away, and stops in the band when it gets there — so the rise is
+something the reader can see the reason for. **Arriving** is the mirror image:
+the square sits on the opening rule of the frame coming up, which is the very
+line it just turned onto, and rides it into place.
 
 `hand` for the last tracked section is the end of the document.
 
