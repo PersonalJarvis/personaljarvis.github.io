@@ -84,7 +84,7 @@ distance is what drives the wipe.
 | Element | Value |
 |---|---|
 | Track | `300svh` |
-| Sticky viewport | `100svh`, `padding-top: 4rem` — the nav band is 4rem and opaque |
+| Sticky viewport | `100svh`, `padding-block: var(--section-inset)` — the same air every other section holds its two rules inside. It is **not** nav clearance: that was `4rem` at the top, and it went when the section took the standard inset. Note that the nav is fixed over this section too since 2026-08-29 and has no ground on it, so anything the pin brings up to the top of the window is read *through* the links rather than hidden behind a band |
 | Width | one `content` container; the head is a 8:5 grid inside it |
 | Eyebrow | 14px from `--text-body-sm`, uppercase, `letter-spacing: .1em` |
 | Headline | `--text-display-xl`, left column, **two lines** |
@@ -312,23 +312,65 @@ job somebody would actually hand over and one the app can honestly take. "Hey
 Jarvis" is the wake word every reader already knows the shape of; the app's own
 is whatever the owner picks.
 
-**The words arrive one at a time.** Each is a span carrying its index, and the
-stylesheet turns `--reveal` — the back half of the wipe, written by the script —
-into an opacity per word: `(reveal × word count − index) × 1.6`, clamped. The
-1.6 is the overlap, so a word is most of the way up before the next one starts
-and the sentence reads as speech rather than as a row of items switching on.
-There is deliberately **no transition** on it: the value already comes from the
-reader's own scrolling, and a transition would be a second, slower clock
-fighting the first — scroll back up and the words would lag behind the picture
-they belong to.
+**It is printed WITH the picture, not laid over it.** The bubble has been three
+things, and the last one is the point:
 
-**It is a DOM layer over the canvas, not part of the PNG.** The bubble was drawn
-into the dot grid by `scripts/dither-scene.py` until 2026-08-29 — empty, three
-dots in it, a wide wedge of a tail running down across the man's head — and the
-maintainer's verdict that day was that it looked bad and should carry words that
-arrive as the reader scrolls. A shape burnt into a one-bit raster can do none of
-those things: it cannot be typeset, it cannot animate, and it cannot move
-without the photograph being regenerated and re-measured.
+1. **Burnt into the dot grid** by `scripts/dither-scene.py` until 2026-08-29 —
+   empty, three dots in it, a wide wedge of a tail running down across the man's
+   head. The maintainer's verdict that day was that it looked bad and should
+   carry words that arrive as the reader scrolls. A shape burnt into a one-bit
+   raster can do none of that: it cannot be typeset, it cannot animate, and it
+   cannot move without the photograph being regenerated and re-measured.
+2. **A DOM box over the canvas**, with the tail as an SVG path. It could do all
+   three, and it broke the picture instead. A smooth radius, a feathered edge
+   and antialiased type are three things that exist nowhere else in a one-bit
+   print, so the bubble read as an interface element sitting on a photograph —
+   *"diese Sprechblase killt den kompletten Theme vom Bild"*, the same day.
+3. **Printed by the painter** — `printBubble` in `VoiceSwitch.astro`. The same
+   canvas, the same 8×8 Bayer matrix and the same dot the photograph is printed
+   with, drawn at run time so it is still typeset, still arrives one word at a
+   time, and still follows the crop.
+
+**The dot is the photograph's; the SIZE is not.** A dot is one source pixel as
+the cover-crop has just scaled it — around two CSS pixels on a wide stage —
+floored at `DOT_MIN` so a stage narrower than the 720px source cannot print the
+sentence at a size nobody can read. The box itself stays in CSS pixels, floor
+plus share (`max(208px, 27%)`, moved out of the stylesheet with the bubble),
+*because* it carries words: a box that scaled with the frame would take the
+sentence down with it on a short window.
+
+**Two clocks, and neither is an opacity.** The box's coverage runs 0..1 while
+the dissolve crosses its own corner, and the sentence is said across the back
+half of the wipe: `(reveal × word count − index) × 1.6`, clamped, per word. The
+1.6 is the overlap, so a word is most of the way in before the next one starts
+and the sentence reads as speech rather than as a row of items switching on.
+
+But a bubble halfway in is **half its dots printed**, and a word halfway in is a
+word half of whose dots are printed. A fade would put a translucent object on a
+one-bit picture; coverage puts more dots on the same paper, which is exactly
+what the wipe underneath it is already doing. There is deliberately no
+transition on either clock: the values come from the reader's own scrolling, and
+a transition would be a second, slower clock fighting the first.
+
+**The type is held hard while its coverage builds.** Each word is drawn in a
+grey that *is* its coverage, so the glyph's own edge (alpha) and how much of the
+word has been said (the grey) stay in two separate channels. The combine
+thresholds the glyph at `TYPE_FLOOR` and dithers the coverage: the letters keep
+their shape at around nine dots tall, which is the one thing this bubble is not
+allowed to lose. Dithering the glyph as well would open holes in its stems and
+the sentence would stop being readable.
+
+**The edge is a dither, not a line** — the same rule the wipe runs on. The last
+dots of the bubble are stroked at half coverage *outside* the fill, so the
+boundary thins into single dots instead of ending. Outside only: a fray that ate
+into the box would put holes under the sentence.
+
+**It costs two `ImageData` reads a frame, on a sheet the size of the bubble**
+rather than of the picture — a few thousand pixels, not a quarter of a million.
+The sheet's origin is snapped to the frame's own dot lattice and the Bayer
+matrix is indexed in the *frame's* cells, so the bubble's dots land on the
+photograph's and its dither stays in phase with the picture's however the box
+moves under a resize.
 
 **Paper on the night picture.** The night frame is `--canvas` ground with `--ink`
 dots, so a bubble filled with `--ink` is that frame's own mark at full coverage —
@@ -338,6 +380,9 @@ it is why the bubble needs no outline: a shape at 100% coverage on a 22% ground
 already has one. The version before it was the opposite, a hole punched in the
 picture with a two-dot outline, and against a dark dithered wall the outline was
 the only thing holding it together.
+
+Two tokens do all of it, and the painter reads both off the root rather than
+naming a colour, the same way the frames' grounds are read.
 
 **Its tail points at the MOUTH and stops at the hairline.** The bubble is what
 the man is saying, so it grows out of him the way a speech bubble does anywhere
@@ -351,24 +396,35 @@ complaint — the old wedge ran the whole way down and hung in the man's face.
 The reader's eye finishes the line, which is what a speech bubble has always
 relied on.
 
-The tail is **one SVG path**, not a bordered pseudo-element, because it spans two
-points that both move: it leaves the bubble's bottom edge, which the text's own
-line count decides, and it aims at a point on the photograph, which the crop
-decides. Straight down the side facing the mouth, curved on the way back — two
-straight sides is the shape the burnt-in wedge had, and it reads as an arrow
-rather than as speech.
+The tail is **part of the same path as the box**, filled in one go so the two
+shapes are one silhouette with no seam between them, and it leaves the bottom
+edge one dot inside it. It spans two points that both move: the bottom edge,
+which the sentence's own line count decides, and a point on the photograph,
+which the crop decides. Straight down the side facing the mouth, curved on the
+way back — two straight sides is the shape the burnt-in wedge had, and it reads
+as an arrow rather than as speech.
 
-**Nothing is measured against a window size.** The script maps the bubble's
-anchor, the mouth and the tail's end through the *same* cover-crop function the
-canvas paints the photograph with, so the whole thing follows the picture. Two
-copies of that arithmetic is how a tail ends up pointing at an ear. Then it
-measures what it got: if the text has wrapped to one line more than the stage
-has room for, the bubble is pushed back down until it clears the top edge by
-10px, and the tail — drawn from the bottom edge it actually ended up with —
-follows, down to a 14px floor so a squeezed layout still shows a tail rather
-than nothing. This is what retires the old pairing note between the 0.42 anchor
-and a hand-measured box: there is one number now, and both readers of it get it
-from the same place.
+**Nothing is measured against a window size.** The painter maps the bubble's
+anchor, the mouth and the tail's end through the *same* cover-crop function it
+paints the photograph with, so the whole thing follows the picture. Two copies
+of that arithmetic is how a tail ends up pointing at an ear. It also sets the
+sentence itself rather than asking the browser to: the wrap is measured at dot
+resolution with `measureText`, and the web font landing after first paint forces
+one repaint, because otherwise the bubble would keep the fallback face's line
+breaks for the rest of the session.
+
+Then it works with what it got: if the sentence wrapped to one line more than
+the stage has room for, the box is pushed back down until it clears the top edge
+by 10px — the corner gives way, never the first line — and the tail, drawn from
+the bottom edge it actually ended up with, follows, down to a 14px floor so a
+squeezed layout still shows a tail rather than nothing. This is what retires the
+old pairing note between the 0.42 anchor and a hand-measured box: there is one
+number now, and both readers of it get it from the same place.
+
+The sentence itself stays in the markup, hidden the way a screen-reader caption
+is hidden — never `display: none`, which would take it out of the accessibility
+tree. It is the only place the spoken line exists as text, and the painter reads
+its words, and its font, off that element.
 
 The two fractions that touch the man — the mouth at (0.818, 0.512) and the
 hairline at 0.376 — **have to be re-measured if the night frame is ever

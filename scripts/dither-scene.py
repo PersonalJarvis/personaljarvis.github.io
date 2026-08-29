@@ -62,10 +62,12 @@ until 2026-08-29, empty, with three dots in it; the maintainer's complaint that
 day was that it looked bad and said nothing. A bubble that carries words has to
 be typeset, has to arrive one word at a time as the reader scrolls, and has to
 be able to move without a photograph being regenerated — none of which a shape
-burnt into a one-bit raster can do. It is a DOM layer over the canvas now, in
-src/sections/VoiceSwitch.astro, which owns the crop maths it needs to sit in the
-right place. The one number this file still owes it is the mouth, at
-(0.818, 0.512) of the frame — see MIC_LIGHT, whose falloff reaches the same
+burnt into a one-bit raster can do. The page prints it onto the canvas at run
+time now, in src/sections/VoiceSwitch.astro, with the same Bayer matrix and the
+same dot this script prints the frames with, so it is still one-bit and still on
+this lattice without being baked into it. That file owns the crop maths it needs
+to sit in the right place. The one number this file still owes it is the mouth,
+at (0.818, 0.512) of the frame — see MIC_LIGHT, whose falloff reaches the same
 lips.
 
 The palette is baked into the PNGs rather than left to CSS. A mask would let the
