@@ -197,6 +197,18 @@ of the column. That edge is **faded, not cut** — the app fades a thought that
 has outgrown its window the same way, and it is the difference between reading
 as "scrolled" and reading as "broken".
 
+### The sidebar shows the whole section list
+
+The one place "shorten everything" is wrong. The sidebar carries the app's
+**entire** list — its order, its grouping, its labels
+(`components/layout/navGroups.ts`) — and lets it run past the bottom edge under
+the same fade.
+
+A shortened list of five rows left the lower half of the sidebar empty, and
+that empty half does not read as brevity. It reads as an app with five sections
+and a rendering bug (maintainer, 2026-08-29). The real list is also the honest
+picture: the app's own sidebar overruns and scrolls there.
+
 ---
 
 ## Interaction

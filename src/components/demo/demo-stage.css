@@ -188,3 +188,14 @@
   mask-image: linear-gradient(to bottom, transparent 0, black 40px);
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 40px);
 }
+
+/* --- The sidebar's section list ------------------------------------------
+ * The app has more sections than fit beside a two-turn conversation, and its
+ * own sidebar scrolls. Here the list simply runs past the bottom edge and
+ * fades out, which says "there is more" without inventing a scrollbar the
+ * demo cannot honour. */
+
+.demo-nav {
+  mask-image: linear-gradient(to bottom, black calc(100% - 32px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 32px), transparent 100%);
+}

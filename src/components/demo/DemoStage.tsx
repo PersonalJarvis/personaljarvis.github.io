@@ -47,9 +47,15 @@ import "./demo-stage.css";
  * in px (docs/hero.md, "Scaling").
  *
  * Fidelity, and where it deliberately stops: the layout, the type roles and
- * the states are the app's. The content is SHORTER and the type LARGER — the
- * hero is read from three metres away, not at working distance. Six sidebar
- * rows stand in for twenty; two turns stand in for a day.
+ * the states are the app's. The content is SHORTER — the hero is read from
+ * three metres away, not at working distance, so two turns stand in for a day.
+ *
+ * The sidebar is the exception. It carries the app's WHOLE section list, in
+ * the app's order and grouping, and lets it run past the bottom edge under a
+ * fade. A shortened list left half the sidebar empty, which read as an app
+ * with five sections and a rendering bug rather than as a demo (maintainer,
+ * 2026-08-29). The app's own sidebar scrolls here; the fade is how a clipped
+ * list says the same thing.
  */
 
 const CHROME_H = 40;
@@ -247,10 +253,27 @@ const PATH = {
   eye: "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
   clip: "M21 12l-8.5 8.5a5 5 0 0 1-7-7L14 5a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L16 7",
   users: "M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9",
-  puzzle:
-    "M9 3a2 2 0 0 1 4 0v1h4a1 1 0 0 1 1 1v4h1a2 2 0 0 1 0 4h-1v4a1 1 0 0 1-1 1h-4v-1a2 2 0 0 0-4 0v1H5a1 1 0 0 1-1-1v-4H3a2 2 0 0 1 0-4h1V5a1 1 0 0 1 1-1h4z",
   store: "M3 9l1.5-5h15L21 9M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1zM3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0",
-  coins: "M12 11c4.4 0 8-1.3 8-3s-3.6-3-8-3-8 1.3-8 3 3.6 3 8 3zM4 8v8c0 1.7 3.6 3 8 3s8-1.3 8-3V8",
+  boxes: "M12 2.5l8.5 4.7v9.6L12 21.5 3.5 16.8V7.2zM12 12l8.5-4.8M12 12v9.5M12 12L3.5 7.2",
+  terminal: "M4 17l6-5-6-5M12 19h8",
+  workflow: "M4 4h6v6H4zM14 14h6v6h-6zM10 7h3a2 2 0 0 1 2 2v5",
+  gauge: "M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM12 12l4.5-4",
+  wallet:
+    "M3 7.5A2.5 2.5 0 0 1 5.5 5H18v3M3 7.5V17a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-3M20 11h-3.5a2.5 2.5 0 0 0 0 5H20z",
+  shapes: "M8.5 3l5.5 9.5H3zM17 21.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+  notebook: "M5 3h14v18H5zM9 3v18M12 8h4M12 12h4",
+  contact: "M4 4h16v16H4zM12 11.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM8.5 17a3.5 3.5 0 0 1 7 0",
+  userCircle: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6.3 18.4a6 6 0 0 1 11.4 0",
+  scroll: "M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 8h6M9 12h6M9 16h4",
+  key: "M14.5 7a4 4 0 1 1-3.4 6.1L4 20.2V22H2v-2.5l8.3-8.3A4 4 0 0 1 14.5 7zM16 10.5h.01",
+  cpu: "M6 6h12v12H6zM9.5 9.5h5v5h-5M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3",
+  settings:
+    "M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zM12 3v2.4M12 18.6V21M3 12h2.4M18.6 12H21M5.6 5.6l1.7 1.7M16.7 16.7l1.7 1.7M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7",
+  image: "M3 5h18v14H3zM8.3 11a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2zM21 16.5L15.5 11 7 19",
+  share:
+    "M18 8a2.6 2.6 0 1 0 0-5.2A2.6 2.6 0 0 0 18 8zM6 14.6a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2zM18 21.2a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2zM8.4 13.3l7.2 4.2M15.6 6.5L8.4 10.7",
+  messageAlert: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM12 7v4M12 13.5h.01",
+  messages: "M14 9a2 2 0 0 1-2 2H6l-4 3V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2zM18 9h2a2 2 0 0 1 2 2v9l-4-3h-6a2 2 0 0 1-2-2v-1",
 } as const;
 
 /**
@@ -559,7 +582,10 @@ function SidebarRow({
         alignItems: "center",
         gap: 10,
         borderRadius: 8,
-        padding: "7px 9px",
+        // A design pixel tighter than it looks like it should be: the app has
+        // more sections than fit beside a conversation, and every pixel here
+        // is one more row of the real list on screen.
+        padding: "6px 9px",
         fontSize: 13,
         color: active ? C.fg : C.dim,
         background: active ? C.muted : "transparent",
@@ -583,6 +609,61 @@ const RECENT: Record<Surface, string[]> = {
   voice: ["Morning brief", "Standup moved", "Trip to Lisbon"],
   chat: ["Shipped — week 35", "Invoice, Kessler", "Wiki cleanup"],
 };
+
+/**
+ * The app's section list, whole — its own order, its own grouping, its own
+ * labels (`components/layout/navGroups.ts`, and the `nav.*` strings from the
+ * English locale, with `{name}` filled in).
+ *
+ * It used to be five rows, which is the one place the "shorten everything"
+ * rule was flatly wrong (maintainer, 2026-08-29). Five rows over a hand of
+ * dead space does not read as a shortened list — it reads as an app that only
+ * has five sections, and the empty half of the sidebar reads as a bug. The
+ * real list overruns the sidebar and fades out at the bottom edge, exactly as
+ * it does in the app, where the sidebar scrolls.
+ *
+ * The front page's own row is drawn above this, because the recent
+ * conversations hang under it.
+ */
+const NAV_GROUPS: { label: string; icon: string }[][] = [
+  // 1) Daily tools.
+  [
+    { label: "Jarvis-Agents", icon: PATH.users },
+    { label: "Skills, Plugins & MCPs", icon: PATH.boxes },
+    { label: "CLIs & CLI Test Hub", icon: PATH.terminal },
+    { label: "Marketplace", icon: PATH.store },
+  ],
+  // 2) Content and data — what you read back, rather than configure.
+  [
+    { label: "Automations", icon: PATH.workflow },
+    { label: "Transcription", icon: PATH.mic },
+    { label: "Run Inspector", icon: PATH.gauge },
+    { label: "Spend", icon: PATH.wallet },
+    { label: "Artifacts", icon: PATH.shapes },
+    { label: "Board", icon: PATH.sparkles },
+    { label: "Wiki", icon: PATH.notebook },
+    { label: "Contacts", icon: PATH.contact },
+    { label: "Profile", icon: PATH.userCircle },
+    { label: "Jarvis.md", icon: PATH.scroll },
+    { label: "Docs", icon: PATH.book },
+  ],
+  // 3) Configuration.
+  [
+    { label: "API Keys", icon: PATH.key },
+    { label: "Local models", icon: PATH.cpu },
+    { label: "Settings", icon: PATH.settings },
+    { label: "Jarvis Voice", icon: PATH.mic },
+    { label: "Wallpaper", icon: PATH.image },
+  ],
+  // 4) Social links and in-app feedback.
+  [
+    { label: "Socials", icon: PATH.share },
+    { label: "Feedback", icon: PATH.messageAlert },
+  ],
+  // 5) The Agentic IDE, apart on purpose — it puts real coding agents to work
+  //    in a folder, which is a step past everything above it.
+  [{ label: "Agentic IDE", icon: PATH.messages }],
+];
 
 function Sidebar({ surface, onPick }: { surface: Surface; onPick: (next: Surface) => void }) {
   const voice = surface === "voice";
@@ -626,7 +707,21 @@ function Sidebar({ surface, onPick }: { surface: Surface; onPick: (next: Surface
         Your browser owns the microphone on this device.
       </p>
 
-      <div style={{ borderTop: `1px solid ${soft(C.border, 70)}`, paddingTop: 10 }}>
+      {/*
+        The nav takes the rest of the sidebar and clips what does not fit, with
+        the bottom edge faded. The app's own sidebar scrolls here; a fade is
+        how a clipped list says so.
+      */}
+      <div
+        className="demo-nav"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflow: "hidden",
+          borderTop: `1px solid ${soft(C.border, 70)}`,
+          paddingTop: 10,
+        }}
+      >
         <SidebarRow label={voice ? "Voice" : "Chat"} icon={voice ? PATH.mic : PATH.message} active />
         <div style={{ paddingLeft: 14, marginBottom: 4 }}>
           {RECENT[surface].map((title) => (
@@ -647,11 +742,24 @@ function Sidebar({ surface, onPick }: { surface: Surface; onPick: (next: Surface
             </div>
           ))}
         </div>
-        <SidebarRow label="Agents" icon={PATH.users} />
-        <SidebarRow label="Skills, Plugins & MCPs" icon={PATH.puzzle} />
-        <SidebarRow label="Marketplace" icon={PATH.store} />
-        <SidebarRow label="Spend" icon={PATH.coins} />
-        <SidebarRow label="Wiki" icon={PATH.book} />
+        {NAV_GROUPS.map((group, i) => (
+          <div
+            key={group[0].label}
+            style={
+              i === 0
+                ? undefined
+                : {
+                    marginTop: 6,
+                    paddingTop: 6,
+                    borderTop: `1px solid ${soft(C.border, 70)}`,
+                  }
+            }
+          >
+            {group.map((item) => (
+              <SidebarRow key={item.label} label={item.label} icon={item.icon} />
+            ))}
+          </div>
+        ))}
       </div>
     </aside>
   );
