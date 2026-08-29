@@ -388,6 +388,17 @@ Inside the band the same layer paints it and nothing can round over it. A
 vertical rail never shows this because its blur is spread down its whole length;
 a 1px horizontal line at a layer boundary is swallowed whole.
 
+**And the band's height is snapped to a whole pixel** — `--nav-height` is
+`round(4rem, 1px)`, defined in `layout.css`. Moving the line inside the band was
+only half the fix: the layer still rounds its own bounds, so at a height of
+75.83 the rule sat at y=74.83 and 83% of it fell in the row the layer gave up.
+It reached the screen at a sixth of its colour, and the maintainer reported the
+divider as missing (2026-08-29). `round()` takes the fraction off the end and
+nothing else — the band still scales with the page, it is NOT back to a frozen
+64px nav — so the layer's bounds and the layout box agree and the line paints
+whole. A `@supports` fallback keeps a browser without `round()` on plain `4rem`,
+because a dropped `height` would collapse the band.
+
 ### Vertical dividers between columns
 
 Optional, in two-column sections. Use `gap: 1px` on a grid with a coloured
