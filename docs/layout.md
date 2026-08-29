@@ -670,10 +670,10 @@ numbers worked out once.
 
 #### The reading line
 
-**The square marks the reader, not the top of the window.** It rides four
-tenths of the way down the screen — the line the eye sits on while reading —
-and it holds that height for the whole of an ordinary section, so it is always
-beside what is being read rather than somewhere else on the page.
+**The square marks the reader, not the top of the window.** It lives in a
+band around a line a little above the middle of the screen — where the eye
+sits while reading — and it crosses that band once per section, slowly, so it
+is always beside what is being read rather than somewhere else on the page.
 
 Everything used to be measured against `scrollY` alone, which is the same thing
 as measuring against the window's top edge. Every hand-over from one section to
@@ -684,8 +684,14 @@ User ungefähr immer auf einer Höhe ist" — and the exception is the one they
 already signed off: **a section that pins**, where the page stops under the
 reader and the square walks the frame instead.
 
-Four tenths clears the nav at every window height and leaves room below for the
-square to dip onto a rule without leaving the screen.
+The band's height and what a corner costs in scrolling are **the same
+number**, and they cannot be separated. While the square is crossing it is on
+the rule, and a rule travels one pixel up the window for every pixel the
+reader scrolls — so a crossing that lasts N pixels of scroll moves the square
+N pixels up the screen, and the rail before it has to have spent those same N
+pixels drifting down to meet it. Ask for a corner that costs nothing and you
+get one that is over in a single wheel notch; ask for one that never leaves a
+fixed height and you get no corner at all.
 
 #### The schedule
 
@@ -719,21 +725,30 @@ does not work at all in How to install Jarvis".
 
 #### Turning the corner
 
-Inside an ordinary section the square does exactly one thing that is not "hold
-the reading line", and it is the corner:
+An ordinary section is **two stretches, not three**, and the reader sees them
+as one line:
 
 | | |
 |---|---|
-| on the line | the rule is still more than two dips below. The square rides the rail at the reading line |
-| coming down | the rule is between two dips and one. The square walks down its rail to meet it, arriving exactly as the rule reaches one dip below the line |
-| across | the square is **on** the rule, riding it up to the reading line while it crosses to the other rail |
+| down the rail | all of the section up to its corner. The square drifts from the top of the band to the bottom of it over **all** of that scrolling — half a pixel of screen per pixel of scroll on an ordinary section, slow enough to read as holding the reader's height |
+| across the rule | the corner. The square is **on** the rule and stays on it, so it rises exactly as fast as the reader scrolls, and it lands on the far rail at the top of the band — which is where the section below picks it up |
 
-A dip is a fixed distance — nine hundredths of the window — and **not** a share
-of the section, which is what keeps "roughly always at one height" true for a
-331px band and a three-screen block alike. Every one of the three puts the
-square on a line the reader can see, and it lands on the far rail at the reading
-line at the very moment the rule passes it, which is where the section below
-starts.
+**It had a third once, and that third was the defect.** The square held a fixed
+line and then dropped onto the rule in one short lunge just before the corner,
+which read as it lifting off the line and tipping over; and because the lunge
+and the crossing shared one small budget, the crossing itself was a whole column
+width in a single wheel notch — "auf der Linie TPt einfach dieses komische Ding
+komplett fast rüber" (maintainer, 2026-08-29). Spreading the same drop over the
+whole section costs a tenth of the speed and buys the corner four times the
+scrolling: about three pixels across per pixel of scroll, which the eye can
+follow.
+
+**A corner gets whichever is the more generous: half of the section's own
+scrolling, or half of everything until the next section takes over.** The
+second is what saves a short band — the logo strip is 331px tall against a
+1216px column, and on its own height alone the square would still be crossing
+the whole width in a notch and a half. The dead scrolling between two sections
+costs nothing to spend.
 
 **The line it turns on is not always its own bottom edge.** A joint carries
 exactly one line and either side may draw it: an ordinary section closes on its

@@ -39,7 +39,6 @@
 
 <script>
   import {
-    CORNER_SHARE,
     READING_SHARE,
     scheduleTracks,
     sidesForTracks,
@@ -215,51 +214,53 @@
     };
 
     /**
-     * A FLOWING section: the square holds the reading line and only leaves it
-     * to turn the corner.
+     * A FLOWING section: down the rail, across the rule, and that is all.
      *
-     * Three stretches, and the reader sees them as one movement:
+     * TWO STRETCHES, NOT THREE, and the reader sees them as one line:
      *
-     *   on the line     the rule is still more than two dips below the reading
-     *                   line. The square rides the rail at exactly that height,
-     *                   which is what "always at the reader's height" means
-     *   coming down     the rule is between two dips and one. The square walks
-     *                   down its rail to meet it, arriving exactly as the rule
-     *                   reaches one dip below the line
-     *   across         the square is ON the rule, riding it up to the reading
-     *                   line while it crosses to the other rail. It lands on
-     *                   that rail at the reading line at the very moment the
-     *                   rule passes it, which is where the section below starts
+     *   down the rail   the whole of the section up to its corner. The square
+     *                   drifts from the top of the band to the bottom of it over
+     *                   ALL of that scrolling, which on an ordinary section is
+     *                   half a pixel of screen per pixel of scroll — slow enough
+     *                   that it reads as holding the reader's height
+     *   across the rule the corner. The square is ON the rule and stays on it,
+     *                   so it rises exactly as fast as the reader scrolls, and
+     *                   it lands on the far rail at the top of the band — which
+     *                   is where the section below picks it up
      *
-     * Every one of them puts the square on a line the reader can see, and the
-     * whole excursion is one dip — a fixed distance, not a share of the
-     * section, so a short band and a three-screen one read the same.
+     * IT USED TO HAVE A THIRD, and that third was the defect. The square held a
+     * fixed line and then dropped onto the rule in one short lunge just before
+     * the corner, which read as it lifting off the line and tipping over; and
+     * because the lunge and the crossing shared one small budget, the crossing
+     * itself was a whole column width in a single wheel notch. Spreading the
+     * same drop over the whole section costs a tenth of the speed and buys the
+     * corner four times the scrolling.
      */
     const onTheLine = (
       track: (typeof tracks)[number],
       span: TrackSpan,
       top: number,
     ) => {
-      const viewport = window.innerHeight;
-      const reading = viewport * READING_SHARE;
-      const dip = viewport * CORNER_SHARE;
+      const reading = window.innerHeight * READING_SHARE;
       const rails = railsOf(track);
+      /* The top of the band, which is where every section takes the square and
+       * where every section leaves it. */
+      const rides = reading - span.crossing / 2;
 
-      if (span.cross === null) return { x: rails.entry, y: reading + 0.5 };
+      if (span.cross === null) return { x: rails.entry, y: rides + 0.5 };
 
-      /* Never above the reading line: past its own rule the section is done and
-       * the hand-over has it, but the last section on the page has nothing to
-       * hand to and simply holds the line. */
-      const rule = Math.max(reading, span.cross - top);
+      /* Never above the band: past its own rule a section is done and the
+       * hand-over has the square, but the last one on the page has nothing to
+       * hand to and simply holds. */
+      const rule = Math.max(rides, span.cross - top);
 
-      if (rule >= reading + 2 * dip) return { x: rails.entry, y: reading + 0.5 };
-
-      if (rule >= reading + dip) {
-        const down = (reading + 2 * dip - rule) / dip;
-        return { x: rails.entry, y: reading + dip * down + 0.5 };
+      if (rule >= rides + span.crossing) {
+        const rail = span.leave - span.crossing - span.enter;
+        const down = rail > 0 ? Math.min(1, Math.max(0, (top - span.enter) / rail)) : 1;
+        return { x: rails.entry, y: rides + span.crossing * down + 0.5 };
       }
 
-      const across = (reading + dip - rule) / dip;
+      const across = (rides + span.crossing - rule) / span.crossing;
       return { x: rails.entry + (rails.exit - rails.entry) * across, y: rule + 0.5 };
     };
 
@@ -284,17 +285,15 @@
         point = span.pinned
           ? pointOn(tracks[index], (top - span.enter) / Math.max(1, span.leave - span.enter))
           : onTheLine(tracks[index], span, top);
-      } else if (!span.pinned && !next.pinned) {
-        /* THE GAP BETWEEN TWO FLOWING BOXES IS NOTHING TO SEE. Both sides end
-         * and begin on the same rail at the same height — that is what the
-         * serpentine and the reading line together guarantee — so the square
-         * simply carries on where it already is. */
-        point = startOf(index + 1);
       } else {
-        /* One of the two is pinned, so its end of the joint is a corner of a
-         * frame rather than a point on the reading line, and the square glides
-         * from one to the other over the scrolling between them. It is the one
-         * thing that keeps it on screen while a pinned frame is leaving. */
+        /* THE GAP: dead scrolling that belongs to no section's box, and the
+         * square glides across it from where this section left it to where the
+         * next one takes it. Between two ordinary sections those two are the
+         * same rail and, unless their bands differ in height, the same point —
+         * so there is usually nothing at all to see. Where one of the two is
+         * PINNED there is: its end of the joint is a corner of a frame rather
+         * than a point in the band, and the glide is what keeps the square on
+         * screen while that frame is arriving or leaving. */
         const gap = span.hand - span.leave;
         const across = gap > 0 ? Math.min(1, (top - span.leave) / gap) : 1;
         const from = endOf(index, top);

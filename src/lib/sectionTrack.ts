@@ -220,7 +220,8 @@ export interface TrackMeasure {
 }
 
 /**
- * Where the square rides, as a share of the window's height.
+ * The middle of the band the square lives in, as a share of the window's
+ * height.
  *
  * THE SQUARE MARKS THE READER, NOT THE TOP OF THE WINDOW. Everything used to be
  * measured against `scrollY` alone, which is the same as measuring against the
@@ -229,24 +230,39 @@ export interface TrackMeasure {
  * square cut off by the edge. The maintainer's ask on 2026-08-29 was plain:
  * "du machst halt, dass es mit dem User ungefähr immer auf einer Höhe ist".
  *
- * A line four tenths down the window is where the eye sits while reading a
- * screen, it clears the nav at every window height, and it leaves room below
- * for the square to dip onto a rule without leaving the screen.
+ * A little above the middle of the window is where the eye sits while reading a
+ * screen, and it leaves room on both sides for the band below.
  */
-export const READING_SHARE = 0.4;
+export const READING_SHARE = 0.42;
 
 /**
- * How far the square leaves the reading line to meet a rule, as a share of the
- * window's height — and, in scroll, how long it then takes to cross it.
+ * What crossing a rule costs in scrolling, as a share of the window's height —
+ * which is also, exactly, how tall the band is.
  *
- * THE DIP IS THE ONLY THING THAT MOVES THE SQUARE OFF THE READING LINE, and it
- * is a fixed distance rather than a share of the section, which is what keeps
- * the promise "roughly always at one height" on a section of any length. The
- * square sits exactly on the line until the rule is two dips below it, comes
- * down the rail to meet it, rides it across to the other rail, and arrives back
- * on the reading line exactly as the rule passes it.
+ * THE TWO ARE THE SAME NUMBER AND THEY CANNOT BE SEPARATED. While the square is
+ * crossing it is ON the rule, and the rule travels one pixel up the window for
+ * every pixel the reader scrolls — so a crossing that lasts N pixels of scroll
+ * moves the square N pixels up the screen, and the rail before it has to have
+ * spent those same N pixels drifting down to meet it. Ask for a crossing that
+ * costs nothing and you get one that is over in a single wheel notch; ask for
+ * one that never leaves a fixed height and you get no crossing at all.
+ *
+ * IT IS A THIRD OF THE WINDOW BECAUSE THE COLUMN IS ABOUT FOUR TIMES THAT WIDE.
+ * At 0.32 the square travels roughly three pixels across for every pixel the
+ * reader scrolls, which the eye can follow. The first version of this spent a
+ * eleven-hundredths of the window on it, and 1216px of column in 112px of
+ * scroll is one wheel notch for the whole width: "auf der Linie TPt einfach
+ * dieses komische Ding komplett fast rüber" (maintainer, 2026-08-29).
+ *
+ * AND THE DRIFT DOWN THE RAIL IS SPREAD OVER THE WHOLE SECTION, not over a
+ * short approach before the corner. Same distance, a tenth of the speed, and
+ * the whole movement reads as one line rather than as a hop onto the rule and
+ * a flick across it — "es hebt ab von der Linie und dann kippt es um".
+ *
+ * Capped at half a section's own scrolling, so the two legs of a short band
+ * stay in proportion to each other.
  */
-export const CORNER_SHARE = 0.09;
+export const CROSSING_SHARE = 0.32;
 
 /**
  * When one section owns the square, and when it hands it on.
@@ -270,6 +286,8 @@ export interface TrackSpan {
   leave: number;
   hand: number;
   pinned: boolean;
+  /** What this section's corner costs in scrolling, and how tall its band is. */
+  crossing: number;
   /** Document y of the line this section turns the corner on, or null. */
   cross: number | null;
 }
@@ -312,24 +330,55 @@ export const scheduleTracks = (
   const bounded = (value: number) => Math.max(0, Math.min(maxScroll, value));
   const reading = viewport * READING_SHARE;
 
-  const spans = measures.map((measure): TrackSpan => {
-    /* The pin lasts until the track's BOTTOM reaches the line the child rests
-     * on plus the child's own height — so it is the track minus the child, not
-     * the track minus the window, and it starts one `pinRest` before the track
-     * reaches the top of the window. */
+  /* The pin lasts until the track's BOTTOM reaches the line the child rests on
+   * plus the child's own height — so it is the track minus the child, not the
+   * track minus the window, and it starts one `pinRest` before the track
+   * reaches the top of the window.
+   *
+   * Worked out FIRST and without the band, because how much room a section has
+   * for its corner depends on where the section below starts, and that cannot
+   * be answered while every `enter` is still being decided. */
+  const base = measures.map((measure) => {
     const pin = measure.pinTop === null ? 0 : measure.pinHeight - measure.pinBox;
     const pinned = measure.pinTop !== null && pin > 0;
     const closes = measure.cross ?? measure.boxTop + measure.boxHeight;
-    const enter = pinned
-      ? (measure.pinTop as number) - measure.pinRest
-      : measure.boxTop - reading;
-    const leave = pinned ? enter + pin : closes - reading;
+    return {
+      pin,
+      pinned,
+      closes,
+      boxTop: measure.boxTop,
+      cross: measure.cross,
+      opens: pinned ? (measure.pinTop as number) - measure.pinRest : measure.boxTop - reading,
+    };
+  });
+
+  const spans = base.map((at, i): TrackSpan => {
+    /* THE CORNER GETS WHICHEVER IS THE MORE GENEROUS: half of the section's own
+     * scrolling, or half of everything until the next section takes over. The
+     * second is what saves a short band — the logo strip is 331px tall and the
+     * column is 1216px wide, so on its own height alone the square would still
+     * be crossing the whole width in a wheel notch and a half. The dead
+     * scrolling between two sections costs nothing to spend. */
+    const next = base[i + 1];
+    const room = (next ? next.opens : maxScroll) - at.opens;
+    const own = at.closes - at.boxTop;
+    const crossing = at.pinned
+      ? 0
+      : Math.min(viewport * CROSSING_SHARE, Math.max(own, room) / 2);
+    /* The band is the crossing, so the square starts each section half a
+     * crossing ABOVE the reading line, drifts down to half a crossing below it
+     * over the rail, and comes back up the same distance riding the rule. The
+     * band is therefore centred on the reading line rather than hanging off it. */
+    const rides = reading - crossing / 2;
+    const enter = at.pinned ? at.opens : at.boxTop - rides;
+    const leave = at.pinned ? enter + at.pin : at.closes - rides;
     return {
       enter: bounded(enter),
       leave: bounded(leave),
       hand: bounded(leave),
-      pinned,
-      cross: measure.cross,
+      pinned: at.pinned,
+      crossing,
+      cross: at.cross,
     };
   });
 
