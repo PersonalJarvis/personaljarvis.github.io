@@ -182,7 +182,29 @@ export interface TrackMeasure {
   pinTop: number | null;
   /** The pinning track's height. Meaningless when `pinTop` is null. */
   pinHeight: number;
+  /** Whether a rule closes this section — how long its path is. */
+  end: TrackEnd;
 }
+
+/**
+ * The share of a section's own scrolling that walking its path costs.
+ *
+ * ONE SPEED FOR THE WHOLE PAGE, in path units per pixel of scroll. A closed
+ * section's path is 200 units and it spends all of its scrolling on them; an
+ * open section's is 100, so it spends half, and what is left is the square
+ * carrying on down the same rail into the section below — which is exactly
+ * what the gap between `leave` and `hand` is drawn as.
+ *
+ * SPENDING ALL OF IT ON 100 UNITS IS THE DEFECT THIS REPLACED, and it is worth
+ * spelling out because the arithmetic hides it. An open section's square
+ * travels one box height down the box while the box travels one box height up
+ * the window: the two cancel exactly, and the square stands still at the top of
+ * the window for the whole section. `Clis` did that for its entire height, and
+ * it is half of what the maintainer meant on 2026-08-29 by the marker "not
+ * keeping up" — it was not lagging there, it was stopped.
+ */
+export const walkShare = (end: TrackEnd): number =>
+  (end === "closed" ? RAIL + CLOSING_RULE : RAIL) / TOTAL;
 
 /**
  * When one section owns the square, and when it hands it on.
@@ -240,7 +262,8 @@ export const scheduleTracks = (
     const pin = measure.pinTop === null ? 0 : measure.pinHeight - viewport;
     const pinned = measure.pinTop !== null && pin > 0;
     const enter = pinned ? (measure.pinTop as number) : measure.boxTop;
-    const leave = enter + (pinned ? pin : measure.boxHeight);
+    const span = pinned ? pin : measure.boxHeight;
+    const leave = enter + span * walkShare(measure.end);
     return { enter: bounded(enter), leave: bounded(leave), hand: bounded(leave) };
   });
 

@@ -74,6 +74,7 @@
       return {
         box,
         path,
+        end,
         /* The tall track a pinned section scrolls on, if it has one. Whether it
          * is actually pinning is decided per measurement, not here. */
         pin: layer.closest<HTMLElement>("[data-scroll-span]"),
@@ -120,6 +121,7 @@
             boxHeight: boxRect.height,
             pinTop: pinRect ? pinRect.top + top : null,
             pinHeight: pinRect ? pinRect.height : 0,
+            end: track.end,
           };
         }),
         viewport,
