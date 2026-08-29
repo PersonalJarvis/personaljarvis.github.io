@@ -136,6 +136,70 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * Scroll snap — the page comes to rest on a section boundary
+ *
+ * Without this the scroll runs straight past every boundary, so a section is
+ * almost never on screen whole: the reader ends up halfway into one with the
+ * tail of the previous still above it. The snap gives the scroll somewhere to
+ * settle. Let go of the wheel anywhere near a boundary and the page comes to
+ * rest with that section's top edge on the top of the window — a beat of a
+ * pause, not a stop.
+ *
+ * `proximity`, NOT `mandatory`, and that is not a preference:
+ *
+ *   - `mandatory` means the scroll position must ALWAYS be on a snap point.
+ *     Two sections here are taller than the window — the pinned voice section
+ *     is three screens, install is four — and the only snap point either of
+ *     them has is its own top edge. Under `mandatory` the browser pulls the
+ *     reader back to that edge every time they try to scroll INSIDE one, and
+ *     the rest of the section cannot be reached at all. It is not a value to
+ *     tune; it is unusable on a page whose sections are not all one screen.
+ *   - `proximity` snaps only when a gesture ENDS near a boundary and leaves
+ *     every other scroll position alone. Tall sections scroll freely, and
+ *     carrying on scrolling always crosses a boundary.
+ *
+ * NO `scroll-snap-stop: always`. It turns every boundary into a wall one
+ * gesture cannot cross, which is a full-page slideshow — a different thing
+ * from a page read at the reader's own pace.
+ *
+ * WHY ONE SELECTOR RATHER THAN A CLASS PER SECTION. The snap points are the
+ * section boundaries, which is a fact about the page's structure and not a
+ * decision each section makes. A class would be a hand-maintained copy of that
+ * fact, and the section that forgets it is the one boundary the page runs past
+ * — invisible in review and hard to attribute afterwards.
+ *
+ * THE FOOTER IS NOT A SNAP POINT, and it gets none because it is not a
+ * `<section>`. It is a quarter of a screen at the very bottom, so its top edge
+ * lies past the document's last scroll position: a snap point there could only
+ * pull the reader back off the end of the page.
+ *
+ * NO `scroll-padding-top`, and the reason is worth writing down because the
+ * usual answer is the opposite. A snap point is the top of the window, so a
+ * bar pinned there would cover the very edge the reader was sent to — the
+ * section's own rule included — and the fix would be a scroll-padding the
+ * height of the bar. This page has no such bar: the nav is `sticky` INSIDE the
+ * hero, so it stops at the hero's bottom edge and every boundary below it
+ * meets a clear window. Give the nav a home outside the hero and this becomes
+ * `scroll-padding-block-start: 4rem`.
+ * ------------------------------------------------------------------------ */
+
+html {
+  scroll-snap-type: y proximity;
+}
+
+body > section {
+  scroll-snap-align: start;
+}
+
+/* A reader who asked for less motion asked for exactly this: the page does not
+ * move on its own once their gesture has finished. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-snap-type: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
  * Page chrome — two rails and the horizontal rules
  *
  * The gutters are made visible: two hairlines standing on the edges of the
