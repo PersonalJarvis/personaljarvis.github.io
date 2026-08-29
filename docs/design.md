@@ -63,7 +63,7 @@ action colour, read the other way round.
 ### Surface
 | Token | Value | Use |
 |---|---|---|
-| `--canvas` | `#0a0a09` | Warm near-black page floor |
+| `--canvas` | `#060605` | Warm near-black page floor — the page's ONE ground |
 | `--canvas-soft` | `#21201c` | Row hover and toolbar wells inside a card |
 | `--surface-card` | `#191815` | Card surface — a small lift off the floor |
 | `--surface-strong` | `#282620` | Badges, tag pills |
@@ -71,35 +71,34 @@ action colour, read the other way round.
 The scale runs the opposite way from a light theme: further from the floor means
 **lighter**, not darker. A card lifts by moving toward the ink.
 
-### Section tone
-| Token | Value | Use |
-|---|---|---|
-| `--tone-deep` | `#060605` | A section that sits below the floor |
-| `--tone-floor` | `#0a0a09` | The floor itself — the same value as `--canvas` |
-| `--tone-raised` | `#131210` | A section that lifts off the floor |
+### One ground, no section tone
 
-The ground a whole section stands on, set with `data-tone` on a `.section-tone`
-element. Each section takes one, **no two neighbours share one**, and a shallow
-gradient is derived from it so a single section is not a flat slab either. The
-page used to be one flat colour from the nav to the footer with the boundaries
-carried entirely by hairlines; the maintainer asked for tonal variation on
-2026-08-29, with meuze.ai's white/near-black alternation as the reference.
+**The page is one black from the nav to the footer.** `--canvas` is painted
+once, by `body` in `global.css`, and nothing else paints a ground. Section
+boundaries are `--rule`'s job.
 
-It is dialled far down from that reference on purpose. A full inversion here
-would break every app mockup on the page: those are clones of the product's own
-dark theme rather than illustrations, and they cannot be re-lit.
+For one build each section painted its own near-black under itself —
+`--tone-deep` `#060605`, `--tone-floor` `#0a0a09`, `--tone-raised` `#131210`,
+plus a shallow gradient inside each one — following meuze.ai's white/near-black
+alternation, dialled down to what a dark page can carry. A full inversion was
+never an option: every app mockup on this page is a clone of the product's own
+dark theme rather than an illustration, and cannot be re-lit.
 
-**The ceiling is `--surface-card`, and it is the card step being spent.** A card
-lifts off its section by exactly the distance between the two — 15 points from
-the floor, 6 from `--tone-raised`, at which point a card reads as a slightly
-darker hole rather than as a surface. **A section that carries cards therefore
-takes a tone at or below the floor.** The logo strip was on `raised` for one
-build and is the worked example.
+Dialled down that far it did not read as alternation. It read as an uneven
+black: three values within two points of each other, and a visible step at
+every joint where one section's gradient ended dark and the next one's began
+light. The maintainer asked for a single background black on 2026-08-29 and
+named the deep sections' ground as the one to keep, which is why `--canvas` is
+`#060605` rather than the old `#0a0a09`.
 
-The mechanics — why the ground is a `z-index: -2` pseudo-element and never a
-`background` on the section — are in
-[`layout.md`](layout.md) § "Section tone", because what they protect is the
-rails.
+The one thing this makes safe: `--surface-card` lifts 15 points off the ground,
+and a tone used to be spent out of that same range — a card on `--tone-raised`
+had 6 points of lift left and read as a slightly darker hole. With one ground,
+nothing can eat the card step.
+
+The mechanics — why a section must never take a `background` for its ground —
+are in [`layout.md`](layout.md) § "One ground, no section tone", because what
+they protect is the rails.
 
 ### Ink and text
 | Token | Value | Use |
@@ -109,9 +108,9 @@ rails.
 | `--body` | `#b4b1a7` | Running text |
 | `--muted` | `#9a978c` | Sub-titles |
 | `--muted-soft` | `#6d6a62` | Disabled text |
-| `--on-ink` | `#0a0a09` | Dark text on a pale CTA |
+| `--on-ink` | `#060605` | Dark text on a pale CTA |
 
-Against the canvas: `--ink` 18.5:1, `--body` 9.2:1, `--muted` 6.8:1 — all past
+Against the canvas: `--ink` 18.7:1, `--body` 9.2:1, `--muted` 6.8:1 — all past
 AA, the first two past AAA. `--muted-soft` sits at 3.7:1 and is for disabled
 text only, never for anything a visitor has to read.
 
@@ -302,10 +301,8 @@ inverts to ink — a pale panel — instead of wearing a coloured ribbon.
 - Don't use the stage pastels for status, decoration, or charts.
 - Don't inline a hex value. Add a token or use one.
 - Don't reintroduce another product's accent colour or typeface.
-- **Don't give a section its ground with `background`.** It paints over the
-  rails. The ground is `.section-tone` plus `data-tone`.
-- **Don't put a tone above the floor on a section that carries cards.** The
-  tone and the card lift come out of the same range.
+- **Don't give a section a ground of its own.** The page has one, `--canvas`
+  on `body`. A section `background` also paints over the rails.
 
 ---
 

@@ -111,16 +111,16 @@ const visibility = [
      neighbours were on `py-24`, which is the kind of drift a shared shell
      exists to stop.
 
-     `deep` AND NOT `raised`, and the cells are the reason. A tone is spent out
-     of the same range the cards lift through: the cells are `--surface-card`,
-     15 points off the floor, and on `--tone-raised` only 6 of those are left —
-     they stop reading as cards and start reading as slightly darker holes. On
-     `--tone-deep` the ground drops away from them instead and they lift by 19.
-     A section that carries cards takes a tone at or below the floor. -->
+     The cells lift off the page by being `--surface-card` on `--canvas`, and
+     that step is the whole reason they read as cells rather than as holes.
+     While the page still had per-section tones this strip had to sit on the
+     deepest of them for exactly that reason — on the raised tone only 6 of the
+     15 points of lift were left and the cells inverted. One ground removes the
+     hazard: nothing can eat the card step any more. Do not paint a background
+     under this section to bring it back. -->
 <section
   aria-labelledby="connects-label"
-  class="section-tone flex flex-col"
-  data-tone="deep"
+  class="relative flex flex-col"
 >
   <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
     <!--
@@ -168,9 +168,9 @@ const visibility = [
    * cards (auto) and stays under the section marker at 20. Hidden below
    * 768px, where the rails themselves are.
    *
-   * Isolation is forbidden on `.section-tone` (it would trap the tone layer
-   * above the real rails). It is safe here: this is the inner band, and the
-   * tone lives on the section around it.
+   * Isolation used to be forbidden on the section itself — it trapped the
+   * retired tone layer above the real rails. It is safe here either way: this
+   * is the inner band, and the section around it paints nothing.
    */
   .strip {
     isolation: isolate;

@@ -27,40 +27,39 @@
    *
    * The scale runs the other way from a light theme: further from the floor
    * means LIGHTER, not darker. A card lifts by getting closer to the ink.
+   *
+   * `--canvas` IS THE ONLY GROUND THE PAGE HAS. Every section stands on it,
+   * from the nav to the footer, and nothing paints a second near-black under
+   * itself — see the note where the section tones used to be.
    */
-  --canvas: #0a0a09;
+  --canvas: #060605;
   --canvas-soft: #21201c;
   --surface-card: #191815;
   --surface-strong: #282620;
 
-  /* --- Section tone ------------------------------------------------------
-   * The ground a whole section stands on. Three values, a few points either
-   * side of the floor, so consecutive sections separate by TONE as well as by
-   * a line and the page stops reading as one flat slab of black.
+  /* --- Section tone: RETIRED, AND NOT TO BE REBUILT ----------------------
+   * There were three grounds here — `--tone-deep` #060605, `--tone-floor`
+   * #0a0a09 and `--tone-raised` #131210 — one painted under each section so
+   * consecutive sections separated by TONE as well as by a line, plus a
+   * shallow gradient inside each one so a single section was not flat either.
+   * The reference was meuze.ai's white/near-black alternation, dialled down to
+   * what a dark page can carry.
    *
-   * This is the move meuze.ai makes by flipping a section from white to
-   * near-black, dialled down to what a dark page can carry: a full inversion
-   * here would break every app mockup on the page, which is drawn for a dark
-   * ground and is a clone of the product rather than an illustration.
+   * Dialled down that far it did not read as alternation. It read as an
+   * uneven black: three values inside two points of each other, and a visible
+   * step at every section joint where one section's gradient ended dark and
+   * the next one's began light. The maintainer asked for ONE background black
+   * on 2026-08-29 and named the deep sections' ground as the one to keep,
+   * which is why `--canvas` above is now #060605 rather than #0a0a09.
    *
-   * THE CEILING IS `--surface-card`, DELIBERATELY. A card lifts off its
-   * section by exactly the step between the two; raise a tone to the card
-   * value and the cards in that section disappear. `--tone-raised` stops well
-   * short of it for that reason, and a fourth, lighter tone is not free space
-   * — it is the card step being spent.
-   *
-   * WHICH MAKES ONE RULE: A SECTION THAT CARRIES CARDS TAKES A TONE AT OR
-   * BELOW THE FLOOR. `--tone-raised` leaves a card 6 points of lift where the
-   * floor leaves it 15, and at 6 a card reads as a slightly darker hole rather
-   * than as a surface. The logo strip was on `raised` for one build and is the
-   * worked example — see the note on its `data-tone`.
-   *
-   * Each section paints ONE of these under itself; the gradient that keeps a
-   * single section from being flat too is derived from it in layout.css.
+   * SO: THE PAGE HAS ONE GROUND, AND SEPARATION IS THE RULES' JOB. `--rule`
+   * draws the section boundaries and is sized to be legible from across the
+   * room precisely so tone does not have to help. Reintroducing a per-section
+   * background — a token, a `data-tone`, a one-off `background` on a section —
+   * brings back the uneven black, and it also breaks the rails: an opaque
+   * background on an in-flow section paints over the fixed rail layer (see
+   * layout.css § "Page chrome").
    */
-  --tone-floor: #0a0a09;
-  --tone-deep: #060605;
-  --tone-raised: #131210;
 
   /* --- Ink ---------------------------------------------------------------
    * The paper colour, carrying the text. Also the primary action colour: the
@@ -72,7 +71,7 @@
   --body: #b4b1a7;
   --muted: #9a978c;
   --muted-soft: #6d6a62;
-  --on-ink: #0a0a09;
+  --on-ink: #060605;
 
   /* --- Hairlines ---------------------------------------------------------
    * All depth in this system comes from 1px lines and the small step between

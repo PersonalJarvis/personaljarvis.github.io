@@ -642,7 +642,7 @@ to its chrome figure, or the section overflows its screen.
 Two classes on two elements that are already there:
 
 ```astro
-<section id="…" class="section-tone flex min-h-svh flex-col" data-tone="raised">
+<section id="…" class="relative flex min-h-svh flex-col">
   <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
     <div class="section-bounds section-bounds--fill">
       <SectionTrack nested />
@@ -654,7 +654,6 @@ Two classes on two elements that are already there:
 
 | Class | Element | Job |
 |---|---|---|
-| `.section-tone` + `data-tone` | the `<section>` | Paints the section's ground (see "Section tone") |
 | `.section-inset` | the `Container` | Holds the band `--section-inset` inside the section's top and bottom edges |
 | `.section-bounds` | the block inside it | Draws both hairlines, spends `--section-pad` inside them, and **is the marker's tracked box** |
 | `.section-bounds--fill` | the same block | Takes the section's leftover height — only for a section that has a height of its own, and it spends `--space-lg` inside the rules rather than `--section-pad` |
@@ -731,33 +730,45 @@ hosts `<SectionTrack nested />` for exactly this reason.
 
 ---
 
-## Section tone
+## One ground, no section tone
 
-Each section paints its own ground, a few points off the floor, so neighbours
-separate by tone as well as by a line and the page stops reading as one flat
-slab from the nav to the footer. Set it with `data-tone` on a `.section-tone`
-element; the three values are in `tokens.css`. A shallow gradient is derived
-from the tone so a single section is not a flat slab either.
+**The page is one black from the nav to the footer — `--canvas`, painted once
+by `body` in `global.css`.** Nothing else paints a ground. Section boundaries
+are carried entirely by `--rule`, which is sized to be legible on the first
+glance precisely so that tone does not have to help.
 
-**No two neighbours share a ground**, which is the only rule the assignment has
-to obey — and the run above counts as one section for it.
+For one build each section painted its own near-black under itself
+(`--tone-deep` `#060605`, `--tone-floor` `#0a0a09`, `--tone-raised` `#131210`,
+set with a `data-tone` attribute), with a shallow gradient inside each one so a
+single section was not flat either. It was meuze.ai's white/near-black
+alternation dialled down to what a dark page can carry — and dialled down that
+far, it did not read as alternation. It read as an uneven black: three values
+within two points of each other, plus a visible step at every joint where one
+section's gradient ended dark and the next one's began light. The maintainer
+asked for a single background black on 2026-08-29 and named the deep sections'
+ground as the one to keep, so `--canvas` is `#060605` now.
 
-**A section that carries cards takes a tone at or below the floor.** A tone is
-spent out of the same range a card lifts through: `--surface-card` is 15 points
-off the floor and only 6 above `--tone-raised`, at which point a card reads as
-a slightly darker hole rather than as a surface. The logo strip was on `raised`
-for one build and is the worked example.
+**Do not give a section a background to bring the separation back.** Two
+reasons, and the second one bites hardest:
 
-**Why a pseudo-element at `z-index: -2` rather than `background` on the
-section.** The rails are a fixed layer at `z-index: -1`, between the page
-background and the content, and an opaque background on an in-flow section
-paints above that layer — the rails would come out in pieces, one gap per
-section, which is the exact failure `global.css` warns about. A negative-z
-child paints below `-1` and above the canvas, so the rails run unbroken over
-every tone. The section must therefore not become a stacking context of its
-own: `position: relative` with `z-index: auto` is safe, `transform`, `filter`,
-`opacity < 1`, `isolation` and `will-change` are not, and `overflow: hidden` is
-fine.
+1. It reintroduces the uneven black. Separation is `--rule`'s job.
+2. The rails are a **fixed** layer at `z-index: -1`, between the page
+   background and the content. An opaque background on an in-flow section
+   paints *above* that layer, so the rails come out in pieces — one gap per
+   section, the exact failure `global.css` warns about. It is why the retired
+   tone layer had to be a `z-index: -2` pseudo-element rather than a plain
+   `background`.
+
+A block with a surface of its own — a card, the CTA band, an app mockup — is
+still free to interrupt a rail. That is a surface, not a ground.
+
+**One thing the single ground makes safe.** `--surface-card` lifts 15 points
+off `--canvas`, and while the tones existed a section could spend that range: a
+card on `--tone-raised` had only 6 points of lift left and read as a slightly
+darker hole rather than a surface. The logo strip shipped that way for one
+build. With one ground, nothing can eat the card step.
+
+---
 
 ## Responsive
 
@@ -820,10 +831,9 @@ nothing — test with a real one.)
 - **A single section leaving the shell.** A run of sections may opt out
   together, because a run still has one boundary at each end; one section
   opting out just changes what one joint looks like
-- **A tone on a section that carries cards** above `--tone-floor`. A tone is
-  spent out of the same range the card lifts through
-- **An opaque `background` on a section** for its ground. It paints over the
-  rails; the ground is a `z-index: -2` pseudo-element (`.section-tone`)
+- **A `background` on a section** for its ground. The page has one ground
+  (`--canvas` on `body`); a section background paints over the fixed rail
+  layer and the rails come out in pieces, one gap per section
 - A section marker in the rails' own `z-index: -1` layer, where every card
   with a surface paints over it
 - A second scroll indicator alongside the section markers — one page-long

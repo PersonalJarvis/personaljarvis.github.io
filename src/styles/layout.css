@@ -409,7 +409,7 @@ body > section {
  * The whole pattern is two classes on two elements that are already in the
  * markup — the Container, and the block inside it:
  *
- *   <section class="section-tone flex min-h-svh flex-col" data-tone="raised">
+ *   <section class="relative flex min-h-svh flex-col">
  *     <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
  *       <div class="section-bounds section-bounds--fill">
  *         <SectionTrack nested />
@@ -464,66 +464,35 @@ body > section {
 }
 
 /* ---------------------------------------------------------------------------
- * Section tone — the ground a section stands on
+ * The page has ONE ground — there is no section tone
  *
- * The page used to be one flat colour from the nav to the footer, with the
- * boundaries carried entirely by hairlines. Each section now paints its own
- * ground a few points off the floor (`--tone-floor`, `--tone-deep`,
- * `--tone-raised` in tokens.css), so neighbours separate by tone as well as by
- * a line, and a shallow wash inside each one keeps a single section from
- * reading as a flat slab either. Requested by the maintainer on 2026-08-29,
- * with meuze.ai's white/near-black alternation as the reference.
+ * For one build each section painted its own near-black under itself
+ * (`--tone-deep`, `--tone-floor`, `--tone-raised`), with a shallow gradient
+ * inside each one, so that neighbours separated by tone as well as by a line.
+ * Three values inside two points of each other do not read as alternation;
+ * they read as an uneven black, with a visible step at every joint where one
+ * section's gradient ended dark and the next one's began light. The maintainer
+ * asked for a single background black on 2026-08-29 and named the deep
+ * sections' ground as the one to keep — it is `--canvas` now, and `body` in
+ * global.css is the only thing that paints it.
  *
- * WHY A PSEUDO-ELEMENT AT z-index -2 RATHER THAN `background` ON THE SECTION.
- * The rails are a fixed layer at z-index -1, between the page background and
- * the content, and an opaque background on an in-flow section paints ABOVE that
- * layer — the rails would come out in pieces, one gap per section, which is the
- * exact failure global.css warns about. A negative-z child paints in the root
- * stacking context BELOW -1 and above the canvas, so the rails run unbroken
- * over every tone.
+ * DO NOT GIVE A SECTION A BACKGROUND TO BRING THE SEPARATION BACK. Two
+ * reasons, and the second one is the hard one:
  *
- * The section must therefore not become a stacking context of its own, or the
- * layer is trapped inside it and lands back on top of the rails. `position:
- * relative` with `z-index: auto` is safe; `transform`, `filter`, `opacity < 1`,
- * `isolation` and `will-change` are not. `overflow: hidden` is fine.
+ *   1. It reintroduces the uneven black the maintainer asked to be rid of.
+ *      Section boundaries are `--rule`'s job, and that token is deliberately
+ *      sized to be legible on the first glance so tone does not have to help.
  *
- * The gradient is derived from the one tone rather than declared as a pair:
- * two variables per section is two chances for a section to carry half a
- * change. 1.5% of ink is about one value step — visible as a wash across 900px
- * of section, invisible as a band edge.
+ *   2. The rails are a FIXED layer at z-index -1, between the page background
+ *      and the content. An opaque background on an in-flow section paints
+ *      ABOVE that layer, so the rails come out in pieces — one gap per
+ *      section. That is the exact failure global.css warns about, and it is
+ *      why the retired tone layer had to be a `z-index: -2` pseudo-element
+ *      rather than a plain `background` in the first place.
+ *
+ * A block with a surface of its own — a card, the CTA band, a mockup — is
+ * still free to interrupt a rail. That is a surface, not a ground.
  * ------------------------------------------------------------------------ */
-
-.section-tone {
-  position: relative;
-}
-
-.section-tone::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--tone) 98.5%, var(--ink)),
-    var(--tone)
-  );
-  pointer-events: none;
-}
-
-/* The three grounds. `data-tone` and not a class, because a tone is a value a
- * section HAS rather than behaviour it opts into, and an attribute cannot be
- * quietly combined with a second one. */
-.section-tone {
-  --tone: var(--tone-floor);
-}
-
-.section-tone[data-tone="deep"] {
-  --tone: var(--tone-deep);
-}
-
-.section-tone[data-tone="raised"] {
-  --tone: var(--tone-raised);
-}
 
 /* The inset itself, on the Container that already wraps the band.
  *

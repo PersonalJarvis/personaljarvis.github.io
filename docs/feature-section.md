@@ -68,7 +68,7 @@ blocks breathe at the standard inset. The maintainer asked for this on
 column.
 
 `Plugins.astro` carries the reasoning and names the three things that are
-load-bearing about it — no `.section-bounds`, no `.section-tone`, and
+load-bearing about it — no `.section-bounds`, no ground of its own, and
 `<SectionTrack open />` on the section. See also `layout.md` § "A run of
 sections may opt out — together": the condition is that all three opt out at
 once, so the run still has exactly one boundary at each end.
@@ -266,10 +266,9 @@ filters, three statuses and no dialogs at all.
 - **A card, a border, a radius or a surface around the block.** The frame was
   removed on 2026-08-29 and putting one back is the change the maintainer asked
   to undo
-- **`.section-bounds` or `.section-tone` on any of the three.** Either one draws
-  a boundary inside the run: the band draws two rules, and a tone is a gradient
-  that restarts at every section's top edge, so even one shared tone meets
-  dark-on-light at the joint
+- **`.section-bounds` on any of the three.** It draws two rules, which is a
+  boundary inside the run. A `background` is the same mistake by another route:
+  it puts an edge at every section's top edge and paints over the rails
 - **Giving one of the three a frame back while the other two go without.** They
   opt out of the shell together or not at all — `layout.md` § "A run of sections
   may opt out — together"
@@ -282,7 +281,7 @@ filters, three statuses and no dialogs at all.
 ## Skeleton
 
 ```astro
-<!-- No .section-tone and no .section-bounds: this is the run that opts out. -->
+<!-- No .section-bounds and no ground of its own: this is the run that opts out. -->
 <section class="relative flex flex-col">
   <!-- On the section, not `nested`, so the square runs unbroken across all
        three; `open`, so it stays on the left rail instead of crossing a rule

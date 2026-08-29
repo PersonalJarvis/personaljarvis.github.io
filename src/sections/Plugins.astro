@@ -24,11 +24,10 @@
  * THREE THINGS ARE LOAD-BEARING AND EASY TO "TIDY" BACK IN:
  *
  *   - No `.section-bounds`. It is what drew the box.
- *   - No `.section-tone`. A tone is a per-section gradient that restarts at
- *     every section's top edge, so even three sections sharing one tone meet
- *     dark-on-light and the seam is exactly the line this change removed.
- *     `--tone-floor` is `--canvas`, so the run is on the floor either way, and
- *     its neighbours are both `raised` — the run still separates by ground.
+ *   - No section background. The page has one ground and these three stand on
+ *     it like everything else; painting one under this run would put a seam
+ *     back at exactly the joints this change removed. See layout.css § "The
+ *     page has ONE ground".
  *   - `<SectionTrack open />` on the SECTION, not `nested` inside a band. See
  *     the marker note below.
  *
