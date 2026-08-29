@@ -55,18 +55,36 @@ const { repo, count, placed, clusters } = stargazers;
 const places = placed === 1 ? "one place" : `${clusters.length} places`;
 ---
 
-<section id="stargazers" class="section-full-height relative flex flex-col">
-  <SectionTrack />
+{/*
+  A BOUNDED SECTION — both of its lines, held an inset inside its own edges.
+  See docs/layout.md § "A bounded section".
 
-  <Container width="content">
-    <!-- The rule sits inside the container so it starts and ends on a rail.
-         Its vertical padding has moved onto the body below, which is the box
-         that has to give when the window is short. -->
-    <div class="section-rule"></div>
-  </Container>
+  It used to carry a single `.section-rule` at the top and rely on its
+  neighbour to close it, which is the default arrangement and works everywhere
+  except here: the section below is bounded too, so its lines stand an inset
+  inside ITS edges and never land on this boundary. The globe therefore ran out
+  of the bottom of the screen with nothing drawn under it.
 
-  <div class="stargazers-body flex flex-1 flex-col justify-center">
-    <Container width="content">
+  Adding a closing rule flush with the bottom edge fixes the structure and not
+  what the reader sees. This section is exactly one viewport, so a line on its
+  bottom edge sits on the bottom edge of the WINDOW — never in the same view as
+  the opening line, which is the thing that makes a section read as bounded.
+  Framed, both lines stand inside the screen at once and the section reads as
+  one object (maintainer, 2026-08-29).
+*/}
+<section id="stargazers" class="section-full-height flex flex-col">
+  <Container
+    width="content"
+    class="section-inset flex min-h-0 flex-1 flex-col"
+  >
+    <div
+      class="section-bounds section-bounds--fill stargazers-body flex flex-col justify-center"
+    >
+      {/* `nested`, because `.section-bounds` already sits on the content
+          column: a second `content` Container would apply its gutter and its
+          max-width again and stand the marker a gutter inside both rails. */}
+      <SectionTrack nested />
+
       <div class="grid items-center gap-12 lg:grid-cols-12 lg:gap-10">
         <div class="stargazers-copy lg:col-span-4">
           <p class="stargazers-eyebrow">In the open</p>
@@ -102,25 +120,7 @@ const places = placed === 1 ? "one place" : `${clusters.length} places`;
           <StarGlobe client:visible clusters={clusters} />
         </div>
       </div>
-    </Container>
-  </div>
-
-  <!--
-    The line that CLOSES this section, and the reason it has to be here.
-
-    Every other section is closed by the rule its neighbour opens with. This
-    one is not: the section below it is BOUNDED, so both of its lines stand an
-    inset inside its own edges and neither of them lands on this boundary. With
-    only the opening rule above, the globe ran out of the bottom of the screen
-    with nothing drawn under it — the section read as unbounded, which is what
-    the maintainer photographed on 2026-08-29.
-
-    It is the same `.section-rule` as the opening line, not a variant: an empty
-    element's border-top and border-bottom occupy the same pixel, so as the
-    last child of the section it draws exactly the closing line.
-  -->
-  <Container width="content">
-    <div class="section-rule"></div>
+    </div>
   </Container>
 </section>
 
@@ -211,8 +211,12 @@ const places = placed === 1 ? "one place" : `${clusters.length} places`;
    * container still governs through `100%`, and this only stops the graphic
    * outgrowing the screen it has to fit on.
    *
-   * The subtraction is the section's own furniture: the rule, the body's
-   * padding at its ceiling, and the nav the page keeps above everything.
+   * The subtraction is the section's own furniture: the two rules, the body's
+   * padding at its ceiling, and the nav the page keeps above everything —
+   * PLUS `2 x --section-inset`, which is what makes this a framed band rather
+   * than a section flush with its edges. docs/layout.md § "The inset is a
+   * share" names that term specifically: it is up to 80px at each end, and a
+   * viewport-derived cap that forgets it overflows the screen by 160px.
    */
   .stargazers-globe :global(.star-globe) {
     /* A quarter smaller than the column would allow (maintainer, 2026-08-29).
@@ -223,7 +227,7 @@ const places = placed === 1 ? "one place" : `${clusters.length} places`;
 
     width: min(
       calc(100% * var(--globe-scale)),
-      calc((100svh - 14rem) * var(--globe-scale))
+      calc((100svh - 14rem - 2 * var(--section-inset)) * var(--globe-scale))
     );
     margin-inline: auto;
   }

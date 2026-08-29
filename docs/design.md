@@ -92,6 +92,22 @@ text only, never for anything a visitor has to read.
 "Strong" still means more contrast, which on this ground means lighter. The
 three keep their order; only the direction flipped.
 
+### The page rule
+`--rule` `#a8a59b` — the two rails and every section boundary, and nothing else.
+
+Not a fourth hairline: a different job. A hairline bounds an **object** and is
+meant to be found only once the eye is already on it, so it sits a shade off the
+floor. A rule draws the **structure of the page** and has to be legible before
+the reader has decided to look at anything. `--hairline` is 1.4:1 against the
+canvas, which is below the threshold where a 1px line survives a real screen —
+the boundaries were visible in the design and invisible on the maintainer's
+monitor until this token was split out (2026-08-29). `--rule` is 8.1:1, one step
+brighter than `--muted` and one under `--body`.
+
+**A block as wide as the `content` column takes `--rule` on its outer edge**,
+because that edge is the rail at that height. See docs/layout.md § "Blocks that
+cross a rail". Everything narrower keeps `--hairline`.
+
 ### Agent timeline — the one coloured signature
 `--stage-thinking` peach · `--stage-grep` mint · `--stage-read` blue ·
 `--stage-edit` lavender · `--stage-done` gold.
@@ -210,7 +226,9 @@ on the page, which is what makes it the one action worth taking.
 
 **Tertiary** — inline ink text link.
 
-**Cards** — card surface, 1px `--hairline`, `--radius-lg`, 24px padding.
+**Cards** — card surface, 1px `--hairline`, `--radius-lg`, 24px padding. A card
+as wide as the `content` column is the exception: its side edges stand on the
+rails, so it takes 1px `--rule` and the rails run through it unbroken.
 
 **Product mockup card** — a card holding a multi-pane mockup, `--radius-lg`,
 1px `--hairline-strong`, no padding (panes fill it edge to edge). Panes use

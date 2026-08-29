@@ -56,6 +56,32 @@
   --hairline-soft: #201f1b;
   --hairline-strong: #46433b;
 
+  /* --- The page rule -----------------------------------------------------
+   * The colour of the page's own boundaries: the two rails, and the line
+   * that opens or closes a section. NOT a fourth hairline — a separate job.
+   *
+   * A hairline draws the edge of an OBJECT: a card, a logo cell, a table
+   * divider. It is meant to be found only when the eye is already on the
+   * thing it bounds, so it sits a shade off the floor and stays there.
+   *
+   * A rule draws the STRUCTURE of the page, and it has to be legible from
+   * across the room, on the first glance, before the reader has decided to
+   * look at anything. `--hairline` at 1.4:1 against the canvas is below the
+   * threshold where a 1px line survives a screen at all: it was visible in
+   * the design and invisible on the maintainer's monitor.
+   *
+   * 8.1:1 — one step brighter than `--muted`, one step under `--body`. The
+   * reference system the maintainer supplied draws its own rails at almost
+   * exactly `--body` (9.6:1). We stop a shade short of that, because this
+   * page carries far more text per section than that one does and a rule as
+   * bright as the prose competes with it.
+   *
+   * DO NOT collapse this back into `--hairline`. One token cannot serve both
+   * jobs: raised to this value it turns every card and every logo cell into
+   * a wireframe; lowered to the hairline value the page loses its structure.
+   */
+  --rule: #a8a59b;
+
   /* --- Agent timeline ----------------------------------------------------
    * The one place colour is allowed to carry meaning, mirroring the stages
    * the product actually has. Scoped to timeline visualisations — never as

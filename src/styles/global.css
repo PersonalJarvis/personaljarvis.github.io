@@ -24,6 +24,7 @@
   --color-hairline: var(--hairline);
   --color-hairline-soft: var(--hairline-soft);
   --color-hairline-strong: var(--hairline-strong);
+  --color-rule: var(--rule);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --radius-md: var(--radius-md);

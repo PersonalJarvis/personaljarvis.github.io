@@ -292,9 +292,13 @@ const figures = [
   }
 
   /* --- The pinned frame --------------------------------------------------
-   * The section drawn as a box: the rails give its two sides, these two
-   * hairlines close it top and bottom, and the section marker walks that
-   * perimeter. It is inset from the sticky viewport rather than flush with it,
+   * The section drawn as a box: the rails give its two sides, these two rules
+   * close it top and bottom, and the section marker walks that perimeter.
+   * They are `--rule` and not `--hairline` for that reason — this is the
+   * page's structure, not the edge of an object, and it is the same line the
+   * rails and every `.section-rule` draw.
+   *
+   * It is inset from the sticky viewport rather than flush with it,
    * because a closing line lying on the bottom edge of the window is a line
    * nobody sees — and the reader is meant to watch the marker turn that corner.
    *
@@ -308,7 +312,7 @@ const figures = [
     flex: 1 1 auto;
     min-height: 0;
     flex-direction: column;
-    border-block: 1px solid var(--hairline);
+    border-block: 1px solid var(--rule);
     padding-block: var(--space-lg);
   }
 
@@ -378,7 +382,11 @@ const figures = [
     flex: 1 1 auto;
     min-height: 0;
     overflow: hidden;
-    border: 1px solid var(--hairline);
+    /* `--rule`, because this border stands ON the two rails: the picture is as
+       wide as the content column, so its left and right edges are the rails at
+       this height and have to be the same line. A hairline here made the rails
+       stop dead for the height of the picture and start again below it. */
+    border: 1px solid var(--rule);
     border-radius: var(--radius-xl);
     /* The manual frame's own paper, so the box reads as one sheet before the
      * canvas has painted and while the first frame is still in front. */
@@ -476,20 +484,32 @@ const figures = [
    * Hairlines are the 1px gaps of a grid on a hairline-coloured ground, the
    * same technique the logo strip uses. No borders are drawn.
    *
-   * `padding-inline: 1px` IS THE RAILS, NOT A NUDGE. The cells are filled in
-   * the page colour and the bar spans the whole column, so without it the bar
+   * THE INLINE BORDER IS THE RAILS, NOT A NUDGE. The cells are filled in the
+   * page colour and the bar spans the whole column, so without it the bar
    * paints over both rails for its own height and the two lines that frame the
-   * section stop dead for 100px and start again below. One pixel of the grid's
-   * hairline ground shows at each outer edge instead, in the same colour and on
-   * the same line, and the rails read as continuous. The picture above solves
-   * the identical problem with its own 1px border; docs/layout.md § "Page
-   * chrome" names this bar as the case to watch.
+   * section stop dead for 100px and start again below. The border draws the
+   * rail's own colour on the rail's own pixel instead, and the rails read as
+   * continuous. The picture above solves the identical problem with its own
+   * 1px border; docs/layout.md § "Page chrome" names this bar as the case to
+   * watch.
+   *
+   * It used to be `padding-inline: 1px`, letting a pixel of the grid's own
+   * hairline ground show at each outer edge. That worked only while the rails
+   * and the internal dividers were the same colour. They are two different
+   * jobs and now two different tokens (`--rule` against `--hairline`), so the
+   * edge has to name the one it is actually continuing.
    */
   [data-figures] {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1px;
-    padding-inline: 1px;
+    /* The outer edge is a BORDER in `--rule` rather than a pixel of the grid's
+       own ground showing through `padding-inline`, because the two colours are
+       no longer the same one. The ground stays `--hairline` — that is what the
+       internal dividers are made of, and they bound cells, not the page. The
+       border is what the rails are made of, and it lands on exactly the pixel
+       the padding used to. Border-box sizing keeps the grid the same width. */
+    border-inline: 1px solid var(--rule);
     background: var(--hairline);
     margin: var(--space-lg) 0 0;
   }

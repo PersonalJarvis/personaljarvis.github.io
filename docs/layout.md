@@ -234,10 +234,82 @@ four steps, a quarter of the track each. Its numbers are in
 
 ---
 
+## The scroll rests on a section boundary
+
+The page snaps. Let go of the wheel near a boundary and it settles with that
+section's top edge on the top of the window — a beat of a pause, so a section
+is read whole instead of being crossed halfway. Two declarations, both in
+`src/styles/layout.css`, and nothing per section:
+
+```css
+html          { scroll-snap-type: y proximity; }
+body > section { scroll-snap-align: start; }
+```
+
+**`proximity`, never `mandatory`.** `mandatory` means the scroll position must
+always be on a snap point. Two sections here are taller than the window — the
+pinned voice section is three screens, install is four — and the only snap
+point either has is its own top edge, so `mandatory` drags the reader back to
+that edge every time they scroll *inside* one and the rest of the section
+cannot be reached. It is not a value to tune down; it is unusable on a page
+whose sections are not all one screen tall.
+
+**No `scroll-snap-stop: always`.** It turns every boundary into a wall a single
+gesture cannot cross. That is a full-page slideshow, which is a different thing
+from a page read at the reader's own pace.
+
+**One selector, not a class per section.** The snap points are the section
+boundaries — a fact about the page's structure, not a decision each section
+makes. A class is a hand-maintained copy of that fact, and the section that
+forgets it is the one boundary the page runs past.
+
+**The footer is not a snap point**, and gets none because it is not a
+`<section>`. It is a quarter-screen at the very bottom, so its top edge lies
+past the document's last scroll position; a snap point there could only pull
+the reader back off the end of the page.
+
+**No `scroll-padding-top` — today.** A snap point *is* the top of the window,
+so a bar pinned there would cover the very edge the reader was sent to, rule
+included. The nav is `sticky` inside the hero and stops at the hero's bottom
+edge, so every boundary below it meets a clear window. Move the nav out of the
+hero and this becomes `scroll-padding-block-start: 4rem`.
+
+`prefers-reduced-motion: reduce` turns the snap off altogether: that reader has
+asked for exactly this — the page does not move on its own once their gesture
+has finished.
+
+---
+
 ## Page chrome: rails and the scroll marker
 
-The gutters are made visible. Two vertical hairlines stand on the edges of the
+The gutters are made visible. Two vertical lines stand on the edges of the
 `content` step and run **the whole page**, not one segment per section.
+
+### The colour of a boundary: `--rule`, not `--hairline`
+
+Every line in this section is `var(--rule)`. That is a separate token from
+`--hairline`, and the two are not interchangeable.
+
+| | `--hairline` `#2b2925` | `--rule` `#a8a59b` |
+|---|---|---|
+| Draws | the edge of an **object** — a card, a logo cell, a table divider | the **structure of the page** — the rails, and every section boundary |
+| Contrast on the canvas | 1.4:1 | 8.1:1 |
+| Found | once the eye is already on the thing it bounds | on the first glance, from across the room |
+
+The rails and the section rules were `--hairline` until 2026-08-29. At 1.4:1 a
+1px line is below the threshold where it survives a screen at all: it was
+visible in the design and invisible on the maintainer's monitor, and the page
+had no legible structure. The reference system draws its own rails at 9.6:1 —
+almost exactly `--body`. `--rule` stops one shade short of that, because this
+page carries far more text per section than the reference does and a rule as
+bright as the prose competes with it.
+
+**Do not collapse the two back into one token.** Raised to `--rule`, every card
+and every logo cell becomes a wireframe; lowered to `--hairline`, the page loses
+its structure. They are two jobs.
+
+**A block that stands on both rails takes `--rule` on its outer edge**, because
+that edge *is* the rail at that height — see "Blocks that cross a rail" below.
 
 ### Rails
 
@@ -245,7 +317,7 @@ The gutters are made visible. Two vertical hairlines stand on the edges of the
 - They sit on the edges of the `content` step and get there through the
   `Container` component itself — never a recomputed pixel value, or they drift
   from the formula the moment one of the four numbers changes
-- 1px, `var(--hairline)`
+- 1px, `var(--rule)`
 - **`z-index: -1`.** The layer between the page background and the content. A
   fixed element at `z-index: 0` paints in the positioned layer, which is *above*
   ordinary in-flow content, and the rails would be drawn over the cards instead
@@ -257,22 +329,62 @@ The gutters are made visible. Two vertical hairlines stand on the edges of the
 This layer holds the **rails only**. The marker has one of its own, in front of
 the content — see below.
 
-Blocks with a surface of their own — cards, the CTA band — paint over the rails
-and interrupt them. That is intended, not a defect. A block that is filled in
-the *page* colour is the case to watch: it hides a rail without reading as a
-surface, so it leaves what looks like a hole. Either make it transparent, or
-let the same hairline show at its outer edge (the figures grid in
-`VoiceSwitch.astro` does the latter with one pixel of inline padding, because
-its dividers are gaps on a hairline ground and its cells have to stay filled).
+### Blocks that cross a rail
+
+A block that is clearly **its own surface** — the CTA band on paper, the hero's
+demo on its painted ground — may paint over the rails and interrupt them. That
+is intended, not a defect: the reader sees one thing end and another begin.
+
+A block filled in something **close to the page colour** is the case to watch.
+It hides the rail without reading as a surface, and what is left is a bright
+line that stops in mid-air for no visible reason. Since the rails became
+legible this is no longer subtle — it reads as a rendering fault. Two fixes,
+and the choice is about what the block is:
+
+- **The block is as wide as the `content` column.** Then its left and right
+  edges *are* the rails at that height, and they take `var(--rule)`. The line
+  runs down the rail, around the block's corner, along its side and out the
+  bottom — unbroken. The section cards in `Plugins`/`Skills`/`Clis`,
+  `BuiltInPublic`'s video card and `VoiceSwitch`'s picture all do this.
+- **The block is narrower.** Then it does not stand on a rail at all and needs
+  nothing.
+
+`VoiceSwitch`'s figures grid is the awkward middle case: its dividers are 1px
+grid gaps on a coloured ground, so the ground has to stay `--hairline` for the
+cells while the outer edge has to be `--rule` for the rails. It carries
+`border-inline: 1px solid var(--rule)` and keeps the hairline ground. It used
+`padding-inline: 1px` — letting a pixel of its own ground show at each edge —
+which worked only while the rails and the dividers were the same colour.
 
 ### Horizontal rules
 
-Every section gets `border-top: 1px solid var(--hairline)` on an element
+Every section gets `border-top: 1px solid var(--rule)` on an element
 **inside** the container — the `.section-rule` class. Not on the section, and
 not on the container either: the container's border box is one gutter wider
 than its padding box, so a border there overshoots both rails and the joint
 reads as a cross instead of a corner. Vertical padding moves onto the same
 element, so the line marks the boundary rather than floating below it.
+
+**One rule per boundary, drawn by the section below it.** A section opens with
+its own rule and is closed by the next section's. That holds everywhere except
+above a **bounded** section: a bounded section's two lines stand an inset inside
+its own edges, so neither of them lands on that boundary and the section above
+it is left open at the bottom.
+
+The section above a bounded one therefore closes itself. Two ways, and they are
+not equivalent:
+
+- **Be bounded too** — the right answer when the section is **exactly one
+  viewport**. A closing rule flush with the bottom edge is structurally correct
+  and changes nothing the reader sees: it sits on the bottom edge of the
+  *window*, never in the same view as the opening line, and one line alone at
+  the top of the screen does not read as a boundary. Framed, both lines stand
+  inside the screen at once. `Stargazers.astro` was converted for exactly this
+  (2026-08-29).
+- **A second `.section-rule` as the last child** — enough when the section is
+  taller or shorter than a screen, so the reader passes both lines anyway.
+  `Install.astro` does this. An empty element's `border-top` and `border-bottom`
+  occupy the same pixel, so the closing line needs no class of its own.
 
 **The hero's rule is the line under the nav**, and it is the nav's only bottom
 edge — the band itself carries no `border-b`. It used to, and that border was
@@ -577,6 +689,17 @@ nothing — test with a real one.)
 - Horizontal padding on a section on top of the container — padding lives in the container alone
 - `100vh` for section-filling heights. Always `100svh`, or iOS pushes the address bar into the layout
 - Rails per section instead of once in the root layout
+- A rail or a section rule in `var(--hairline)`. At 1.4:1 on this canvas the
+  line is invisible on a real screen; page boundaries are `var(--rule)`
+- `var(--rule)` on the edge of an ordinary object — a small card, a logo cell,
+  a table divider. It is the page's structure, not an object's outline, and
+  used everywhere it turns the page into a wireframe
+- A block as wide as the `content` column whose outer edge is `--hairline`
+  while it is filled near the page colour, which stops both rails dead for its
+  own height
+- A one-viewport section closed by a rule flush with its bottom edge. That line
+  lands on the edge of the window and is never seen with the opening one — such
+  a section is bounded instead
 - A section marker in the rails' own `z-index: -1` layer, where every card
   with a surface paints over it
 - A second scroll indicator alongside the section markers — one page-long

@@ -171,7 +171,7 @@
 
 .page-chrome__rails {
   position: relative;
-  border-inline: 1px solid var(--hairline);
+  border-inline: 1px solid var(--rule);
 }
 
 /* Below the container's own breakpoint there are no gutters left to draw in. */
@@ -271,8 +271,22 @@
  * Vertical padding belongs below the line, so it goes on the same element.
  * ------------------------------------------------------------------------ */
 
+/* A SECOND `.section-rule`, as the last child of a section, closes it.
+ *
+ * The default arrangement needs only the opening line, because the next
+ * section's rule closes this one. That breaks at exactly one kind of joint:
+ * where the next section is BOUNDED, its two lines stand an inset inside its
+ * own edges and neither lands on this boundary, so the section above runs out
+ * of the bottom of the screen with nothing drawn under it. A section sitting
+ * above a bounded one therefore closes itself, and a one-viewport section
+ * becomes bounded instead (see docs/layout.md - a line on its bottom edge
+ * lands on the edge of the window and is never seen with the opening one).
+ *
+ * An empty element's border-top and border-bottom occupy the same pixel, so
+ * the closing line needs no class of its own.
+ */
 .section-rule {
-  border-top: 1px solid var(--hairline);
+  border-top: 1px solid var(--rule);
 }
 
 /* ---------------------------------------------------------------------------
@@ -388,7 +402,7 @@
 .section-bounds {
   position: relative;
   min-height: 0;
-  border-bottom: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--rule);
 }
 
 .section-bounds::before {
@@ -397,7 +411,7 @@
   inset-block-start: 0;
   inset-inline: 0;
   height: 1px;
-  background: var(--hairline);
+  background: var(--rule);
   pointer-events: none;
 }
 
