@@ -141,7 +141,7 @@ sticky child, and `track - viewport` of scrolling as the running length.
 | Track | `400svh` — three screens of pinned scrolling, 75svh per step |
 | Sticky child | `100svh`, `var(--space-lg)` padding, `overflow: hidden`. It carries the frame AND the band |
 | Frame | `border-block: 1px solid var(--rule)`, `var(--space-base)` padding, content centred |
-| Pin drops out at | `(max-width: 1279px), (max-height: 1059px), (min-width: 2000px) and (max-height: 1229px), (prefers-reduced-motion: reduce)` |
+| Pin drops out at | narrow, calm, or **measured not to fit** — see below |
 
 ### The band is part of the pinned screen
 
@@ -156,23 +156,41 @@ inside the one the sticky child carries; a second `content` Container there
 applies the gutter and the max-width a second time and pulls the band 32px
 inside the rails.
 
-**Where the height thresholds come from.** What the screen needs depends on how
-WIDE it is, because the root scale grows with the viewport and the same content
-is taller on a big monitor. Measured, frame plus band plus the child's padding:
+### The height is measured, not tuned
 
-| Viewport width | Window height the pinned screen needs |
-|---|---|
-| 1280px | 994px |
-| 1920px | 1024px |
-| 2560px | 1213px |
+**There is no window-height threshold in this file any more, and that is the
+point.** How tall the screen has to be is a fact about the content — four
+steps, an install box, a band, at a root scale that grows with the viewport —
+and a hand-measured number is a stale copy of it the moment anyone touches a
+step, a padding or the band. It was wrong twice in one afternoon: once when the
+band moved into this screen, and once when the sticky child's top inset went
+from `--space-lg` to `--section-inset`.
 
-Hence two bands rather than one number: 1060px below 2000px wide, 1230px above
-it, each with a margin over the measurement. Below them the pin gives up rather
-than clipping — the sticky child hides overflow, so a frame shorter than its
-content loses the bottom of step 4 and nobody would see it go.
+So the script measures the failure itself: **the list of steps must end above
+the line that closes the frame.** If it does not, `data-unpinned` goes on the
+section and the stylesheet gives up the pin, which the section survives — it
+becomes an ordinary block. What it does not survive is the alternative: the
+sticky child hides overflow, so a screen 40px too short simply eats the bottom
+of step 4 with nothing to show for it.
 
-Measure all three again whenever anything is added to a step or to the band.
-They are the numbers in this file a copy change can invalidate.
+Two things that look like the obvious test and are not:
+
+- **`scrollHeight` against `clientHeight`.** The frame centres its content, so
+  half of any overflow goes off the TOP, and `scrollHeight` does not count
+  that. A screen 40px short reads as 20px short.
+- **The frame's own natural height.** The mark's canvas carries an explicit
+  pixel height derived from the frame, so asking the frame how tall it wants to
+  be is circular. The list is neither centred nor circular: it is text, and its
+  height depends only on the column it wraps in.
+
+The query that remains — `(max-width: 1279px), (max-height: 1059px),
+(prefers-reduced-motion: reduce)` — covers the structural cases and acts as a
+floor for a reader with no JavaScript. Above it the measurement decides.
+
+For reference rather than as a contract, at the time of writing the pinned
+screen needs about 1269px of window at 2560 wide, 1080px at 1920 and 1160px at
+1280. The `--section-inset` at the top of the sticky child is 56px of that, and
+it is spent on the joint between this section and the one above it.
 
 **The progress comes from `spanProgress`** in `src/lib/scrollSpan.ts` — the
 same function the section marker and the voice wipe measure with. Three things
