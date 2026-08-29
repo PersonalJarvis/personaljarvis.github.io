@@ -10,6 +10,47 @@ export default defineConfig({
   site: "https://personaljarvis.ai",
   integrations: [react(), sitemap()],
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss(), pinDevReactRuntime()],
   },
 });
+
+/**
+ * Keep the dev server's pre-bundled React on its DEVELOPMENT build.
+ *
+ * Astro's background dev server can come up with NODE_ENV unset. Vite's
+ * dependency pre-bundler then folds `process.env.NODE_ENV` to "production" and
+ * bundles React through its production entry — where `react/jsx-dev-runtime`
+ * deliberately exports `jsxDEV` as undefined. Our own source is still
+ * transformed with the development JSX runtime, so every island throws
+ * `_jsxDEV is not a function` the moment it hydrates.
+ *
+ * The failure is quiet in the worst way: server-rendered markup stays on
+ * screen, so a section looks present and is simply dead. A demo whose size is
+ * computed after mount (the window starts hidden until a ResizeObserver
+ * reports a scale) renders as an empty well instead — no error in sight
+ * unless you open the console.
+ *
+ * Setting the define is what actually holds. Assigning `process.env.NODE_ENV`
+ * alone survives the first optimize pass and is lost the next time Vite
+ * re-bundles after a new import appears, which is exactly when a page is being
+ * built out and nobody is watching the console.
+ *
+ * `command === "serve"` scopes all of it to the dev server; a production build
+ * never reaches this branch.
+ */
+function pinDevReactRuntime() {
+  return {
+    name: "jarvis:pin-dev-react-runtime",
+    config(_config, { command }) {
+      if (command !== "serve") return;
+      if (!process.env.NODE_ENV) process.env.NODE_ENV = "development";
+      const define = { "process.env.NODE_ENV": JSON.stringify("development") };
+      return {
+        optimizeDeps: {
+          esbuildOptions: { define },
+          rollupOptions: { define },
+        },
+      };
+    },
+  };
+}
