@@ -52,10 +52,21 @@ that range — see TONE_RADIUS. After it, the pass sees the tone that actually
 decides the dots, and the gamma is simply solved a second time so the coverage
 target still lands exactly.
 
-THE NIGHT FRAME CARRIES TWO HAND-PLACED TOUCHES, and both are measured against
-that one photograph rather than derived from anything: MIC_LIGHT dodges the
-microphone out of the wall it is the same brightness as, and BUBBLE draws the
-speech bubble. Regenerate that photograph and both need measuring again.
+THE NIGHT FRAME CARRIES ONE HAND-PLACED TOUCH, measured against that one
+photograph rather than derived from anything: MIC_LIGHT dodges the microphone
+out of the wall it is the same brightness as. Regenerate that photograph and it
+needs measuring again.
+
+THE SPEECH BUBBLE IS NOT IN HERE ANY MORE. This script drew it into the dot grid
+until 2026-08-29, empty, with three dots in it; the maintainer's complaint that
+day was that it looked bad and said nothing. A bubble that carries words has to
+be typeset, has to arrive one word at a time as the reader scrolls, and has to
+be able to move without a photograph being regenerated — none of which a shape
+burnt into a one-bit raster can do. It is a DOM layer over the canvas now, in
+src/sections/VoiceSwitch.astro, which owns the crop maths it needs to sit in the
+right place. The one number this file still owes it is the mouth, at
+(0.818, 0.512) of the frame — see MIC_LIGHT, whose falloff reaches the same
+lips.
 
 The palette is baked into the PNGs rather than left to CSS. A mask would let the
 page recolour the dots, but a mask is resampled by the compositor and the crisp
@@ -68,9 +79,9 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageFilter
 
-CANVAS = (0x0A, 0x0A, 0x09)  # --canvas
+CANVAS = (0x06, 0x06, 0x05)  # --canvas
 INK = (0xF7, 0xF7, 0xF4)     # --ink
 
 GRID_W = 720   # dither resolution; the page scales it up with smoothing off
@@ -169,44 +180,6 @@ COLOURED = 0.15
 #: lets the hue be unmistakable anyway.
 TINT = 0.80
 
-#: The speech bubble on the night frame, in fractions of the frame: box, then
-#: the tail's three points. Empty, with three dots inside — no text, ever.
-#:
-#: THE TAIL POINTS AT THE MOUTH. The bubble is what the man is saying, so it
-#: grows out of him the way a speech bubble does anywhere else, and the reader
-#: is told in one shape that the way you work this thing is by talking.
-#:
-#: It pointed at the SCREEN until 2026-08-29 — the argument being that the
-#: bubble was the machine answering — and the maintainer replaced that
-#: direction the same day: "Ich möchte, dass die Sprechblase aus dem Mund
-#: kommt". The tail's two base points now sit on the bubble's BOTTOM edge and
-#: the tip lands on the lips, just clear of the microphone's near end. It
-#: crosses the boom arm on the way down, which is what a bubble drawn over a
-#: photograph does; the fill clears its dots, so it reads as lying on top.
-#:
-#: It is DRAWN HERE rather than asked of the image model, for three reasons: a
-#: model puts letters in a speech bubble whatever the prompt says, its outline
-#: would be dithered into a fuzzy smudge along with everything else, and the
-#: position would move every time a photograph is regenerated. Drawn into the
-#: dot grid after the halftone, it is exactly two dots thick and lands on the
-#: same lattice as the picture.
-#:
-#: These are measured against the photograph, so REGENERATING THE NIGHT FRAME
-#: MEANS RE-MEASURING THEM — the box AND the tail's tip, which has to keep
-#: landing on the mouth. The box sits OFF THE MONITOR — top right, over the dark
-#: wall above the person's head. It used to sit on the glass, which was harmless
-#: while the screen was a bright smudge and is not now that the screen is what
-#: the section is about.
-#:
-#: The mouth in this pair is at (0.821, 0.528) of the frame, measured: the lit
-#: edge of the profile, immediately right of the microphone's near end.
-#:
-#: The vertical placement has a second constraint that is easy to miss and was
-#: measured, not guessed: the page crops this 16:9 frame into a box up to three
-#: times as wide as it is tall, anchored at 0.42 of the height. At that crop
-#: only rows 0.17..0.75 survive on the shortest window the sticky layout still
-#: runs on, and a bubble at 0.15 loses its top edge — which is exactly what the
-#: first version did. Keep the box inside 0.19..0.73.
 #: The microphone, dodged. Centre and radii in fractions of the frame, then the
 #: rotation of its long axis in degrees, the softness of the falloff as a share
 #: of the radius, and the gain in the middle of it.
@@ -224,19 +197,14 @@ TINT = 0.80
 #: measured box when the colour detector may not: the colour rule has to hold
 #: for any frame, and a box there was a bug waiting for the next photograph;
 #: this is a light that the photographer did not set, aimed at one object in one
-#: file. It sits beside BUBBLE because it carries the same contract —
-#: REGENERATING THE NIGHT FRAME MEANS RE-MEASURING IT, or better, lighting the
-#: microphone in the photograph and deleting this.
+#: file. REGENERATING THE NIGHT FRAME MEANS RE-MEASURING IT, or better, lighting
+#: the microphone in the photograph and deleting this.
 #:
 #: Multiplicative, not additive: the mic's own dark bands stay dark relative to
 #: its body, so the shock mount and the cylinder keep their modelling instead of
 #: flooding into one grey shape. The falloff is generous on purpose — it reaches
-#: the lips, which is what the speech bubble's tail now points at.
+#: the lips, which is where the page's speech bubble points.
 MIC_LIGHT = (0.746, 0.532, 0.074, 0.076, -8.0, 0.35, 2.2)
-
-BUBBLE = (0.790, 0.200, 0.952, 0.360)
-BUBBLE_TAIL = ((0.797, 0.358), (0.857, 0.358), (0.821, 0.528))
-BUBBLE_STROKE = 2  # dots
 
 
 def bayer(n: int = 8) -> np.ndarray:
@@ -384,50 +352,6 @@ def render(path: Path, *, invert: bool, retouch: bool) -> tuple[np.ndarray, np.n
     return dots, hue
 
 
-def add_bubble(dots: np.ndarray, hue: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Draw the empty speech bubble into the dot grid.
-
-    Two passes, and both are needed. The FILL clears its dots, so the bubble
-    reads as a hole punched in the picture rather than as a shape floating on
-    top of it; the STROKE then sets the outline and the three dots. Drawing only
-    the outline leaves the room's own dots showing through the middle, and the
-    bubble stops looking like a bubble.
-    """
-    h, w = dots.shape
-    box = [BUBBLE[0] * w, BUBBLE[1] * h, BUBBLE[2] * w, BUBBLE[3] * h]
-    tail = [(x * w, y * h) for x, y in BUBBLE_TAIL]
-    radius = (box[3] - box[1]) * 0.28
-
-    fill = Image.new("1", (w, h), 0)
-    pen = ImageDraw.Draw(fill)
-    pen.rounded_rectangle(box, radius=radius, fill=1)
-    pen.polygon(tail, fill=1)
-
-    stroke = Image.new("1", (w, h), 0)
-    pen = ImageDraw.Draw(stroke)
-    pen.rounded_rectangle(box, radius=radius, outline=1, width=BUBBLE_STROKE)
-    pen.line([tail[0], tail[2], tail[1]], fill=1, width=BUBBLE_STROKE)
-
-    # The three dots, on the box's own centre line.
-    middle = (box[1] + box[3]) / 2
-    spacing = (box[2] - box[0]) / 4
-    size = max(1.0, (box[3] - box[1]) * 0.07)
-    for i in (1, 2, 3):
-        cx = box[0] + spacing * i
-        pen.ellipse([cx - size, middle - size, cx + size, middle + size], fill=1)
-
-    out = dots.copy()
-    out[np.asarray(fill, dtype=bool)] = False
-    out[np.asarray(stroke, dtype=bool)] = True
-
-    # The bubble sits on top of the picture, so it takes the frame's own mark. A
-    # speech bubble drawn in a syntax colour would read as part of the screen.
-    plain = hue.copy()
-    plain[np.asarray(fill, dtype=bool)] = -1
-    plain[np.asarray(stroke, dtype=bool)] = -1
-    return out, plain
-
-
 def to_png(
     dots: np.ndarray,
     hue: np.ndarray,
@@ -455,12 +379,11 @@ def to_png(
 
 #: name -> (source argv index, dots on the dark end, ground, dot colour, retouch)
 #:
-#: `retouch` is the two hand-placed, hand-measured touches the NIGHT frame
-#: carries and the daylight one does not: the microphone's dodge (MIC_LIGHT,
-#: before the halftone) and the speech bubble (BUBBLE, after it). One flag,
-#: because they are one fact — this is the frame with a person speaking in it —
-#: and because they share a contract: regenerate that photograph and both have
-#: to be measured again.
+#: `retouch` is the hand-placed, hand-measured touch the NIGHT frame carries and
+#: the daylight one does not: the microphone's dodge (MIC_LIGHT, before the
+#: halftone). It kept the speech bubble company until 2026-08-29; the bubble is a
+#: DOM layer over the canvas now and this flag is down to one correction, which
+#: still carries its contract — regenerate that photograph and re-measure it.
 FRAMES = (
     ("manual", 1, True, INK, CANVAS, False),
     ("jarvis", 2, False, CANVAS, INK, True),
@@ -478,8 +401,6 @@ def main(argv: list[str]) -> int:
     for name, index, invert, ground, mark, retouch in FRAMES:
         src = Path(argv[index])
         dots, hue = render(src, invert=invert, retouch=retouch)
-        if retouch:
-            dots, hue = add_bubble(dots, hue)
         to_png(dots, hue, ground=ground, mark=mark).save(out / f"{name}.png", optimize=True)
         print(
             f"  {name:7s} {dots.shape[1]}x{dots.shape[0]}"

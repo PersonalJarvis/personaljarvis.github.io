@@ -91,6 +91,23 @@ const captions = {
 };
 
 /**
+ * What the man in the night frame is saying, one word per span.
+ *
+ * IT IS A REQUEST, NOT A GREETING. The section's claim is that real work goes
+ * to a coding agent in an isolated copy of your files, so the sentence has to be
+ * a job somebody would actually hand over — and one the app can honestly take.
+ * "Hey Jarvis" is the wake word every reader already knows the shape of; the
+ * app's own is whatever the owner picks.
+ *
+ * The words arrive ONE AT A TIME as the reader scrolls, which is why they are
+ * split here rather than typed as one string in the markup: each span carries
+ * its index and the stylesheet turns the scroll's own progress into an opacity.
+ * See `[data-word]` in the styles and `--reveal` in the script.
+ */
+const said = "Hey Jarvis, the tests are red. Find out why and fix it.";
+const words = said.split(" ");
+
+/**
  * The figures under the picture. Each is countable in the app's own source;
  * none is a marketing number, and nothing here may be invented.
  *
@@ -220,6 +237,46 @@ const figures = [
                 role="img"
                 aria-label="One desk in two states, dissolving from the first into the second as the page scrolls: by hand in hard daylight, hunched over a keyboard under a screenful of overlapping panels; then the same desk at night, sat back with both hands away, speaking into a microphone, the same editor down to one tidy column of code."
               ></canvas>
+
+              <!--
+                THE SPEECH BUBBLE, AND WHY IT IS HERE RATHER THAN IN THE PNG.
+
+                It was drawn into the dot grid by scripts/dither-scene.py until
+                2026-08-29 — empty, three dots in it, a wide wedge of a tail
+                running down across the man's head. The maintainer's verdict
+                that day was that it looked bad and should carry words that
+                arrive as the reader scrolls. All three of those are things a
+                shape burnt into a one-bit raster cannot do: it cannot be
+                typeset, it cannot animate, and it cannot move without the
+                photograph being regenerated and re-measured.
+
+                So it is two elements over the canvas. The bubble is ordinary
+                type on an ordinary box; the tail is one SVG path, because it
+                has to reach from the bubble's own bottom edge — wherever the
+                text has left it — toward a point measured on the photograph,
+                and no border trick draws a line between two moving points.
+
+                Both are positioned by the script from the SAME cover-crop maths
+                the canvas paints with, so they follow the picture instead of
+                being measured against one window size. That is what retires the
+                old pairing note: the 0.42 anchor and the bubble's box were two
+                hand-set numbers that had to be kept in step by hand.
+              -->
+              <svg data-tail aria-hidden="true" preserveAspectRatio="none">
+                <path data-tail-path></path>
+              </svg>
+
+              <p data-bubble style={`--n: ${words.length}`}>
+                {
+                  words.map((word, i) => (
+                    <Fragment>
+                      <span data-word style={`--i: ${i}`}>
+                        {word}
+                      </span>{" "}
+                    </Fragment>
+                  ))
+                }
+              </p>
             </div>
 
             <figcaption data-caption>
@@ -432,6 +489,79 @@ const figures = [
     visibility: hidden;
   }
 
+  /* --- The speech bubble --------------------------------------------------
+   *
+   * PAPER ON THE NIGHT PICTURE. The night frame is `--canvas` ground with
+   * `--ink` dots, so a bubble filled with `--ink` is simply that frame's own
+   * mark at full coverage — the one patch of the picture that is completely
+   * inked in — and the words are the ground showing back through. That is the
+   * printing this whole section is an argument about, and it is why the bubble
+   * needs no outline: a shape at 100% coverage on a 22% ground already has one.
+   *
+   * The version before this one was the opposite, a hole punched in the picture
+   * with a two-dot outline around it, and against a dark dithered wall the
+   * outline was the only thing holding it together.
+   *
+   * Nothing here is interactive, and `pointer-events: none` says so: the text
+   * is part of the photograph, and a caret blinking in it while the bubble is
+   * still fading in would be nonsense.
+   */
+  [data-bubble] {
+    position: absolute;
+    /* The script writes these two from the picture's own crop. The fallbacks
+     * are only for the frames between first paint and first measure. */
+    right: var(--bubble-right, 4%);
+    bottom: var(--bubble-bottom, 62%);
+    /* Floor plus share, the same shape as every width on this site: a share of
+     * a wide stage, and a pixel floor so a phone-width stage still gets a
+     * readable line rather than a column of single words. */
+    width: max(208px, 27%);
+    margin: 0;
+    padding: var(--space-sm) var(--space-base);
+    border-radius: var(--radius-xl);
+    background: var(--ink);
+    color: var(--canvas);
+    font-size: var(--text-body-sm);
+    line-height: 1.4;
+    text-wrap: balance;
+    opacity: var(--bubble-on, 0);
+    pointer-events: none;
+  }
+
+  /* One word, one index, and the scroll decides how many are in.
+   *
+   * `--reveal` runs 0..1 across the back half of the wipe. Multiplying it by the
+   * word count gives how far the sentence has been said; subtracting this word's
+   * index gives how far THIS word is in. The 1.6 is the overlap — a word is most
+   * of the way up before the next one starts, so the sentence arrives as speech
+   * rather than as a row of items switching on.
+   *
+   * There is deliberately no `transition` on it. The value already comes from
+   * the reader's own scrolling, so a transition would be a second, slower clock
+   * fighting the first: scroll back up and the words would lag behind the
+   * picture they belong to. */
+  [data-word] {
+    opacity: clamp(0, calc((var(--reveal, 0) * var(--n) - var(--i)) * 1.6), 1);
+  }
+
+  /* The tail is a path rather than a bordered pseudo-element because it spans
+   * two points that both move: it leaves the bubble's bottom edge, which the
+   * text's own line count decides, and it aims at the mouth, which the crop
+   * decides. The script writes the `d`; the SVG is just the coordinate space,
+   * so its viewBox is the stage in CSS pixels. */
+  [data-tail] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: var(--bubble-on, 0);
+    pointer-events: none;
+  }
+
+  [data-tail-path] {
+    fill: var(--ink);
+  }
+
   /* --- Caption -----------------------------------------------------------
    * Both captions reserve the same box, so the state change does not shove the
    * figures up and down the page. They are stacked rather than toggled with
@@ -565,8 +695,9 @@ const figures = [
    *             animation, and the head's two columns have collapsed anyway
    *   short     the flex chain gives the picture whatever height is left, and
    *             below about 880px of window that is a 4:1 letterbox slot the
-   *             photograph cannot survive — measured, not assumed: the crop
-   *             starts cutting the speech bubble off the top around there
+   *             photograph cannot survive — measured, not assumed: at that crop
+   *             the picture is down to the monitor and the head, and the
+   *             keyboard and the two hands are outside it
    *   calm      prefers-reduced-motion
    *
    * THIS IS A GEOMETRY DECISION AND NOTHING ELSE. It used to be a mode: the
@@ -695,6 +826,72 @@ const figures = [
   const WIPE_FROM = downTheRail(0.75);
   const WIPE_TO = TURN_DOWN;
 
+  /** The vertical anchor of the crop: 42%, not 50%.
+   *
+   * The stage is much wider than 16:9 once the flex chain has taken its height,
+   * so a centred crop cuts the desk edge away. Biasing upward keeps the head,
+   * the bubble and the desk in frame and loses ceiling instead.
+   *
+   * It used to be a bare literal inside the draw call, paired by a comment with
+   * a hand-measured box in the Python script. Both the picture and the bubble
+   * read it from here now, so the pair cannot drift. */
+  const ANCHOR = 0.42;
+
+  /* --- The speech bubble's geometry, in fractions of the FRAME -------------
+   *
+   * Fractions of the photograph, never of the stage: the stage is cropped and
+   * its shape changes with the window, the photograph does not. The script maps
+   * these through the same cover-crop the canvas paints with.
+   *
+   * MEASURED ON THE NIGHT FRAME, and the two that touch the man have to be
+   * re-measured if that photograph is ever regenerated. The wall above his head
+   * is empty from the top of the frame down to the hairline at 0.396, and the
+   * boom arm crosses below that.
+   */
+
+  /** The bubble's bottom-right corner. It grows up and to the left from here,
+   * so the corner nearest the tail stays put however the text wraps. */
+  const BUBBLE_AT = [0.972, 0.302] as const;
+
+  /** The lips, measured: the lit edge of the profile, just past the near end of
+   * the microphone. The tail points here. */
+  const MOUTH = [0.818, 0.512] as const;
+
+  /** Where the tail leaves the bubble's bottom edge, and where it stops.
+   *
+   * IT STOPS AT THE HAIRLINE, which is the whole point of the number. The
+   * previous tail was a wedge that ran all the way to the lips, straight down
+   * across the man's head — the maintainer's complaint on 2026-08-29 was that
+   * it hung in his face. This one keeps the direction and gives up the last
+   * two thirds of the journey: it leans at exactly the angle that would reach
+   * the mouth and ends above the hair, so the reader's eye finishes the line.
+   *
+   * TAIL_MIN is the floor under that. On a very short window the bubble is
+   * pushed down to stay inside the stage and the gap to the hairline closes; a
+   * tail of nothing reads as a bug, so it keeps 14px and accepts the overlap. */
+  const TAIL_AT = 0.868;
+  const TAIL_END = 0.376;
+  const TAIL_MIN = 14;
+  const TAIL_HALF = 11;
+  const TAIL_BULGE = 5;
+
+  /** Air between the bubble and the top of the stage. The stage clips, so this
+   * is what stops a three-line bubble losing its first line. */
+  const BUBBLE_AIR = 10;
+
+  /** Where the bubble and its words sit on the wipe.
+   *
+   * The bubble fades in while the dissolve is crossing its own corner — the
+   * edge travels right to left, so the top right of the picture turns over
+   * between roughly 0.28 and 0.40 — and the sentence is said across the back
+   * half, finishing early enough to be read before the section lets go.
+   *
+   * Nothing appears on the daylight frame, because nobody is speaking in it. */
+  const BUBBLE_FROM = 0.26;
+  const BUBBLE_TO = 0.4;
+  const WORDS_FROM = 0.42;
+  const WORDS_TO = 0.85;
+
   /** ~30fps. The frames are a dot grid; the extra 30 buy nothing visible and
    * cost a full repaint of the stage. */
   const FRAME_MS = 33;
@@ -705,6 +902,9 @@ const figures = [
     const track = section.querySelector<HTMLElement>("[data-track]")!;
     const stage = section.querySelector<HTMLElement>("[data-stage]")!;
     const view = section.querySelector<HTMLCanvasElement>("[data-canvas]")!;
+    const bubble = section.querySelector<HTMLElement>("[data-bubble]")!;
+    const tail = section.querySelector<SVGSVGElement>("[data-tail]")!;
+    const tailPath = section.querySelector<SVGPathElement>("[data-tail-path]")!;
     const captions = Array.from(section.querySelectorAll<HTMLElement>("[data-caption-for]"));
     const sources = (["manual", "jarvis"] as const).map(
       (name) => section.querySelector<HTMLImageElement>(`[data-source="${name}"]`)!,
@@ -738,6 +938,10 @@ const figures = [
 
     let box = { w: 0, h: 0 };
     let painted = -1;
+    /* The bubble is positioned from measurements, so it is only re-placed when
+     * something that feeds those measurements has moved: the stage's size, the
+     * text's own wrap, or the frame finishing its decode. */
+    let unplaced = true;
 
     /** Sync the canvas backing store to the box and the display density. Returns
      * false while the stage has no size yet — before layout, and while the tab
@@ -757,31 +961,107 @@ const figures = [
         painted = -1; // a resized canvas is a cleared canvas
       }
       for (const c of [ctx, layerCtx]) c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (box.w !== width || box.h !== height) unplaced = true;
       box = { w: width, h: height };
       return true;
     };
 
-    /** Draw one frame over the whole stage, cover-style.
+    /** Where a frame lands on the stage: cover, centred across, biased up.
      *
-     * The vertical anchor is 42%, not 50%: the stage is much wider than 16:9
-     * once the flex chain has taken its height, so a centred crop cuts the
-     * desk edge away. Biasing upward keeps the head, the speech bubble and the
-     * desk in frame and loses ceiling instead. The number is paired with
-     * BUBBLE in scripts/dither-scene.py — moving one without the other clips
-     * the bubble's top edge on a short window. */
+     * ONE COPY OF THIS ARITHMETIC, used by the painter and by the bubble. They
+     * have to agree to the pixel — the tail points at a mouth measured on the
+     * photograph, and a second, slightly different crop is how a tail ends up
+     * pointing at an ear. */
+    const cover = (img: HTMLImageElement) => {
+      const scale = Math.max(box.w / img.naturalWidth, box.h / img.naturalHeight);
+      const w = img.naturalWidth * scale;
+      const h = img.naturalHeight * scale;
+      return { x: (box.w - w) / 2, y: (box.h - h) * ANCHOR, w, h };
+    };
+
+    /** Draw one frame over the whole stage. */
     const drawFrame = (target: CanvasRenderingContext2D, index: number) => {
       const img = sources[index];
       target.fillStyle = grounds[index];
       target.fillRect(0, 0, box.w, box.h);
       if (!img.complete || img.naturalWidth === 0) return;
 
-      const scale = Math.max(box.w / img.naturalWidth, box.h / img.naturalHeight);
-      const w = img.naturalWidth * scale;
-      const h = img.naturalHeight * scale;
+      const at = cover(img);
       /* Smoothing off, or the browser resamples the dither into grey mush and
        * the treatment is simply gone. */
       target.imageSmoothingEnabled = false;
-      target.drawImage(img, (box.w - w) / 2, (box.h - h) * 0.42, w, h);
+      target.drawImage(img, at.x, at.y, at.w, at.h);
+    };
+
+    /** Put the bubble on the photograph and draw its tail.
+     *
+     * Three steps, in this order, because each one needs the last one's answer:
+     * anchor the bubble to a point on the frame, push it back inside the stage
+     * if the text has grown it past the top edge, then draw a tail from the
+     * bottom edge it actually ended up with.
+     *
+     * Returns false while the night frame has no size yet — before its decode,
+     * and before layout has given the stage a box.
+     */
+    const place = (): boolean => {
+      const img = sources[1];
+      if (box.w <= 0 || !img.complete || img.naturalWidth === 0) return false;
+
+      const frame = cover(img);
+      const at = (fx: number, fy: number) => ({
+        x: frame.x + fx * frame.w,
+        y: frame.y + fy * frame.h,
+      });
+
+      const corner = at(BUBBLE_AT[0], BUBBLE_AT[1]);
+      const right = Math.max(0, box.w - corner.x);
+      bubble.style.right = `${right}px`;
+      bubble.style.bottom = `${box.h - corner.y}px`;
+
+      /* The stage clips, so a bubble whose text wrapped to one more line than
+       * the frame has room for would lose its top line rather than overflow.
+       * Measured, not predicted: the wrap depends on the font that actually
+       * loaded. */
+      const stageTop = stage.getBoundingClientRect().top;
+      const over = BUBBLE_AIR - (bubble.getBoundingClientRect().top - stageTop);
+      const bottom = Math.max(0, box.h - corner.y - Math.max(0, over));
+      if (over > 0) bubble.style.bottom = `${bottom}px`;
+
+      /* The tail leaves the bubble's real bottom edge, a pixel inside it so the
+       * two shapes are one silhouette with no seam between them. */
+      const baseY = box.h - bottom - 1;
+      const edgeR = box.w - right;
+      const edgeL = edgeR - bubble.offsetWidth;
+      const baseX = Math.min(
+        Math.max(at(TAIL_AT, 0).x, edgeL + TAIL_HALF + 14),
+        edgeR - TAIL_HALF - 14,
+      );
+
+      const mouth = at(MOUTH[0], MOUTH[1]);
+      let tipY = at(0, TAIL_END).y;
+      if (tipY - baseY < TAIL_MIN) tipY = baseY + TAIL_MIN;
+      const run = mouth.y - baseY;
+      const tipX = baseX + (run > 1 ? ((tipY - baseY) / run) * (mouth.x - baseX) : 0);
+
+      /* Straight down the side facing the mouth, curved on the way back: a
+       * wedge with two straight sides is the shape the old burnt-in tail had,
+       * and it reads as an arrow rather than as speech. */
+      const x1 = baseX - TAIL_HALF;
+      const x2 = baseX + TAIL_HALF;
+      const dx = x2 - tipX;
+      const dy = baseY - tipY;
+      const len = Math.hypot(dx, dy) || 1;
+      const cx = (tipX + x2) / 2 - (dy / len) * TAIL_BULGE;
+      const cy = (tipY + baseY) / 2 + (dx / len) * TAIL_BULGE;
+
+      tail.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
+      tailPath.setAttribute(
+        "d",
+        `M${x1.toFixed(1)} ${baseY.toFixed(1)}` +
+          `L${tipX.toFixed(1)} ${tipY.toFixed(1)}` +
+          `Q${cx.toFixed(1)} ${cy.toFixed(1)} ${x2.toFixed(1)} ${baseY.toFixed(1)}Z`,
+      );
+      return true;
     };
 
     /** Build the dissolve mask: one pixel per cell, alpha only.
@@ -855,8 +1135,27 @@ const figures = [
       for (const caption of captions) caption.hidden = caption.dataset.captionFor !== mode;
     };
 
+    /** 0..1 across one window of a value, clamped at both ends. */
+    const span = (value: number, from: number, to: number) =>
+      Math.min(1, Math.max(0, (value - from) / (to - from)));
+
+    let spoken = -1;
+
+    /** The bubble's two clocks, as plain custom properties on the stage: the box
+     * fades in while the dissolve crosses its corner, and the sentence is said
+     * across the back half. The stylesheet does the per-word arithmetic from
+     * `--reveal`, so this writes two values however long the sentence is. */
+    const speak = (wipe: number) => {
+      if (Math.abs(wipe - spoken) < 0.0015) return;
+      spoken = wipe;
+      stage.style.setProperty("--bubble-on", span(wipe, BUBBLE_FROM, BUBBLE_TO).toFixed(3));
+      stage.style.setProperty("--reveal", span(wipe, WORDS_FROM, WORDS_TO).toFixed(3));
+    };
+
     const render = (wipe: number) => {
       paint(wipe);
+      if (unplaced) unplaced = !place();
+      speak(wipe);
       setMode(wipe >= 0.5 ? "jarvis" : "manual");
     };
 
@@ -870,7 +1169,7 @@ const figures = [
      */
     const fromScroll = (): number => {
       const through = spanProgress(track.getBoundingClientRect(), window.innerHeight);
-      return Math.min(1, Math.max(0, (through - WIPE_FROM) / (WIPE_TO - WIPE_FROM)));
+      return span(through, WIPE_FROM, WIPE_TO);
     };
 
     /* Nothing repaints while the section is off screen. */
@@ -891,12 +1190,28 @@ const figures = [
     /* The first paint has to wait for the frames to decode; until then the
      * stage shows its paper background rather than an empty box. */
     for (const img of sources) {
-      if (!img.complete) img.addEventListener("load", () => (painted = -1), { once: true });
+      if (!img.complete) {
+        img.addEventListener(
+          "load",
+          () => {
+            painted = -1;
+            unplaced = true;
+          },
+          { once: true },
+        );
+      }
     }
 
     /* A resize changes the crop and the cell grid, so the next frame has to
      * repaint even at an unchanged wipe. */
     new ResizeObserver(() => (painted = -1)).observe(stage);
+
+    /* And the bubble is re-placed whenever its own box changes, which is the
+     * one thing the stage's size does not predict: the sentence rewraps at a
+     * different width, and the web font landing after first paint rewraps it
+     * again. Position is set from a measurement, so it has to follow the
+     * measurement rather than a guess about when the text settles. */
+    new ResizeObserver(() => (unplaced = true)).observe(bubble);
 
     /* A reader who asked for less motion gets the night frame and its caption,
      * standing still: the state the section is arguing for, the one carrying

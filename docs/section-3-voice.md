@@ -149,8 +149,9 @@ handed control to two buttons in the picture's corner. The buttons went on
 2026-08-29 and only `prefers-reduced-motion` still means anything to the script,
 so there is no longer a pair of conditions to keep spelled alike.
 
-The 880px figure is measured, not chosen: it is where the crop starts cutting
-the speech bubble off the top of the frame.
+The 880px figure is measured, not chosen: below it the crop is down to the
+monitor and the head, and the keyboard and the two hands — what the daylight
+frame is an argument about — are outside it.
 
 ---
 
@@ -168,7 +169,8 @@ the speech bubble off the top of the frame.
 model puts letters on a monitor whatever the prompt says, and letters do not
 survive a halftone — they dither into a smudge. The generator drew the editor as
 flat shapes and set it on the screen in perspective, which is the same reasoning
-that keeps the speech bubble out of the model's hands (below).
+that keeps the speech bubble out of the model's hands — and, since 2026-08-29,
+off the raster altogether (below).
 
 The sources and the prompt that produced them are committed under
 `src/assets/scene/sources/`. They are not imported anywhere, so the build never
@@ -293,51 +295,84 @@ which is what the speech bubble's tail points at.
 **It is a correction to one photograph, not a rule**, and that is why it may be
 a measured box when the colour detector may not. The colour rule has to hold for
 any frame, and a box there was a bug waiting for the next photograph; this is a
-light the photographer did not set, aimed at one object in one file. It sits
-beside `BUBBLE` because it carries the same contract: **regenerating the night
-frame means re-measuring it** — or better, lighting the microphone in the
-photograph and deleting it.
+light the photographer did not set, aimed at one object in one file. It carries
+its own contract: **regenerating the night frame means re-measuring it** — or
+better, lighting the microphone in the photograph and deleting it.
 
 ### The speech bubble
 
-The night frame carries one empty speech bubble with three dots in it, drawn
-into the dot grid after the halftone. The maintainer asked for it by name on
-2026-08-29.
+The man in the night frame says one sentence, and the reader's scrolling is what
+says it:
 
-**Its tail points at the MOUTH.** The bubble is what the man is saying, so it
-grows out of him the way a speech bubble does anywhere else, and the reader is
-told in one shape that the way you work this thing is by talking. It pointed at
-the *screen* until 2026-08-29 — the argument being that the bubble was the
-machine answering — and the maintainer replaced that direction the same day:
-*"Ich möchte, dass die Sprechblase aus dem Mund kommt"*. The two base points now
-sit on the bubble's bottom edge and the tip lands on the lips at (0.821, 0.528)
-of the frame, measured, just clear of the microphone's near end. It crosses the
-boom arm on the way down, which is what a bubble drawn over a photograph does;
-the fill clears its dots, so it reads as lying on top.
+> Hey Jarvis, the tests are red. Find out why and fix it.
 
-**It is drawn by the script, never asked of the image model.** A model puts
-letters in a speech bubble whatever the prompt says; its outline would be
-dithered into a fuzzy smudge along with everything else; and the position would
-move every time a photograph is regenerated. Drawn into the grid it is exactly
-two dots thick and lands on the same lattice as the picture.
+**It is a request, not a greeting.** The section's claim is that real work goes
+to a coding agent in an isolated copy of your files, so the sentence has to be a
+job somebody would actually hand over and one the app can honestly take. "Hey
+Jarvis" is the wake word every reader already knows the shape of; the app's own
+is whatever the owner picks.
 
-Two passes, and both are needed: the fill clears its dots so the bubble reads as
-a hole punched in the picture, then the stroke sets the outline and the dots.
-Outline alone leaves the room showing through and it stops looking like a
-bubble.
+**The words arrive one at a time.** Each is a span carrying its index, and the
+stylesheet turns `--reveal` — the back half of the wipe, written by the script —
+into an opacity per word: `(reveal × word count − index) × 1.6`, clamped. The
+1.6 is the overlap, so a word is most of the way up before the next one starts
+and the sentence reads as speech rather than as a row of items switching on.
+There is deliberately **no transition** on it: the value already comes from the
+reader's own scrolling, and a transition would be a second, slower clock
+fighting the first — scroll back up and the words would lag behind the picture
+they belong to.
 
-**`BUBBLE` is measured against the photograph.** Regenerating the night frame
-means re-measuring it — the box *and* the tail's tip, which has to keep landing
-on the mouth. It sits **off the monitor** — top right, over the dark wall above
-the person's head. It used to sit on the glass, which was harmless when the
-screen was a bright smudge and is not now that the screen is the subject. It also has a crop constraint: the page crops this 16:9
-frame into a box up to three times as wide as it is tall, anchored at 0.42 of
-the height, so only rows 0.17–0.75 survive on the shortest window the sticky
-layout still runs on. Keep the box inside 0.19–0.73 — a bubble at 0.15 loses its
-top edge, which is exactly what the first version did.
+**It is a DOM layer over the canvas, not part of the PNG.** The bubble was drawn
+into the dot grid by `scripts/dither-scene.py` until 2026-08-29 — empty, three
+dots in it, a wide wedge of a tail running down across the man's head — and the
+maintainer's verdict that day was that it looked bad and should carry words that
+arrive as the reader scrolls. A shape burnt into a one-bit raster can do none of
+those things: it cannot be typeset, it cannot animate, and it cannot move
+without the photograph being regenerated and re-measured.
 
-The 0.42 anchor in `VoiceSwitch.astro` and `BUBBLE` here are a pair. Move one
-without the other and the bubble clips.
+**Paper on the night picture.** The night frame is `--canvas` ground with `--ink`
+dots, so a bubble filled with `--ink` is that frame's own mark at full coverage —
+the one patch of the picture completely inked in — and the words are the ground
+showing back through. That is the printing this whole section argues about, and
+it is why the bubble needs no outline: a shape at 100% coverage on a 22% ground
+already has one. The version before it was the opposite, a hole punched in the
+picture with a two-dot outline, and against a dark dithered wall the outline was
+the only thing holding it together.
+
+**Its tail points at the MOUTH and stops at the hairline.** The bubble is what
+the man is saying, so it grows out of him the way a speech bubble does anywhere
+else. It pointed at the *screen* until 2026-08-29 — the argument being that the
+bubble was the machine answering — and the maintainer replaced that direction
+the same day: *"Ich möchte, dass die Sprechblase aus dem Mund kommt"*. The tail
+still leans at exactly the angle that would reach the lips, measured at
+(0.818, 0.512) of the frame, but it gives up the last two thirds of the journey
+and ends above the hair at 0.376. That is the second half of the same
+complaint — the old wedge ran the whole way down and hung in the man's face.
+The reader's eye finishes the line, which is what a speech bubble has always
+relied on.
+
+The tail is **one SVG path**, not a bordered pseudo-element, because it spans two
+points that both move: it leaves the bubble's bottom edge, which the text's own
+line count decides, and it aims at a point on the photograph, which the crop
+decides. Straight down the side facing the mouth, curved on the way back — two
+straight sides is the shape the burnt-in wedge had, and it reads as an arrow
+rather than as speech.
+
+**Nothing is measured against a window size.** The script maps the bubble's
+anchor, the mouth and the tail's end through the *same* cover-crop function the
+canvas paints the photograph with, so the whole thing follows the picture. Two
+copies of that arithmetic is how a tail ends up pointing at an ear. Then it
+measures what it got: if the text has wrapped to one line more than the stage
+has room for, the bubble is pushed back down until it clears the top edge by
+10px, and the tail — drawn from the bottom edge it actually ended up with —
+follows, down to a 14px floor so a squeezed layout still shows a tail rather
+than nothing. This is what retires the old pairing note between the 0.42 anchor
+and a hand-measured box: there is one number now, and both readers of it get it
+from the same place.
+
+The two fractions that touch the man — the mouth at (0.818, 0.512) and the
+hairline at 0.376 — **have to be re-measured if the night frame is ever
+regenerated.** They live in `VoiceSwitch.astro`, beside the anchor.
 
 ---
 
