@@ -6,10 +6,12 @@
  * than eyeballed: equal cells in a single row, 10px apart, no ornament beyond
  * a hairline. See docs/LOGOS.md.
  *
- * There are far more marks than cells, so each cell is a flip board: it holds
- * a stack of marks and flips to the next one on a stagger. The whole thing is
- * CSS — no JavaScript reaches the browser, and `prefers-reduced-motion` gets a
- * still frame instead of a special case.
+ * There are far more marks than cells, so each cell is a flip board. The card
+ * is what moves, not the mark inside it: a card is hinged along its top edge,
+ * swings down into place carrying its mark, holds, then keeps falling forward
+ * and out while the next one drops in behind it. The whole thing is CSS — no
+ * JavaScript reaches the browser, and `prefers-reduced-motion` gets a still
+ * frame instead of a special case.
  *
  * Sizes are rem throughout. The root font size scales with the viewport
  * (src/styles/layout.css), so a px height would freeze while everything around
@@ -22,18 +24,25 @@ import { marks } from "@/components/logos/marks";
 const CELLS = 8;
 const PER_CELL = 7;
 
-/** Seconds one mark holds before it flips away, and the resulting cycle. */
-const SLOT_S = 3.4;
+/**
+ * One card's turn: it swings down, holds, then falls away. The next card's
+ * turn begins exactly where this one ends, so the three add up to the slot and
+ * two cards are never mid-swing at the same time.
+ */
+const FOLD_IN_S = 0.75;
+const HOLD_S = 3.5;
+const FOLD_OUT_S = 0.75;
+const SLOT_S = FOLD_IN_S + HOLD_S + FOLD_OUT_S;
 const CYCLE_S = SLOT_S * PER_CELL;
 
 /**
- * Every face's delay is negative, so each animation starts already in
- * progress: at the first paint one mark per cell is mid-hold instead of the
- * strip standing empty until the first flip comes round.
+ * Every card's delay is negative, so each animation starts already in
+ * progress: at the first paint one card per cell is resting mid-hold, instead
+ * of the strip standing empty until the first one swings down.
  *
- * The offset carries a per-cell term as well as a per-face one. Without it
- * every cell flips on the same beat, which reads as a machine rather than a
- * board; a fraction of a slot apart, the flip ripples along the row.
+ * The offset carries a per-cell term as well as a per-card one. Without it all
+ * eight cells fall on the same beat, which reads as a mechanism rather than a
+ * board; a fraction of a slot apart, the fall ripples along the row.
  */
 const cellOffset = (c: number) => (c * SLOT_S) / CELLS;
 const startAt = (c: number, r: number) => -(r * SLOT_S + cellOffset(c) + SLOT_S / 2);
@@ -50,11 +59,10 @@ const pool = marks.map((_, i) => marks[(i * STRIDE) % marks.length]);
 // Padding, because the grid holds a few more slots than there are marks.
 //
 // Which mark fills a spare slot matters. Padding from the start of the pool
-// puts a copy roughly one slot away from its original in time, and since a
-// mark is on screen for slightly longer than one slot, both copies are briefly
-// visible at once — two GitLabs side by side. Taking the filler from half a
-// cycle back instead separates the pair by three slots, which is far wider
-// than the window either of them is visible for.
+// puts a copy about one slot away from its original in time, and a card is on
+// screen for a whole slot, so both copies end up visible at once — two GitLabs
+// side by side. Taking the filler from half a cycle back instead separates the
+// pair by three slots, far wider than either is on screen for.
 const PAD_BACK = Math.floor(PER_CELL / 2) * CELLS;
 while (pool.length < CELLS * PER_CELL) pool.push(pool[pool.length - PAD_BACK]);
 
@@ -67,11 +75,11 @@ const visibility = [
   "",
   "",
   "",
-  "hidden sm:flex",
-  "hidden lg:flex",
-  "hidden lg:flex",
-  "hidden 2xl:flex",
-  "hidden 2xl:flex",
+  "hidden sm:block",
+  "hidden lg:block",
+  "hidden lg:block",
+  "hidden 2xl:block",
+  "hidden 2xl:block",
 ];
 ---
 
@@ -88,7 +96,7 @@ const visibility = [
           <li class={`cell ${visibility[c]}`}>
             {stack.map(({ name, Mark, rem }, r) => (
               <span
-                class="face"
+                class="card"
                 style={`--delay:${startAt(c, r).toFixed(2)}s; --mark:${rem}rem`}
               >
                 <Mark className="mark" />
@@ -112,66 +120,79 @@ const visibility = [
     color: var(--muted);
   }
 
+  /*
+   * The cell is only a slot in the row: it holds the space and supplies the
+   * depth. Everything visible belongs to the card inside it, because the card
+   * is what moves.
+   */
   .cell {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 8rem;
-    padding-inline: 1rem;
-    border: 1px solid var(--hairline);
-    border-radius: var(--radius-lg);
-    background: var(--surface-card);
-    /* The flip needs depth to read as a flip rather than a squash. Kept
+    height: 6.5rem;
+    /* The fold needs depth to read as a fold rather than a squash. Kept
        shallow: a strong perspective on a wide cell skews the mark. */
-    perspective: 40rem;
+    perspective: 45rem;
   }
 
-  .face {
+  /*
+   * A card is hinged along its top edge. It starts folded up and out of sight,
+   * swings down into place, holds, then keeps going and falls forward out of
+   * the frame while the next card drops in behind it.
+   */
+  .card {
     position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding-inline: 1rem;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    background: var(--surface-card);
     color: var(--ink);
-    opacity: 0;
-    transform: rotateX(-90deg);
+    transform-origin: top center;
     backface-visibility: hidden;
-    animation: mark-flip var(--cycle) linear infinite;
+    animation: card-fall var(--cycle) linear infinite;
     animation-delay: var(--delay);
   }
 
-  .face :global(.mark) {
+  .card :global(.mark) {
     /*
      * One knob for the whole strip. Each mark carries its own optical height
      * (docs/LOGOS.md); this scales all of them together, so "the marks are too
-     * small" is one number here rather than fifty in marks.ts. At 1.15 a mark
-     * fills about 36% of the cell's height, near the reference's 40%.
+     * small" is one number here rather than fifty in marks.ts.
      */
-    height: calc(var(--mark) * 1.15);
+    height: calc(var(--mark) * 1.1);
     width: auto;
   }
 
   /*
-   * One slot is 100/7 = 14.286% of the cycle. The flip itself takes 0.55s,
-   * which is 2.31% of the 23.8s cycle at either end; the rest of the slot is
-   * the mark holding still, and the remaining 85.7% is spent edge-on and
-   * invisible while the other six marks take their turn.
+   * One slot is 100/7 = 14.286% of the cycle, and the three phases fill it
+   * exactly: the fold in takes 0.75s (2.143%), the hold 3.5s (10%), the fall
+   * out another 0.75s. The next card's fold begins where this card's fall
+   * ends, so no two cards are ever mid-swing together. The remaining 85.7% is
+   * spent folded away and invisible while the other six take their turn.
+   *
+   * The easing is per phase: the card drops in and settles, then tips out
+   * slowly before accelerating away. A single linear rotation reads as a
+   * mechanism rather than something falling.
    */
-  @keyframes mark-flip {
+  @keyframes card-fall {
     0% {
       transform: rotateX(-90deg);
-      opacity: 0;
+      opacity: 1;
+      animation-timing-function: cubic-bezier(0.22, 0.8, 0.3, 1);
     }
-    2.31% {
+    2.143% {
       transform: rotateX(0deg);
       opacity: 1;
+      animation-timing-function: linear;
     }
-    11.97% {
+    12.143% {
       transform: rotateX(0deg);
       opacity: 1;
+      animation-timing-function: cubic-bezier(0.7, 0, 0.85, 0.6);
     }
-    14.29% {
+    14.286% {
       transform: rotateX(90deg);
       opacity: 0;
     }
@@ -181,12 +202,17 @@ const visibility = [
     }
   }
 
+  /*
+   * No motion: the strip becomes a plain row of cards. The first card in each
+   * cell stays put and the rest never appear.
+   */
   @media (prefers-reduced-motion: reduce) {
-    .face {
+    .card {
       animation: none;
       transform: none;
+      opacity: 0;
     }
-    .face:first-child {
+    .card:first-child {
       opacity: 1;
     }
   }

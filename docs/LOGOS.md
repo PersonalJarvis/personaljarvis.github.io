@@ -10,8 +10,10 @@ command-line tools it drives, and the plugins it connects. It is one section,
 `src/components/logos/`, and one generated list in
 `src/components/logos/marks.ts`.
 
-There are fifty marks and eight cells, so each cell is a flip board: it holds a
-stack of marks and flips to the next on a stagger.
+There are fifty marks and eight cells, so each cell is a flip board. The card
+is what moves, not the mark inside it: a card hangs from its top edge, swings
+down carrying its mark, holds, then keeps falling forward and out while the
+next one drops in behind it.
 
 ---
 
@@ -142,17 +144,26 @@ in `LogoStrip.astro` — not the fifty values in `marks.ts`.
 
 ---
 
-## The flip
+## The fall
 
-Each cell holds seven marks and shows one at a time. A mark flips in, holds for
-about three seconds, and flips out edge-on while the next flips in.
+Each cell holds seven cards and shows one at a time. **The card is the moving
+part**, hinged along its top edge — not the mark rotating inside a card that
+stays put. A card swings down into place, holds, then keeps falling forward and
+out of frame while the next drops in behind it.
+
+One card's turn is five seconds: 0.75s down, 3.5s holding, 0.75s falling away.
+The next card's fall begins exactly where the previous one's ends, so two cards
+are never mid-swing together. Seven cards make a 35-second cycle.
 
 - **CSS only.** No JavaScript reaches the browser. The stagger is an
-  `animation-delay` per face, and the delays are **negative**, so every
-  animation starts already in progress: at the first paint one mark per cell is
-  mid-hold instead of the strip standing empty until the first flip.
+  `animation-delay` per card, and the delays are **negative**, so every
+  animation starts already in progress: at the first paint one card per cell
+  rests mid-hold instead of the strip standing empty until the first one falls.
+- **The easing changes per phase.** The card drops and settles, then tips
+  slowly before accelerating away. One linear rotation throughout reads as a
+  mechanism rather than something falling.
 - **Cells are offset against each other** by a fraction of a slot. Without that
-  all eight flip on the same beat, which reads as a machine rather than a
+  all eight fall on the same beat, which reads as a machine rather than a
   board.
 - **The order is strided, not alphabetical.** `marks.ts` is sorted by name and
   the cells run nearly in phase, so a straight fill put Slack, Spotify, Stripe
@@ -161,12 +172,12 @@ about three seconds, and flips out edge-on while the next flips in.
   every mark exactly once, and it is fixed rather than random.
 - **Spare slots are padded from half a cycle back.** Fifty marks do not fill
   fifty-six slots, so six marks appear twice per cycle. Padding from the start
-  of the pool put a copy about one slot from its original, and a mark is on
-  screen slightly longer than one slot — two GitLabs, side by side. Taking the
-  filler from three rows back separates each pair by 10.2s against a 2.85s
-  visible window.
+  of the pool put a copy about one slot from its original, and a card is on
+  screen for a whole slot — two GitLabs, side by side. Taking the filler from
+  three rows back separates each pair by 15s, three times the window either is
+  on screen for.
 - **`prefers-reduced-motion` gets a still frame**, not a special case: the
-  animation is switched off and the first mark in each cell stays visible.
+  animation is switched off and the first card in each cell stays visible.
 
 ---
 
@@ -178,12 +189,12 @@ outlined and are not.
 | Property | Reference | Ours |
 |---|---|---|
 | Cells | 8 equal columns, one row | 8 from `2xl`, 6 from `lg`, 4 from `sm`, 3 below |
-| Cell size | 154 × 100px | Width follows the grid; height 8rem |
+| Cell size | 154 × 100px | Width follows the grid; height 6.5rem |
 | Gap | 10px | 10px |
 | Cell surface | a 2% darker plate, 4px radius, **no border** | card surface, 1px hairline, `--radius-lg` |
 | Mark colour | `currentColor` at full body ink | `currentColor` at `--ink` |
 | Mark size | one shared 40px height | per mark, about 36% of cell height |
-| Contents | eight fixed customer logos | fifty marks on a flip board |
+| Contents | eight fixed customer logos | fifty marks on a falling flip board |
 
 ### Deliberate deviations
 
@@ -194,7 +205,7 @@ outlined and are not.
 - **Per-mark sizing.** The reference sets one height for every mark, which
   works there because its logos are wordmarks of similar weight. Ours are
   square icons, where a shared height reads as an accident.
-- **The flip.** The reference is static. This was asked for.
+- **The fall.** The reference is static. This was asked for.
 
 ---
 
