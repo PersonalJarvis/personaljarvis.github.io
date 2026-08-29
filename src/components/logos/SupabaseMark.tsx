@@ -1,0 +1,24 @@
+/**
+ * SupabaseMark — the Supabase mark.
+ *
+ * Converted from the bundled original; source and licence are recorded in
+ * docs/LOGOS.md. Every colour is stripped, so the mark inherits the
+ * surrounding text colour through `currentColor` and needs no second asset
+ * for dark mode.
+ */
+export function SupabaseMark({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 256 263"
+      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M149.601512,258.578826 C142.884085,267.038157 129.263882,262.403261 129.102024,251.601817 L126.735244,93.6176533 L232.963622,93.6176533 C252.204429,93.6176533 262.935398,115.840956 250.971119,130.909887 L149.601512,258.578826 Z" />
+      <path d="M149.601512,258.578826 C142.884085,267.038157 129.263882,262.403261 129.102024,251.601817 L126.735244,93.6176533 L232.963622,93.6176533 C252.204429,93.6176533 262.935398,115.840956 250.971119,130.909887 L149.601512,258.578826 Z" />
+      <path d="M106.399023,4.36908575 C113.11645,-4.09118439 126.736889,0.544432392 126.898746,11.3460249 L127.935901,169.329953 L23.0369844,169.329953 C3.79559007,169.329953 -6.93568494,147.106651 5.02918175,132.037719 L106.399023,4.36908575 Z" />
+    </svg>
+  );
+}

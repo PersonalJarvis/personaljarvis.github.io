@@ -1,81 +1,193 @@
 ---
 /**
- * The provider strip — the marks of the model providers Jarvis runs on.
+ * The connection strip — every service Jarvis talks to, in one row.
  *
  * Layout follows the bar under the hero on the reference site, measured rather
- * than eyeballed: equal cells in one grid, 10px apart, 64px tall on a phone and
- * 100px from md up, and no ornament beyond that. See docs/LOGOS.md.
+ * than eyeballed: equal cells in a single row, 10px apart, no ornament beyond
+ * a hairline. See docs/LOGOS.md.
  *
- * Two things deviate from that reference, both on purpose and both recorded in
- * docs/LOGOS.md: the cells carry a hairline (this system's own card treatment),
- * and each mark gets its own height instead of one shared value — see the
- * `height` field below.
+ * There are far more marks than cells, so each cell is a flip board: it holds
+ * a stack of marks and flips to the next one on a stagger. The whole thing is
+ * CSS — no JavaScript reaches the browser, and `prefers-reduced-motion` gets a
+ * still frame instead of a special case.
+ *
+ * Sizes are rem throughout. The root font size scales with the viewport
+ * (src/styles/layout.css), so a px height would freeze while everything around
+ * it grew — which is exactly how this strip first read as too small.
  */
 import Container from "@/components/Container.astro";
+import { marks } from "@/components/logos/marks";
 
-import { AnthropicMark } from "@/components/logos/AnthropicMark";
-import { AntigravityMark } from "@/components/logos/AntigravityMark";
-import { CartesiaMark } from "@/components/logos/CartesiaMark";
-import { ElevenLabsMark } from "@/components/logos/ElevenLabsMark";
-import { GeminiMark } from "@/components/logos/GeminiMark";
-import { GoogleCloudMark } from "@/components/logos/GoogleCloudMark";
-import { GroqMark } from "@/components/logos/GroqMark";
-import { NvidiaMark } from "@/components/logos/NvidiaMark";
-import { OllamaMark } from "@/components/logos/OllamaMark";
-import { OpenAiMark } from "@/components/logos/OpenAiMark";
-import { OpenRouterMark } from "@/components/logos/OpenRouterMark";
-import { XaiMark } from "@/components/logos/XaiMark";
+/** Cells in the row at the widest breakpoint, and marks stacked in each. */
+const CELLS = 8;
+const PER_CELL = 7;
+
+/** Seconds one mark holds before it flips away, and the resulting cycle. */
+const SLOT_S = 3.4;
+const CYCLE_S = SLOT_S * PER_CELL;
 
 /**
- * `height` is an optical value, not a measurement. Marks of equal box height
- * do not read as equal size: a sparse one (the Ollama outline) looks smaller
- * than a solid one (the ElevenLabs bars) at the same height.
+ * Every face's delay is negative, so each animation starts already in
+ * progress: at the first paint one mark per cell is mid-hold instead of the
+ * strip standing empty until the first flip comes round.
  *
- * These numbers were derived rather than guessed. Each mark was rendered and
- * its ink area sampled; perceived size tracks the square root of that area, so
- * the height that equalises it is `current × median ÷ own`. The raw result is
- * damped to roughly two thirds, because a mark that is sparse *and* wide
- * (Ollama again) would otherwise grow physically larger than its neighbours
- * and trade one imbalance for another.
- *
- * They are literal Tailwind classes on purpose: the scanner only generates
- * utilities it can read as strings in the source, so an interpolated
- * `h-[${n}px]` would silently produce no CSS at all.
+ * The offset carries a per-cell term as well as a per-face one. Without it
+ * every cell flips on the same beat, which reads as a machine rather than a
+ * board; a fraction of a slot apart, the flip ripples along the row.
  */
-const marks = [
-  { name: "Anthropic Claude", Mark: AnthropicMark, height: "h-[27px]" },
-  { name: "OpenAI", Mark: OpenAiMark, height: "h-[27px]" },
-  { name: "Google Gemini", Mark: GeminiMark, height: "h-[29px]" },
-  { name: "Google Cloud Vertex AI", Mark: GoogleCloudMark, height: "h-[25px]" },
-  { name: "xAI Grok", Mark: XaiMark, height: "h-[31px]" },
-  { name: "OpenRouter", Mark: OpenRouterMark, height: "h-[25px]" },
-  { name: "NVIDIA", Mark: NvidiaMark, height: "h-[27px]" },
-  { name: "Groq", Mark: GroqMark, height: "h-[31px]" },
-  { name: "Ollama", Mark: OllamaMark, height: "h-[34px]" },
-  { name: "ElevenLabs", Mark: ElevenLabsMark, height: "h-[24px]" },
-  { name: "Antigravity", Mark: AntigravityMark, height: "h-[27px]" },
-  { name: "Cartesia", Mark: CartesiaMark, height: "h-[26px]" },
+const cellOffset = (c: number) => (c * SLOT_S) / CELLS;
+const startAt = (c: number, r: number) => -(r * SLOT_S + cellOffset(c) + SLOT_S / 2);
+
+// The marks list is alphabetical, and the cells run nearly in phase, so a
+// straight fill puts Slack, Spotify, Stripe and Supabase on screen together —
+// which reads as a sorted directory rather than a set of partners. Walking the
+// list in strides instead scatters neighbours apart. The stride is coprime
+// with the list length, so it visits every mark exactly once, and it is fixed
+// rather than random: the same build must produce the same strip.
+const STRIDE = 23;
+const pool = marks.map((_, i) => marks[(i * STRIDE) % marks.length]);
+
+// Padding, because the grid holds a few more slots than there are marks.
+//
+// Which mark fills a spare slot matters. Padding from the start of the pool
+// puts a copy roughly one slot away from its original in time, and since a
+// mark is on screen for slightly longer than one slot, both copies are briefly
+// visible at once — two GitLabs side by side. Taking the filler from half a
+// cycle back instead separates the pair by three slots, which is far wider
+// than the window either of them is visible for.
+const PAD_BACK = Math.floor(PER_CELL / 2) * CELLS;
+while (pool.length < CELLS * PER_CELL) pool.push(pool[pool.length - PAD_BACK]);
+
+const columns = Array.from({ length: CELLS }, (_, c) =>
+  Array.from({ length: PER_CELL }, (_, r) => pool[r * CELLS + c]),
+);
+
+/** Which cells survive at which width — the row never wraps. */
+const visibility = [
+  "",
+  "",
+  "",
+  "hidden sm:flex",
+  "hidden lg:flex",
+  "hidden lg:flex",
+  "hidden 2xl:flex",
+  "hidden 2xl:flex",
 ];
 ---
 
-<section aria-labelledby="providers-label" class="py-20">
+<section aria-labelledby="connects-label" class="py-20">
   <Container width="content">
-    <p
-      id="providers-label"
-      class="text-center text-[11px] font-semibold uppercase tracking-[0.88px] text-muted"
-    >
-      Runs on any of these
-    </p>
+    <p id="connects-label" class="eyebrow">Everything Jarvis connects</p>
 
-    <ul class="mt-6 grid grid-cols-3 gap-[10px] sm:grid-cols-4 lg:grid-cols-6">
+    <ul
+      class="mt-8 grid grid-cols-3 gap-[10px] sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-8"
+      style={`--cycle:${CYCLE_S}s`}
+    >
       {
-        marks.map(({ name, Mark, height }) => (
-          <li class="flex h-16 items-center justify-center rounded-md border border-hairline bg-card px-4 md:h-[100px]">
-            <Mark className={`${height} w-auto text-ink`} />
-            <span class="sr-only">{name}</span>
+        columns.map((stack, c) => (
+          <li class={`cell ${visibility[c]}`}>
+            {stack.map(({ name, Mark, rem }, r) => (
+              <span
+                class="face"
+                style={`--delay:${startAt(c, r).toFixed(2)}s; --mark:${rem}rem`}
+              >
+                <Mark className="mark" />
+                <span class="sr-only">{name}</span>
+              </span>
+            ))}
           </li>
         ))
       }
     </ul>
   </Container>
 </section>
+
+<style>
+  .eyebrow {
+    text-align: center;
+    font-size: var(--text-caption-upper);
+    font-weight: 600;
+    letter-spacing: var(--tracking-caption-upper);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .cell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 8rem;
+    padding-inline: 1rem;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    background: var(--surface-card);
+    /* The flip needs depth to read as a flip rather than a squash. Kept
+       shallow: a strong perspective on a wide cell skews the mark. */
+    perspective: 40rem;
+  }
+
+  .face {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink);
+    opacity: 0;
+    transform: rotateX(-90deg);
+    backface-visibility: hidden;
+    animation: mark-flip var(--cycle) linear infinite;
+    animation-delay: var(--delay);
+  }
+
+  .face :global(.mark) {
+    /*
+     * One knob for the whole strip. Each mark carries its own optical height
+     * (docs/LOGOS.md); this scales all of them together, so "the marks are too
+     * small" is one number here rather than fifty in marks.ts. At 1.15 a mark
+     * fills about 36% of the cell's height, near the reference's 40%.
+     */
+    height: calc(var(--mark) * 1.15);
+    width: auto;
+  }
+
+  /*
+   * One slot is 100/7 = 14.286% of the cycle. The flip itself takes 0.55s,
+   * which is 2.31% of the 23.8s cycle at either end; the rest of the slot is
+   * the mark holding still, and the remaining 85.7% is spent edge-on and
+   * invisible while the other six marks take their turn.
+   */
+  @keyframes mark-flip {
+    0% {
+      transform: rotateX(-90deg);
+      opacity: 0;
+    }
+    2.31% {
+      transform: rotateX(0deg);
+      opacity: 1;
+    }
+    11.97% {
+      transform: rotateX(0deg);
+      opacity: 1;
+    }
+    14.29% {
+      transform: rotateX(90deg);
+      opacity: 0;
+    }
+    100% {
+      transform: rotateX(90deg);
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .face {
+      animation: none;
+      transform: none;
+    }
+    .face:first-child {
+      opacity: 1;
+    }
+  }
+</style>

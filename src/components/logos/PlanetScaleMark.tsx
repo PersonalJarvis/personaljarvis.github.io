@@ -1,14 +1,12 @@
 /**
- * AntigravityMark — the Antigravity mark.
+ * PlanetScaleMark — the PlanetScale mark.
  *
  * Converted from the bundled original; source and licence are recorded in
  * docs/LOGOS.md. Every colour is stripped, so the mark inherits the
  * surrounding text colour through `currentColor` and needs no second asset
  * for dark mode.
- *
- * Conversion note: mask outline.
  */
-export function AntigravityMark({ className }: { className?: string }) {
+export function PlanetScaleMark({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -18,7 +16,7 @@ export function AntigravityMark({ className }: { className?: string }) {
       aria-hidden="true"
       focusable="false"
     >
-      <path d="M21.751 22.607c1.34 1.005 3.35.335 1.508-1.508C17.73 15.74 18.904 1 12.037 1 5.17 1 6.342 15.74.815 21.1c-2.01 2.009.167 2.511 1.507 1.506 5.192-3.517 4.857-9.714 9.715-9.714 4.857 0 4.522 6.197 9.714 9.715z" />
+      <path d="M0 12C0 5.373 5.373 0 12 0c4.873 0 9.067 2.904 10.947 7.077l-15.87 15.87a11.981 11.981 0 0 1-1.935-1.099L14.99 12H12l-8.485 8.485A11.962 11.962 0 0 1 0 12Zm12.004 12L24 12.004C23.998 18.628 18.628 23.998 12.004 24Z" />
     </svg>
   );
 }

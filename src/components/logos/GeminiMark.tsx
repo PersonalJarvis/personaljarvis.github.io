@@ -3,11 +3,10 @@
  *
  * Converted from the bundled original; source and licence are recorded in
  * docs/LOGOS.md. Every colour is stripped, so the mark inherits the
- * surrounding text colour through `currentColor` and follows light and dark
- * mode by itself.
+ * surrounding text colour through `currentColor` and needs no second asset
+ * for dark mode.
  *
- * Sizing is the caller's job. LogoStrip.astro sets a height per mark, because
- * a sparse mark and a dense one do not read as the same size at equal height.
+ * Conversion note: one of four stacked copies.
  */
 export function GeminiMark({ className }: { className?: string }) {
   return (

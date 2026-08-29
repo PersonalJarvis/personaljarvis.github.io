@@ -1,14 +1,12 @@
 /**
- * AntigravityMark — the Antigravity mark.
+ * RenderMark — the Render mark.
  *
  * Converted from the bundled original; source and licence are recorded in
  * docs/LOGOS.md. Every colour is stripped, so the mark inherits the
  * surrounding text colour through `currentColor` and needs no second asset
  * for dark mode.
- *
- * Conversion note: mask outline.
  */
-export function AntigravityMark({ className }: { className?: string }) {
+export function RenderMark({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -18,7 +16,7 @@ export function AntigravityMark({ className }: { className?: string }) {
       aria-hidden="true"
       focusable="false"
     >
-      <path d="M21.751 22.607c1.34 1.005 3.35.335 1.508-1.508C17.73 15.74 18.904 1 12.037 1 5.17 1 6.342 15.74.815 21.1c-2.01 2.009.167 2.511 1.507 1.506 5.192-3.517 4.857-9.714 9.715-9.714 4.857 0 4.522 6.197 9.714 9.715z" />
+      <path d="M18.263.007c-3.121-.147-5.744 2.109-6.192 5.082-.018.138-.045.272-.067.405-.696 3.703-3.936 6.507-7.827 6.507-1.388 0-2.691-.356-3.825-.979a.2024.2024 0 0 0-.302.178V24H12v-8.999c0-1.656 1.338-3 2.987-3h2.988c3.382 0 6.103-2.817 5.97-6.244-.12-3.084-2.61-5.603-5.682-5.75" />
     </svg>
   );
 }

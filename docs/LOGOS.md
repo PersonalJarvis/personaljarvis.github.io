@@ -1,47 +1,17 @@
-# Logos — the provider strip
+# Logos — the connection strip
 
 > Builds on [`layout.md`](layout.md) and [`design.md`](design.md). Widths come
 > from the `Container`, colour and rhythm from the tokens. This file governs
 > only what is specific to the marks themselves.
 
-The strip sits directly under the hero and shows the model providers Jarvis
-runs on. It is one section: `src/sections/LogoStrip.astro`, with one component
-per mark in `src/components/logos/`.
+The strip shows every service Jarvis talks to — model providers, the
+command-line tools it drives, and the plugins it connects. It is one section,
+`src/sections/LogoStrip.astro`, one component per mark in
+`src/components/logos/`, and one generated list in
+`src/components/logos/marks.ts`.
 
----
-
-## Which logos
-
-Sources are the marks already bundled in the app checkout, whose provenance and
-licence are recorded in its own ledger (`src/assets/providers/LOGOS.md` there).
-Paths below are relative to that folder.
-
-| Company | Source file | Status |
-|---|---|---|
-| OpenAI | `openai.svg` | Ready — already single-colour, one path |
-| xAI (Grok) | `xai.svg` | Ready — already single-colour |
-| OpenRouter | `openrouter.svg` | Ready — already single-colour |
-| Groq | `groq.svg` | Ready — already single-colour |
-| Ollama | `ollama.svg` | Ready — already single-colour |
-| ElevenLabs | `elevenlabs.svg` | Ready — already single-colour |
-| Anthropic (Claude) | `claude.svg` | Converted — one path, one colour value dropped |
-| NVIDIA | `nvidia.svg` | Converted — one path, one colour value dropped |
-| Google Gemini | `gemini.svg` | Converted — four copies of one path behind six gradients; one kept |
-| Google Cloud (Vertex AI) | `google-cloud.svg` | Converted — four colour areas that tile into the standard mono cloud |
-| Antigravity | `antigravity.svg` | Converted — the mask outline is the mark; the blurred colour blobs behind it are dropped |
-| Cartesia | `cartesia.svg` | Converted — the green plate rectangle dropped, the glyph kept |
-| Inworld | `inworld.png` | **Not used** — a 180×180 raster, so no `currentColor` component is possible |
-
-Twelve marks are in use. The conversion is scripted, not hand-copied, and the
-script refuses to write a file in which a hex value survived.
-
-### Trademark
-
-Every mark belongs to its owner. They identify the service a provider connects
-to — nominative use — and never imply endorsement, sponsorship, or affiliation.
-A permissive licence on an SVG settles the copyright in the drawing; it grants
-no trademark rights, and nothing here claims otherwise. If you own a mark shown
-here and want it removed, open an issue and it will be taken out.
+There are fifty marks and eight cells, so each cell is a flip board: it holds a
+stack of marks and flips to the next on a stagger.
 
 ---
 
@@ -49,17 +19,154 @@ here and want it removed, open an issue and it will be taken out.
 
 These are binding.
 
-1. **The layout model is the bar under the hero on the reference site** —
-   its cell division, height, hairlines and restraint. Not the companies shown
-   there; those are its customers, ours are our providers.
-2. **Every mark is a React component with `fill="currentColor"`.** No hardcoded
-   colour survives conversion. The mark inherits the surrounding text colour,
-   so light and dark mode need no second asset.
-3. **Optical size is set per mark, not one shared `max-height`.** Two marks of
-   equal box height do not read as equal size: a sparse mark looks smaller than
-   a solid one. The heights live in the `marks` array in `LogoStrip.astro`.
-4. **Nothing here is invented.** A case this file does not cover is a question
+1. **One row.** The strip never wraps. Cells are dropped at narrower
+   breakpoints instead — three on a phone, four from `sm`, six from `lg`,
+   eight from `2xl`.
+2. **The layout model is the bar under the hero on the reference site** — its
+   cell division, height, hairlines and restraint. Not the companies shown
+   there; those are its customers, ours are our connections.
+3. **Every mark is a React component with `fill="currentColor"`.** No hardcoded
+   colour survives conversion, so one asset serves light and dark mode.
+4. **Optical size is set per mark, not one shared height.** Two marks of equal
+   box height do not read as equal size. The values live in `marks.ts`; the
+   strip scales all of them together with one factor in `LogoStrip.astro`.
+5. **Sizes are rem, never px.** The root font size scales with the viewport
+   (`layout.css`), so a px height freezes while everything around it grows.
+   This is exactly how the strip first came out too small to read.
+6. **Nothing here is invented.** A case this file does not cover is a question
    for the maintainer, not a decision for whoever is editing.
+
+---
+
+## Which logos
+
+Sources are the marks bundled in the app checkout, whose provenance and licence
+are recorded in its own ledgers (`src/assets/{providers,clis,brands}/LOGOS.md`
+there). Paths below are relative to that folder.
+
+The conversion is scripted, not hand-copied, and the script refuses to write a
+file in which a hex value survived. Four shapes of problem come up, and the
+"Conversion" column says which applied.
+
+<!-- Generated by the conversion script; regenerate rather than hand-editing. -->
+
+| Company | Source file | Conversion | Optical height |
+|---|---|---|---|
+| Airtable | `brands/airtable.svg` | Sat on a coloured plate — the plate is dropped, the glyph kept | 2.85 rem |
+| Anthropic Claude | `providers/claude.svg` | Single colour already — taken as it is | 2.55 rem |
+| Antigravity | `providers/antigravity.svg` | Colour blobs behind a mask — the mask outline is the mark | 2.7 rem |
+| Asana | `brands/asana.svg` | Single colour already — taken as it is | 2.5 rem |
+| AWS | `clis/aws.svg` | Single colour already — taken as it is | 3.15 rem |
+| Cal.com | `brands/cal_com.svg` | Single colour already — taken as it is | 3.4 rem |
+| Canva | `brands/canva.svg` | Light glyph on a coloured plate — the glyph is punched out as a hole | 2.75 rem |
+| Cartesia | `providers/cartesia.svg` | Sat on a coloured plate — the plate is dropped, the glyph kept | 2.4 rem |
+| ClickUp | `brands/clickup.svg` | Single colour already — taken as it is | 2.75 rem |
+| Cloudflare | `clis/cloudflare.svg` | Single colour already — taken as it is | 2.9 rem |
+| Discord | `brands/discord.svg` | Single colour already — taken as it is | 2.35 rem |
+| Docker | `clis/docker.svg` | Single colour already — taken as it is | 2.65 rem |
+| Dropbox | `brands/dropbox.svg` | Single colour already — taken as it is | 2.55 rem |
+| ElevenLabs | `providers/elevenlabs.svg` | Single colour already — taken as it is | 2.55 rem |
+| Firebase | `clis/firebase.svg` | Light glyph on a coloured plate — the glyph is punched out as a hole | 2.4 rem |
+| Fly.io | `clis/fly.svg` | Light glyph on a coloured plate — the glyph is punched out as a hole | 2.15 rem |
+| Gmail | `brands/gmail.svg` | Light glyph on a coloured plate — the glyph is punched out as a hole | 2.45 rem |
+| GitHub | `clis/github.svg` | Single colour already — taken as it is | 2.5 rem |
+| GitLab | `clis/gitlab.svg` | Single colour already — taken as it is | 2.3 rem |
+| Google Calendar | `brands/google_calendar.svg` | Light glyph on a coloured plate — the glyph is punched out as a hole | 2.0 rem |
+| Google Cloud | `providers/google-cloud.svg` | Single colour already — taken as it is | 2.5 rem |
+| Google Drive | `brands/google_drive.svg` | Light glyph on a coloured plate — the glyph is punched out as a hole | 2.3 rem |
+| Google Gemini | `providers/gemini.svg` | Four copies of one shape behind gradients — one kept | 2.85 rem |
+| Google Workspace | `clis/google.svg` | Single colour already — taken as it is | 2.4 rem |
+| Groq | `providers/groq.svg` | Single colour already — taken as it is | 3.1 rem |
+| Heroku | `clis/heroku.svg` | Single colour already — taken as it is | 2.75 rem |
+| Home Assistant | `brands/home_assistant.svg` | Sat on a coloured plate — the plate is dropped, the glyph kept | 2.25 rem |
+| Kubernetes | `clis/kubernetes.svg` | Light glyph on a coloured plate — the glyph is punched out as a hole | 2.3 rem |
+| Linear | `brands/linear.svg` | Single colour already — taken as it is | 2.25 rem |
+| Microsoft Azure | `clis/azure.svg` | Single colour already — taken as it is | 2.25 rem |
+| Neon | `clis/neon.svg` | Light glyph on a coloured plate — the glyph is punched out as a hole | 2.95 rem |
+| Netlify | `clis/netlify.svg` | Single colour already — taken as it is | 3.4 rem |
+| Notion | `brands/notion.svg` | Sat on a coloured plate — the plate is dropped, the glyph kept | 2.4 rem |
+| NVIDIA | `providers/nvidia.svg` | Single colour already — taken as it is | 2.7 rem |
+| Ollama | `providers/ollama.svg` | Single colour already — taken as it is | 3.2 rem |
+| OpenAI | `providers/openai.svg` | Single colour already — taken as it is | 2.6 rem |
+| OpenRouter | `providers/openrouter.svg` | Single colour already — taken as it is | 2.45 rem |
+| PlanetScale | `clis/planetscale.svg` | Single colour already — taken as it is | 2.3 rem |
+| Railway | `clis/railway.svg` | Single colour already — taken as it is | 2.25 rem |
+| Render | `clis/render.svg` | Single colour already — taken as it is | 2.45 rem |
+| Slack | `brands/slack.svg` | Single colour already — taken as it is | 2.4 rem |
+| Spotify | `brands/spotify.svg` | Single colour already — taken as it is | 2.2 rem |
+| Stripe | `clis/stripe.svg` | Single colour already — taken as it is | 2.45 rem |
+| Supabase | `clis/supabase.svg` | Single colour already — taken as it is | 2.6 rem |
+| Telegram | `brands/telegram.svg` | Light glyph on a coloured plate — the glyph is punched out as a hole | 2.2 rem |
+| Todoist | `brands/todoist.svg` | Light glyph on a coloured plate — the glyph is punched out as a hole | 2.05 rem |
+| Twilio | `clis/twilio.svg` | Single colour already — taken as it is | 2.4 rem |
+| Vercel | `clis/vercel.svg` | Single colour already — taken as it is | 2.5 rem |
+| xAI Grok | `providers/xai.svg` | Single colour already — taken as it is | 3.05 rem |
+| YouTube Music | `brands/youtube_music.svg` | Light glyph on a coloured plate — the glyph is punched out as a hole | 2.6 rem |
+| Inworld | `providers/inworld.png` | **Not used** — a 180×180 raster, so no `currentColor` component is possible | — |
+
+### The one rule the conversion turns on
+
+A light shape drawn **under** everything else is the plate the brand puts its
+glyph on; filled in one colour it swallows the glyph, so it is dropped. A light
+shape drawn **on top of** dark ones is the glyph itself, so it is punched out
+as a hole. Getting this backwards produces a solid black square, which is how
+Notion, Google Calendar and Cartesia first came out.
+
+Google's four-colour marks are the exception the rule cannot see: their yellow
+is light by luminance but tiles with the other three rather than sitting on
+them. Those are listed explicitly in the script.
+
+### Trademark
+
+Every mark belongs to its owner. They identify the service Jarvis connects to —
+nominative use — and never imply endorsement, sponsorship, or affiliation. A
+permissive licence on an SVG settles the copyright in the drawing; it grants no
+trademark rights, and nothing here claims otherwise. If you own a mark shown
+here and want it removed, open an issue and it will be taken out.
+
+---
+
+## How the optical heights were derived
+
+Not guessed. Each mark was rendered and its ink area sampled; perceived size
+tracks the square root of that area, so the height that equalises it is
+`base × (median ÷ own)`. The correction is damped with an exponent of 0.65,
+because a mark that is sparse *and* wide would otherwise grow physically larger
+than its neighbours and trade one imbalance for another.
+
+Across the fifty marks that took the spread in perceived size from a factor of
+1.97 down to 1.30.
+
+To make every mark bigger or smaller, change the single multiplier on `.mark`
+in `LogoStrip.astro` — not the fifty values in `marks.ts`.
+
+---
+
+## The flip
+
+Each cell holds seven marks and shows one at a time. A mark flips in, holds for
+about three seconds, and flips out edge-on while the next flips in.
+
+- **CSS only.** No JavaScript reaches the browser. The stagger is an
+  `animation-delay` per face, and the delays are **negative**, so every
+  animation starts already in progress: at the first paint one mark per cell is
+  mid-hold instead of the strip standing empty until the first flip.
+- **Cells are offset against each other** by a fraction of a slot. Without that
+  all eight flip on the same beat, which reads as a machine rather than a
+  board.
+- **The order is strided, not alphabetical.** `marks.ts` is sorted by name and
+  the cells run nearly in phase, so a straight fill put Slack, Spotify, Stripe
+  and Supabase on screen together — a sorted directory rather than a set of
+  partners. The stride is coprime with the list length, so it still visits
+  every mark exactly once, and it is fixed rather than random.
+- **Spare slots are padded from half a cycle back.** Fifty marks do not fill
+  fifty-six slots, so six marks appear twice per cycle. Padding from the start
+  of the pool put a copy about one slot from its original, and a mark is on
+  screen slightly longer than one slot — two GitLabs, side by side. Taking the
+  filler from three rows back separates each pair by 10.2s against a 2.85s
+  visible window.
+- **`prefers-reduced-motion` gets a still frame**, not a special case: the
+  animation is switched off and the first mark in each cell stays visible.
 
 ---
 
@@ -70,26 +177,24 @@ outlined and are not.
 
 | Property | Reference | Ours |
 |---|---|---|
-| Cells | 8 equal columns, one row | 6 columns from `lg`, 4 from `sm`, 3 below — twelve marks, so two rows at desktop |
-| Cell size | 154 × 100px | Width follows the grid; height 64px, 100px from `md` |
+| Cells | 8 equal columns, one row | 8 from `2xl`, 6 from `lg`, 4 from `sm`, 3 below |
+| Cell size | 154 × 100px | Width follows the grid; height 8rem |
 | Gap | 10px | 10px |
-| Cell surface | a 2% darker plate, 4px radius, **no border** | white card, 1px hairline, `--radius-md` |
+| Cell surface | a 2% darker plate, 4px radius, **no border** | card surface, 1px hairline, `--radius-lg` |
 | Mark colour | `currentColor` at full body ink | `currentColor` at `--ink` |
-| Mark size | one shared 40px height | per mark, 24–32px |
-| Label above | 14px, centred | `caption-upper` token, centred |
+| Mark size | one shared 40px height | per mark, about 36% of cell height |
+| Contents | eight fixed customer logos | fifty marks on a flip board |
 
-### Two deliberate deviations
+### Deliberate deviations
 
-Both are open for a one-word reversal.
-
-- **Hairlines.** The reference has none — the cell is a tinted plate with no
-  border at all. The brief asked for hairlines and `design.md` gives cards a
-  1px hairline, so the cells carry one. Dropping it means removing
-  `border border-hairline` from the cell class.
-- **Per-mark sizing.** The reference sets one 40px height for every mark, which
+- **Hairlines.** The reference has none — its cell is a tinted plate with no
+  border. The brief asked for hairlines and `design.md` gives cards a 1px
+  hairline, so the cells carry one. Removing it means dropping
+  `border: 1px solid var(--hairline)` from `.cell`.
+- **Per-mark sizing.** The reference sets one height for every mark, which
   works there because its logos are wordmarks of similar weight. Ours are
-  square icons, where a shared height reads as an accident. This deviation was
-  instructed and is rule 3 above.
+  square icons, where a shared height reads as an accident.
+- **The flip.** The reference is static. This was asked for.
 
 ---
 
@@ -97,26 +202,25 @@ Both are open for a one-word reversal.
 
 1. Take the original from the app checkout's bundled marks, or from the
    vendor's own brand page. Prefer the icon over the wordmark.
-2. Convert it: strip every colour, keep a roughly square `viewBox`, drop
-   titles, scripts, external references and embedded rasters.
-3. Save it as `src/components/logos/<Name>Mark.tsx` following the existing
-   files — `fill="currentColor"`, `aria-hidden`, `className` passed through.
-4. Add it to the `marks` array in `LogoStrip.astro` with its own optical
-   height, and give it an `sr-only` name.
+2. Convert it with the script: every colour stripped, shapes reduced to paths,
+   plate dropped or glyph punched out per the rule above.
+3. Check it on a contact sheet before trusting it. A mark whose bounding box is
+   more than about 82% filled is a blob, not a glyph.
+4. Give it an optical height and add it to `marks.ts`.
 5. Add a row to the table above. An entry without a row is a licence gap.
 
 ---
 
 ## Open questions
 
-Listed rather than decided, per rule 4.
+Listed rather than decided, per rule 6.
 
-- **The label copy** currently reads "Runs on any of these". It is a
-  placeholder: factual, but nobody has approved the wording.
-- **Order of the marks** is the order of the table, which is conversion effort,
-  not importance. If there is a wanted order — by relevance, alphabetical — it
-  has not been stated.
-- **Dark mode** is undefined site-wide (`design.md`, "Known gaps"). The marks
-  themselves are ready for it: `currentColor` needs no second asset.
-- **Inworld** is left out for want of a vector. If it must appear, someone has
-  to obtain an SVG; recolouring a raster is not possible.
+- **The label copy** reads "Everything Jarvis connects". That wording was
+  given; the sentence around it has never been reviewed.
+- **Cal.com and AWS are wordmarks**, not icons, because that is what the app
+  bundles. They read fine at this size but sit oddly beside forty-eight glyphs.
+- **Google Calendar is the heaviest mark** — a filled square with a knocked-out
+  "31". It is a faithful mono rendering, but it is the one mark that reads as a
+  block rather than a glyph.
+- **Dark mode** now exists site-wide and the marks follow it through
+  `currentColor` with no second asset.
