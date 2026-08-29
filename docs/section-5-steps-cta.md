@@ -60,6 +60,7 @@ naming what proves it.
 | Columns | **6/12 steps left, 6/12 artwork right** |
 | Step spacing | 40px between blocks |
 | Number badge | 24×24px, radius 4px, `--font-mono` |
+| Install box | step `content`'s left column, ~105px tall — header 33px, two command lines |
 | Connecting line | 1px, `--hairline`, one segment per gap |
 | Boundary | `.section-rule` above the steps **and** below them |
 
@@ -110,11 +111,11 @@ knows both of its own ends can.
 **Exactly one step is active.** The active step stands at full opacity, the
 other three at `opacity: .35`.
 
-- Only the active step shows its button. The others show none — not greyed out,
-  absent
 - The active badge is filled (`--surface-strong` ground, `--ink` digit), the
   inactive ones outlined only
 - 300ms transition on `opacity`
+- Step 1 carries the install box, and it dims with step 1 like any other
+  content. It is **not** added and removed as the focus moves — see below
 
 ### How the active step is decided
 
@@ -128,6 +129,78 @@ focus follows. Sticky variants break on mobile and feel sluggish.
 
 Hovering an inactive step also brings it to full opacity, without taking over
 the active state.
+
+---
+
+## The install box
+
+Step 1 ends in the install one-liner, **printed**. Component:
+`src/components/InstallCommand.astro`; the commands themselves come from
+`src/lib/install.ts`, which is also what the copy button reads, so the line on
+screen and the line in the clipboard cannot drift apart.
+
+Until 2026-08-29 this was a button reading "Copy the install command". The
+maintainer's instruction that day: render the real command, make it look like
+something, and let the visitor pick their machine. The reasoning holds on its
+own — the command pipes a remote script into a shell, and a button that copies
+something the reader never sees asks for trust it has not earned.
+
+| Element | Value |
+|---|---|
+| Frame | `--surface-card`, 1px `--hairline`, `--radius-lg` — the code block of [`design.md`](design.md) |
+| Header | shell name left, machine picker right, 1px `--hairline-soft` under it |
+| Command | `--font-mono`, prompt (`$`, `PS>`) in `--muted-soft`, command in `--ink` |
+| Copy | icon button right of the command, ticks green on success |
+
+### Three machines, two commands
+
+macOS, Windows, Linux — in that order. The README has two lines, not three,
+because macOS and Linux run the same `curl`. The site still offers three
+choices: "which of these is mine" is a question the visitor should never have
+to answer. Two of the three agreeing is a property of the installer, not
+something to hide.
+
+**The visitor's own machine is preselected** from the user agent
+(`detectOs()`). iOS lands on macOS and Android on Linux — neither can run the
+installer, and guessing further away would not help them.
+
+### It is a radio group, and that is load-bearing
+
+Three options, one chosen. Using the real control means the switch works with
+**JavaScript turned off**, answers to the arrow keys, and announces itself
+without a line of ARIA. The panels follow the checked radio through `:has()`,
+which is what lets the tabs sit in the header while the command sits in the
+body.
+
+JavaScript adds exactly two things: it preselects the machine, and it copies.
+The copy button therefore starts `hidden` and is revealed by the script — a
+copy button without a clipboard is a lie, and the command is on screen to
+select by hand either way.
+
+### The box never leaves
+
+The button it replaced was pulled out of the DOM whenever another step took
+focus. That was affordable at 44px. The box is 105px, and adding and removing
+it on every scroll shunted the three steps below it up and down the screen. It
+stays, and dims with step 1; hovering step 1 brings it back to full strength,
+which is also what makes it clickable without scrolling it into focus first.
+
+The section still fits one screen: 1305px of content on the maintainer's
+1305px viewport, measured 2026-08-29.
+
+### The command's type size is the one exception to rem
+
+Everything on this site scales with the root font size. This line cannot. The
+steps column stops widening at `content`'s 1280px floor while the root size
+keeps climbing, so on a 2560px monitor the same command was set 18% larger in a
+column that had not grown — it wrapped onto a third line and pushed the section
+119px past one screen.
+
+`clamp(0.75rem, 2.9cqi, var(--text-code))`, against a container on the command
+column. `cqi` is a share of the box, not of the viewport, so the characters per
+line stay put however wide the monitor is. Two lines on every machine and every
+screen; `word-break: break-all` fills each line rather than leaving `irm` alone
+on the first one.
 
 ---
 
@@ -220,9 +293,10 @@ the button is therefore dark on the pale band.
 - Block A is an `<ol>`. The order is part of the content
 - The focus behaviour is purely visual. All four steps stay equally readable to
   a screen reader, dimmed ones included
-- The active step's button is not removed with `display: none`; it is present
-  in the DOM only on the active step, so a screen reader never announces four
-  buttons where one is offered
+- The install box is a radio group and a button, both real controls, both
+  reachable by keyboard whether or not step 1 is the active one
+- Only the checked machine's command line is in the DOM tree that a screen
+  reader walks; the other two are `display: none`, not merely off screen
 - `prefers-reduced-motion`: no opacity transitions. Every step at full opacity,
   every button visible. The same state is what a visitor without JavaScript
   gets, because the dimming is opted into by script
@@ -233,7 +307,9 @@ the button is therefore dark on the pale band.
 
 - Scroll hijacking or sticky pinning for the focus behaviour
 - More than four steps
-- Buttons on every step at once
+- A second install box, or one on any step but the first
+- Hiding the command behind a button again, or printing a line the copy button
+  does not hand over verbatim
 - Invented steps that README or the repo cannot prove
 - Sizing the artwork from the VIEWPORT — an `svh` cap, a fixed aspect ratio.
   It is framed against the section it sits in, and nothing else

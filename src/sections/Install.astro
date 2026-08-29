@@ -7,15 +7,25 @@
  * closes it. See docs/section-5-steps-cta.md.
  *
  * THE FOCUS BEHAVIOUR IS THE SIGNATURE. Exactly one step stands at full
- * opacity; the other three sit at .35, and only the active one carries its
- * button. The active step is whichever sits closest to the middle of the
- * screen, found with an IntersectionObserver — no scroll hijacking and no
- * sticky pinning, so the reader scrolls normally and the focus follows.
+ * opacity; the other three sit at .35. The active step is whichever sits
+ * closest to the middle of the screen, found with an IntersectionObserver — no
+ * scroll hijacking and no sticky pinning, so the reader scrolls normally and
+ * the focus follows.
  *
  * The dimming is opt-in, applied by the script through `data-focus` on the
  * list. Without JavaScript, and under `prefers-reduced-motion`, the attribute
- * is never set: every step reads at full opacity and the button stays put.
- * That is the accessible resting state, not a degraded one.
+ * is never set: every step reads at full opacity. That is the accessible
+ * resting state, not a degraded one.
+ *
+ * STEP 1 CARRIES THE INSTALL BOX, AND IT NEVER LEAVES. What used to sit there
+ * was a button that was pulled out of the DOM whenever another step took
+ * focus. That was affordable for a 44px button; the box that replaced it
+ * (maintainer, 2026-08-29 — print the real command, let the visitor pick their
+ * machine) is twice that tall, and adding and removing it on every scroll
+ * shunted the three steps below it up and down the screen. It dims with the
+ * rest of step 1 instead, and hovering step 1 brings it back to full strength
+ * — which is also what makes it clickable without scrolling it into focus
+ * first.
  *
  * NOTHING HERE IS INVENTED. Every step is provable from README.md ("Install",
  * "Run it") or from jarvis.toml.example; see the comment on each one.
@@ -25,6 +35,7 @@
  * a COLOUR, which silently leaves every heading at body size.
  */
 import Container from "@/components/Container.astro";
+import InstallCommand from "@/components/InstallCommand.astro";
 import SectionTrack from "@/components/SectionTrack.astro";
 import { TurningMark } from "@/components/mark/TurningMark";
 import { REPO } from "@/lib/install";
@@ -123,15 +134,9 @@ function segments(body: string) {
                 </p>
 
                 {step.cta && (
-                  <p class="mt-4" data-cta-home>
-                    <button
-                      type="button"
-                      class="action inline-flex h-11 items-center rounded-[var(--radius-md)] bg-ink px-5 font-medium text-on-ink transition-colors hover:bg-ink-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-                      data-copy
-                    >
-                      <span data-copy-label>Copy the install command</span>
-                    </button>
-                  </p>
+                  <div class="mt-4">
+                    <InstallCommand />
+                  </div>
                 )}
               </li>
             ))
@@ -329,21 +334,17 @@ function segments(body: string) {
 
 <script>
   /**
-   * The focus behaviour, and the copy button.
+   * The focus behaviour. The install box owns its own script.
    *
    * The observer is only a trigger. Which step is active is decided by
    * measuring, because a 10% band in the middle of the screen can hold two
    * steps at once or none at all, and "closest to the middle" is the rule the
    * spec actually states.
    */
-  import { installCommandFor, isWindows } from "@/lib/install";
-
   const list = document.querySelector<HTMLElement>("[data-steps]");
 
   if (list) {
     const items = Array.from(list.querySelectorAll<HTMLElement>("[data-step]"));
-    const cta = list.querySelector<HTMLElement>("[data-copy]");
-    const ctaHome = cta?.closest<HTMLElement>("[data-cta-home]") ?? null;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     if (!reduce.matches && items.length > 0) {
@@ -358,14 +359,6 @@ function segments(body: string) {
         items.forEach((item, i) => {
           item.toggleAttribute("data-active", i === next);
         });
-
-        /* The button is removed from the DOM rather than hidden, so a screen
-           reader never announces four buttons where only one is offered. */
-        if (cta && ctaHome) {
-          const owner = items.findIndex((item) => item.contains(ctaHome));
-          if (owner === next) ctaHome.appendChild(cta);
-          else cta.remove();
-        }
       };
 
       const measure = () => {
@@ -395,33 +388,6 @@ function segments(body: string) {
       window.addEventListener("scroll", measure, { passive: true });
       window.addEventListener("resize", measure);
       measure();
-    }
-
-    /* The copy button hands over the line for the visitor's own shell. */
-    if (cta) {
-      const label = cta.querySelector<HTMLElement>("[data-copy-label]");
-      const windows = isWindows(navigator.userAgent);
-      const command = installCommandFor(navigator.userAgent);
-      const resting = label?.textContent ?? "Copy the install command";
-      let restore = 0;
-
-      cta.addEventListener("click", async () => {
-        if (!label) return;
-        try {
-          await navigator.clipboard.writeText(command);
-          label.textContent = windows
-            ? "Copied — paste it into PowerShell"
-            : "Copied — paste it into your terminal";
-        } catch {
-          /* Clipboard access can be refused outright. Saying so beats a button
-             that silently does nothing. */
-          label.textContent = "Copy blocked — the command is in the README";
-        }
-        window.clearTimeout(restore);
-        restore = window.setTimeout(() => {
-          label.textContent = resting;
-        }, 2600);
-      });
     }
   }
 </script>

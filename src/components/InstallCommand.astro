@@ -1,0 +1,403 @@
+---
+/**
+ * The install one-liner, PRINTED — not hidden behind a button.
+ *
+ * It replaces a button reading "Copy the install command" (maintainer,
+ * 2026-08-29). A button that copies something the reader never sees asks for
+ * trust before it has earned any: this is a line that pipes a remote script
+ * into a shell, and the one thing a careful visitor wants is to read it first.
+ * The box shows the whole line, names the shell it belongs in, and still
+ * copies on one click.
+ *
+ * THE SWITCH IS THREE RADIO BUTTONS, NOT STATE. Three options, one chosen —
+ * that is a radio group, and using the real control means the switch works
+ * with JavaScript turned off, answers to the arrow keys, and announces itself
+ * correctly without a line of ARIA plumbing. The panels follow the checked
+ * radio through `:has()`, which is what lets the tabs sit in the header while
+ * the command sits in the body: no sibling relationship is needed between
+ * them, so the markup can be laid out for the reader rather than for CSS.
+ *
+ * JAVASCRIPT ADDS EXACTLY TWO THINGS: it preselects the visitor's own machine,
+ * and it copies. Neither is load-bearing. Without it the box opens on macOS
+ * and every line is still on screen to read, select and copy by hand — which
+ * is why the copy button starts `hidden` and is revealed by the script rather
+ * than sitting there dead.
+ *
+ * The prompt (`$`, `PS>`) is decoration, `aria-hidden` and unselectable, and is
+ * never part of what gets copied — the copied text comes from the module, not
+ * from the DOM, so a stray character on screen can never end up in a shell.
+ */
+import { INSTALL_TARGETS, DEFAULT_OS } from "@/lib/install";
+---
+
+<div class="installer" data-installer>
+  {/*
+    Header: which shell the line belongs in, and the machine picker. The shell
+    name is also where the copy confirmation lands — it is the only text in the
+    box that can be replaced without the command moving.
+  */}
+  <div class="head">
+    <p class="shells">
+      {
+        INSTALL_TARGETS.map((target) => (
+          <span class="shell" data-os={target.id}>
+            {target.shell}
+          </span>
+        ))
+      }
+    </p>
+
+    <p class="status" role="status" data-status></p>
+
+    <div class="tabs" role="group" aria-label="Your operating system">
+      {
+        INSTALL_TARGETS.map((target) => (
+          <Fragment>
+            <input
+              class="sr-only"
+              type="radio"
+              name="install-os"
+              id={`install-os-${target.id}`}
+              value={target.id}
+              checked={target.id === DEFAULT_OS}
+            />
+            <label class="tab" for={`install-os-${target.id}`}>
+              {target.label}
+            </label>
+          </Fragment>
+        ))
+      }
+    </div>
+  </div>
+
+  {/*
+    Body: one line per target, only the checked one displayed. All three are in
+    the DOM so the switch needs no fetch and no re-render; `display: none` keeps
+    the other two out of the accessibility tree as well as off the screen.
+  */}
+  <div class="body">
+    <div class="lines">
+      {
+        INSTALL_TARGETS.map((target) => (
+          <p class="line" data-os={target.id}>
+            <span class="prompt" aria-hidden="true">
+              {target.prompt}
+            </span>
+            <code>{target.command}</code>
+          </p>
+        ))
+      }
+    </div>
+
+    <button class="copy" type="button" data-copy hidden aria-label="Copy the install command">
+      <svg class="icon-copy" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+        <rect x="5.75" y="1.75" width="8.5" height="10.5" rx="1.75" fill="none" stroke="currentColor" stroke-width="1.4"></rect>
+        <path d="M10.25 14.25H3.75a1.5 1.5 0 0 1-1.5-1.5V4.75" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
+      </svg>
+      <svg class="icon-done" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+        <path d="M3 8.5 6.5 12 13 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<style>
+  /* The "code block" of docs/design.md § Components — card surface, one
+     hairline, `--radius-lg` — split into a header and a body rather than one
+     padded box, because the machine picker has to sit on the same rail as the
+     command it changes. */
+  .installer {
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    background: var(--surface-card);
+    overflow: hidden;
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding: 5px 6px 5px var(--space-base);
+    border-bottom: 1px solid var(--hairline-soft);
+  }
+
+  .shells,
+  .status {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption-upper);
+    letter-spacing: var(--tracking-caption-upper);
+    text-transform: uppercase;
+    color: var(--muted-soft);
+  }
+
+  /* The confirmation replaces the shell name in place. Two texts in one slot,
+     never both: the box has one line of header and the command must not move
+     because something was copied. */
+  .status {
+    display: none;
+    color: var(--body);
+  }
+
+  /* `data-said` is "the header is carrying a message", `data-copied` is "and
+     that message is a success". They are two attributes because a refused
+     clipboard has to be readable too, and it must not show a tick. */
+  .installer[data-said] .shells {
+    display: none;
+  }
+
+  .installer[data-said] .status {
+    display: block;
+  }
+
+  /* --- The machine picker ------------------------------------------------
+     A radio group wearing a segmented control. The input is visually hidden
+     but still the thing that is focused, so the focus ring has to be drawn on
+     the label next to it. */
+  .tabs {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .tab {
+    display: block;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-caption);
+    color: var(--muted);
+    cursor: pointer;
+    transition:
+      color 150ms ease,
+      background-color 150ms ease;
+  }
+
+  .tab:hover {
+    color: var(--ink);
+  }
+
+  .tabs input:checked + .tab {
+    background: var(--surface-strong);
+    color: var(--ink);
+  }
+
+  .tabs input:focus-visible + .tab {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  /* --- The command -------------------------------------------------------- */
+  .body {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-xs);
+    padding: 10px 6px 11px var(--space-base);
+  }
+
+  /* A container, so the command can be measured against the COLUMN rather than
+     against the screen. See the font size below. */
+  .lines {
+    flex: 1;
+    min-width: 0;
+    container-type: inline-size;
+  }
+
+  /* THE ONE TYPE SIZE ON THIS SITE THAT IS NOT PURELY REM, AND WHY.
+     ------------------------------------------------------------------
+     Everything else scales with the root font size, because a wide screen
+     should get a bigger page rather than the same page with more empty space
+     (docs/layout.md). This line cannot: the steps column stops widening at
+     `content`'s 1280px floor while the root size keeps climbing, so on a
+     2560px monitor the same command was set 18% larger inside a column that
+     had not grown at all — and wrapped onto a third line, which pushed the
+     whole section 119px past one screen.
+
+     `cqi` is a share of THIS BOX, not of the viewport, so the number of
+     characters per line stays put however wide the monitor is. The clamp keeps
+     both ends honest: `--text-code` is the ceiling, so it never sets larger
+     than the site's own code size, and the rem floor keeps it readable on a
+     phone, where the box is narrow and a pure share would be 7px. */
+  .line {
+    display: none;
+    gap: var(--space-xs);
+    font-family: var(--font-mono);
+    font-size: clamp(0.75rem, 2.9cqi, var(--text-code));
+    line-height: 1.45;
+  }
+
+  /* Which line is on screen follows the checked radio. Three rules rather than
+     one, because CSS cannot match an attribute value against a checked input —
+     a fourth target means a fourth rule here. */
+  .installer:has(#install-os-macos:checked) [data-os="macos"],
+  .installer:has(#install-os-windows:checked) [data-os="windows"],
+  .installer:has(#install-os-linux:checked) [data-os="linux"] {
+    display: flex;
+  }
+
+  /* The shell names are spans in a row; the same three rules have to give them
+     an inline box rather than the flex one the command line wants. */
+  .shell {
+    display: none;
+  }
+
+  .installer:has(#install-os-macos:checked) .shell[data-os="macos"],
+  .installer:has(#install-os-windows:checked) .shell[data-os="windows"],
+  .installer:has(#install-os-linux:checked) .shell[data-os="linux"] {
+    display: inline;
+  }
+
+  .prompt {
+    flex: none;
+    color: var(--muted-soft);
+    user-select: none;
+  }
+
+  /* `break-all`, not `overflow-wrap: anywhere`.
+     ------------------------------------------------------------------
+     Both let the line wrap inside the URL — which it has to, since the URL is
+     longer than the column and has no spaces in it. The difference is what
+     they do with the ONE space the command does have. `anywhere` still treats
+     that space as the preferred break, so `irm` was left sitting alone on the
+     first line with the whole URL below it: three ragged lines where two full
+     ones fit. `break-all` fills each line to the edge and the command reads as
+     one block of text, which is also how it looks in a terminal.
+
+     The command sits in its own flex column, so a wrapped line starts under
+     the first character of the command rather than under the prompt. */
+  .line code {
+    flex: 1;
+    min-width: 0;
+    color: var(--ink);
+    word-break: break-all;
+    /* `inherit`, or the line ignores the size set on it. global.css sets a
+       size on bare `code` from an UNLAYERED rule, and unlayered always beats
+       layered whatever the specificity — so the container-relative size above
+       reached the prompt and not the command it was calculated for. */
+    font-size: inherit;
+  }
+
+  /* --- Copy --------------------------------------------------------------- */
+  .copy {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    cursor: pointer;
+    transition:
+      color 150ms ease,
+      background-color 150ms ease;
+  }
+
+  .copy:hover {
+    background: var(--surface-strong);
+    color: var(--ink);
+  }
+
+  .copy:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  .icon-done,
+  .installer[data-copied] .icon-copy {
+    display: none;
+  }
+
+  .installer[data-copied] .icon-done {
+    display: block;
+    color: var(--success);
+  }
+
+  /* On a phone the header stacks: three tabs and a shell name do not share a
+     narrow rail without one of them wrapping mid-word. */
+  @media (max-width: 27rem) {
+    .head {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-xs);
+      padding: var(--space-sm);
+    }
+
+    .tabs {
+      justify-content: space-between;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tab,
+    .copy {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * Preselect the visitor's machine, and copy on click.
+   *
+   * The command comes from the module rather than from the DOM: what lands in
+   * someone's clipboard is then the same string the section printed, with no
+   * chance of a prompt character or a soft wrap travelling with it.
+   */
+  import { detectOs, targetFor, type OsId } from "@/lib/install";
+
+  const box = document.querySelector<HTMLElement>("[data-installer]");
+
+  if (box) {
+    const inputs = Array.from(box.querySelectorAll<HTMLInputElement>("input[name='install-os']"));
+    const copy = box.querySelector<HTMLButtonElement>("[data-copy]");
+    const status = box.querySelector<HTMLElement>("[data-status]");
+
+    /* The visitor's own machine, chosen before anything is painted. */
+    const detected = inputs.find((input) => input.value === detectOs(navigator.userAgent));
+    if (detected) detected.checked = true;
+
+    const current = (): OsId =>
+      (inputs.find((input) => input.checked)?.value as OsId | undefined) ?? "macos";
+
+    if (copy && status) {
+      /* Dead without a clipboard, so it only appears once there is one. */
+      copy.hidden = false;
+
+      let restore = 0;
+
+      const clear = () => {
+        window.clearTimeout(restore);
+        box.removeAttribute("data-said");
+        box.removeAttribute("data-copied");
+        status.textContent = "";
+      };
+
+      const settle = (text: string, ok: boolean) => {
+        status.textContent = text;
+        box.setAttribute("data-said", "");
+        box.toggleAttribute("data-copied", ok);
+        window.clearTimeout(restore);
+        restore = window.setTimeout(clear, 2600);
+      };
+
+      copy.addEventListener("click", async () => {
+        const target = targetFor(current());
+        try {
+          await navigator.clipboard.writeText(target.command);
+          settle(`Copied — paste it into ${target.shell}`, true);
+        } catch {
+          /* Clipboard access can be refused outright. Saying so beats a button
+             that silently does nothing — and the line is on screen anyway. */
+          settle("Copy blocked — select the line above", false);
+        }
+      });
+
+      /* Switching machines invalidates a confirmation about the old one. */
+      inputs.forEach((input) => input.addEventListener("change", clear));
+    }
+  }
+</script>
