@@ -21,6 +21,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
+import wellBackdrop from "@/assets/hero/stage-backdrop-well.webp";
 
 /** True when the visitor asked their system for less motion. Read on mount,
  *  not during render: reading it during render would differ between the
@@ -157,10 +158,34 @@ export function DemoStage({
         ref={stageRef}
         aria-hidden="true"
         onMouseDownCapture={onTakeOver}
-        className="grid aspect-[7/6] w-full place-items-center overflow-hidden rounded-[var(--radius-lg)] border border-hairline bg-canvas p-6 lg:aspect-auto lg:h-full"
+        className="relative grid aspect-[7/6] w-full place-items-center overflow-hidden rounded-[var(--radius-lg)] border border-hairline bg-canvas p-6 lg:aspect-auto lg:h-full"
       >
+        {/*
+          The same painting the hero window floats on.
+
+          The well used to be flat `bg-canvas`. A window is never as tall as the
+          box it is centred in — the list is short on a filtered frame, and the
+          canvas is sized for the tallest one either way — so that flat floor
+          read as a hole punched in the card rather than as a background. The
+          painting turns the leftover into the reason the window is there.
+
+          A separate, smaller file than the hero's on purpose: the wells render
+          at about 600px wide, the hero frame at 1216. Same source image.
+
+          Lazy, because all three of these sit below the fold; `alt=""` and the
+          well's own `aria-hidden` keep it out of the accessibility tree.
+        */}
+        <img
+          src={wellBackdrop.src}
+          alt=""
+          width={wellBackdrop.width}
+          height={wellBackdrop.height}
+          loading="lazy"
+          decoding="async"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+        />
         <div
-          className="overflow-hidden rounded-[var(--radius-md)] border border-hairline bg-card"
+          className="relative overflow-hidden rounded-[var(--radius-md)] border border-hairline bg-card"
           style={{
             width: canvasWidth * scale,
             height: canvasHeight * scale,

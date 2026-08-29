@@ -57,19 +57,47 @@ Depth comes from two radii inside one another, never from a shadow — the site
 has no shadow tokens and the style gate rejects one.
 
 ```
-┌─ Card (white, radius 16, hairline) ─────────────────┐
+┌─ Card (radius 16, hairline) ────────────────────────┐
 │                                                     │
-│  Copy            ┌─ Stage (cream, radius 12) ─────┐ │
-│  vertically      │                                │ │
-│  centred         │   ┌─ Window (white, radius 8)┐ │ │
+│  Copy            ┌─ Well (painting, radius 12) ───┐ │
+│  vertically      │ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ │ │
+│  centred         │   ┌─ Window (radius 8) ──────┐ │ │
 │                  │   │                          │ │ │
 │  Link →          │   └──────────────────────────┘ │ │
+│                  │ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ │ │
 │                  └────────────────────────────────┘ │
 └─────────────────────────────────────────────────────┘
 ```
 
-White card, recessed cream well, white window floating in it. The stage carries
-24px of its own padding so the window never touches its edge.
+Card, recessed well, window floating in it. The well carries 24px of its own
+padding so the window never touches its edge.
+
+### The well is a painting, not a colour
+
+The well used to be flat `--canvas`. A window is never as tall as the box it is
+centred in — the canvas is sized for the tallest frame of the script, and a
+filtered frame is shorter still — so on the dark page that flat floor read as a
+hole punched in the card rather than as a background. The maintainer asked for
+the hero's treatment here too (2026-08-29).
+
+It is the **same painting as the hero**, at a smaller size:
+`src/assets/hero/stage-backdrop-well.webp`, 1280×720, because these wells render
+at roughly 600px wide against the hero frame's 1216. Same source image, so the
+two surfaces cannot drift apart.
+
+- It lives in `window-demo/Stage.tsx`, so all three feature cards get it from
+  one place and a fourth would too. It is not a prop and must not become one —
+  a well without the painting is the bug this fixed
+- Plain `<img>`, not `astro:assets`: the stage is a React island and cannot
+  reach Astro's `<Image />`. `loading="lazy"`, because all three sit below the
+  fold, and `alt=""` under the well's own `aria-hidden`
+- **Licence:** generated for this site (xAI `grok-imagine-image-2.0`), so
+  nothing third-party is attached to it. A replacement must be public domain or
+  explicitly licensed, and recorded here and in `hero.md`
+
+**What this does not fix, on purpose.** The empty area *inside* the window —
+below a short list — is still the window's own surface. Filling it would mean
+inventing rows the app does not have.
 
 ---
 
