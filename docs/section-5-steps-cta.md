@@ -285,16 +285,34 @@ The Jarvis mark as a **dither relief**. Recipe, pipeline and acceptance live in
   so the old square sat at the TOP of a row the steps ran on past, and the mark
   read as floating in the upper corner over a hole. Drawn size went up about
   45% between the two
-- Purely decorative: `aria-hidden="true"`
+- **The reader can turn it by hand.** Hold the left button and drag; letting go
+  throws it, and the throw glides back into the idle turn. Nothing on the page
+  depends on which way the mark is facing — it is a toy, and asked for as one
+  (maintainer, 2026-08-29)
+- Purely decorative: `aria-hidden="true"`, and **no `tabindex`**. There is no
+  content behind the turn or the drag, so there is nothing for assistive
+  technology to miss; a focusable element inside an `aria-hidden` subtree, on
+  the other hand, is a stop on the tab order that a screen reader cannot
+  describe
 - Below 1024px it is dropped, not shrunk. `client:media` means the bundle is
   never fetched there
 
-Three things about the mark are decisions, not defaults:
+Four things about the mark are decisions, not defaults:
 
 - **The face is on the front only.** The back of the turn is a blank body
   (maintainer, 2026-08-29)
+- **The whole face is carried across, not a summary of it.** Sockets, pupils,
+  mouth, the two displacement slices beside the eyes, both scanlines and the
+  nine loose glitch pixels, at the drawing's own coordinates. Three shapes were
+  tried first — two eyes and a mouth — and read as too plain beside the app's
+  own mascot (maintainer, 2026-08-29)
 - **Eyes and mouth are black**, which in this raster means *no dots*: they fall
-  under every threshold in the matrix and the page floor shows through
+  under every threshold in the matrix and the page floor shows through. Which
+  side of a feature is black therefore INVERTS against the drawing: the drawing
+  paints a light pupil on a dark body, the relief stands a paper pupil in a
+  dark socket. Same structure, one material logic. It is also why the glitch
+  pixels take the paper material — black chips on an unprinted floor would be
+  invisible
 - **The arms reach further than the drawing does.** In 2D they are legible
   because nothing sits in front of them; in 3D the body's own bevelled edge
   eats a stub that short

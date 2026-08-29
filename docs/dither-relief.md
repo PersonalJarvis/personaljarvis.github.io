@@ -167,6 +167,30 @@ front face and the flank, and it is where the eye reads the turn; four segments
 render it as four flat facets, which at any size read as a panel pasted onto
 the corner. Ten reads as a roll and costs nothing per frame.
 
+### A relief the reader can take hold of
+
+The mark in `Install.astro` turns by hand: hold the left button and drag, and
+letting go throws it back into the idle turn (maintainer, 2026-08-29). Three
+rules come with that, and they generalise to any relief given the same handle.
+
+- **The turn has to be state, not a clock.** An angle read as `elapsed /
+  seconds-per-revolution` cannot be interrupted — whatever a hand does is
+  overwritten on the next frame. An angle and an angular speed, integrated per
+  frame, is the smallest model in which a drag can take over and hand back, and
+  it costs nothing to keep.
+- **Reduced motion still turns under a hand.** The preference is against
+  movement nobody asked for, not against the reader's own gesture: the idle
+  turn goes, the drag stays, and the mark coasts to a stop instead of rejoining
+  a drift. It is also the one setting under which such a scene should cost no
+  GPU at all — which needs the loop to skip a render when nothing moved, so a
+  still mark is genuinely still and not a static image redrawn sixty times a
+  second.
+- **Cap the throw.** A flick past roughly two revolutions a second outruns the
+  raster: the dot grid is fixed in screen space, so the form stops resolving
+  between frames and the mark reads as strobing dots. Clamp the released speed
+  rather than the drag itself — a hand cannot move too fast, only let go too
+  fast.
+
 ---
 
 ## Forbidden

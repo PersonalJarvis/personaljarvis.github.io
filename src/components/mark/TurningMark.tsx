@@ -22,6 +22,17 @@
  *
  * The viewpoint is a dead-on orthographic elevation — no tilt, no perspective
  * — matching the reference the maintainer chose the effect from.
+ *
+ * ## The reader can take hold of it
+ *
+ * Holding the left button and dragging turns the mark by hand, and letting go
+ * throws it: the hand's last speed becomes the mark's, and an exponential
+ * glide carries that back into the idle drift. That is why the turn is state
+ * here rather than a function of elapsed time — a clock-driven angle cannot be
+ * interrupted, because the next frame simply overwrites whatever the hand did.
+ *
+ * It is a toy, and it is meant to be: nothing on the page depends on which way
+ * the mark is facing.
  */
 
 import { useEffect, useRef } from "react";
@@ -79,6 +90,45 @@ const FRAME_MARGIN = 1.04;
 
 /** The pose a still frame settles on: turned just enough to show the depth. */
 const RESTING_ANGLE = -0.32;
+
+/**
+ * The idle turn as an angular speed, because the mark is no longer driven by
+ * the clock alone. Same fourteen seconds, expressed the way a loop that also
+ * has to accept a hand on the mark needs it.
+ */
+const AUTO_SPEED = (2 * Math.PI) / TURN_SECONDS;
+
+/**
+ * Dragging across the full width of the frame turns the mark exactly once.
+ *
+ * Derived from the frame rather than fixed as radians-per-pixel: a constant
+ * that feels right in this column feels stiff in a narrower one and twitchy in
+ * a wider one, and this frame is sized from the section's grid.
+ */
+const TURNS_PER_FRAME_WIDTH = 1;
+
+/**
+ * The fastest a flick may leave the hand, in radians per second — about two
+ * revolutions. Past that the raster stops resolving the form between frames
+ * and the mark reads as strobing dots rather than as something spinning.
+ */
+const MAX_FLING = 4 * Math.PI;
+
+/**
+ * Time constant for the return to the idle turn, in seconds. A release hands
+ * its speed to an exponential glide instead of snapping back, so a flick
+ * coasts, slows and rejoins the drift with no visible seam. Just under a
+ * second is long enough to read as momentum and short enough that the mark is
+ * never off doing its own thing.
+ */
+const SETTLE_SECONDS = 0.9;
+
+/**
+ * A frame longer than this was a backgrounded tab, not a slow one. Integrating
+ * it would jump the mark through an arbitrary angle on the way back, so it is
+ * clamped to a plausible frame and the lost time is simply lost.
+ */
+const MAX_FRAME_SECONDS = 0.05;
 
 interface Props {
   className?: string;
@@ -264,6 +314,16 @@ export function TurningMark({ className }: Props) {
     let height = 0;
 
     /**
+     * Whether anything has changed since the last render.
+     *
+     * The loop used to redraw unconditionally, which was fine while the mark
+     * could only ever be turning. It can now be still — under reduced motion,
+     * and for as long as a hand holds it in one place — and a still mark has
+     * no reason to cost a render pass a frame.
+     */
+    let dirty = true;
+
+    /**
      * The canvas takes the frame's real shape, and the camera is fitted to it.
      *
      * It used to be squared off to the shorter side and paired with a fixed
@@ -293,6 +353,7 @@ export function TurningMark({ className }: Props) {
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       target.setSize(width * ratio, height * ratio);
+      dirty = true;
     };
 
     const observer = new ResizeObserver(resize);
@@ -312,18 +373,127 @@ export function TurningMark({ className }: Props) {
     );
     visibility.observe(host);
 
+    /**
+     * Reduced motion takes away the UNPROMPTED turn, not the mark's ability to
+     * move. A drag is the reader asking for it, so the mark still turns under
+     * the hand and still coasts to a stop afterwards; what it never does is
+     * start on its own. Read per frame rather than captured once, so a reader
+     * who changes the setting is obeyed without a reload.
+     */
+    const idleSpeed = () => (motion.matches ? 0 : AUTO_SPEED);
+
+    /**
+     * The turn, as state rather than as a function of the clock.
+     *
+     * It used to be `elapsed / TURN_SECONDS`, which cannot be interrupted: a
+     * hand on the mark would have been overwritten by the clock on the very
+     * next frame. An angle and a speed, integrated per frame, is the smallest
+     * model that lets a drag take over and then hand back.
+     */
+    let angle = motion.matches ? RESTING_ANGLE : 0;
+    let speed = idleSpeed();
+
+    let dragging = false;
+    let dragPointer = -1;
+    let dragX = 0;
+    let dragAt = 0;
+    let dragSpeed = 0;
+
+    const onPointerDown = (event: PointerEvent) => {
+      // Left button only. A right-click is the context menu and a middle click
+      // starts an autoscroll; grabbing the mark on either would take a gesture
+      // the browser has already promised to something else.
+      if (dragging || event.button !== 0 || width === 0) return;
+
+      dragging = true;
+      dragPointer = event.pointerId;
+      dragX = event.clientX;
+      dragAt = performance.now();
+      dragSpeed = 0;
+
+      // Capture, so a hand that runs off the canvas mid-turn keeps turning it
+      // and the release still arrives here rather than at whatever element the
+      // cursor happens to be over by then.
+      host.setPointerCapture(dragPointer);
+      host.style.cursor = "grabbing";
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (!dragging || event.pointerId !== dragPointer) return;
+
+      const now = performance.now();
+      // Floored: two samples inside the same millisecond would otherwise
+      // divide by zero and hand the fling an infinite speed.
+      const dt = Math.max((now - dragAt) / 1000, 0.001);
+      const delta =
+        ((event.clientX - dragX) * TURNS_PER_FRAME_WIDTH * 2 * Math.PI) / width;
+
+      angle += delta;
+      dirty = true;
+
+      // Smoothed rather than the last raw sample: a pointer that stalls for
+      // one frame before the release would otherwise throw a hand that was
+      // plainly still moving at a speed of nothing.
+      dragSpeed = dragSpeed * 0.7 + (delta / dt) * 0.3;
+
+      dragX = event.clientX;
+      dragAt = now;
+    };
+
+    const endDrag = (event: PointerEvent) => {
+      if (!dragging || event.pointerId !== dragPointer) return;
+
+      dragging = false;
+      if (host.hasPointerCapture(dragPointer)) {
+        host.releasePointerCapture(dragPointer);
+      }
+      dragPointer = -1;
+      host.style.cursor = "grab";
+
+      // A hand that came to rest before letting go releases a still mark. Only
+      // a release that was still moving throws one, and only up to a speed the
+      // raster can still resolve.
+      const moving = performance.now() - dragAt < 120;
+      speed = moving ? Math.max(-MAX_FLING, Math.min(MAX_FLING, dragSpeed)) : 0;
+    };
+
+    host.addEventListener("pointerdown", onPointerDown);
+    host.addEventListener("pointermove", onPointerMove);
+    host.addEventListener("pointerup", endDrag);
+    host.addEventListener("pointercancel", endDrag);
+
     let running = true;
     let raf = 0;
-    const started = performance.now();
+    let last = performance.now();
 
     const draw = () => {
       if (!running) return;
       raf = requestAnimationFrame(draw);
+
+      const now = performance.now();
+      const dt = Math.min((now - last) / 1000, MAX_FRAME_SECONDS);
+      last = now;
+
       if (!onScreen || width === 0) return;
 
-      pivot.rotation.y = motion.matches
-        ? RESTING_ANGLE
-        : ((performance.now() - started) / (TURN_SECONDS * 1000)) * Math.PI * 2;
+      if (!dragging) {
+        // Frame-rate independent, which `speed += (target - speed) * k` is
+        // not: that settles more than twice as fast on a 144Hz panel as on a
+        // 60Hz one, so the coast after a flick would be a different gesture on
+        // a different screen.
+        speed += (idleSpeed() - speed) * (1 - Math.exp(-dt / SETTLE_SECONDS));
+
+        // Below this the glide is asymptote, not movement. Stopping here is
+        // what lets a reduced-motion page and a held mark cost nothing.
+        if (Math.abs(speed) > 1e-4) {
+          angle += speed * dt;
+          dirty = true;
+        }
+      }
+
+      if (!dirty) return;
+      dirty = false;
+      pivot.rotation.y = angle;
 
       renderer.setRenderTarget(target);
       renderer.clear();
@@ -342,6 +512,10 @@ export function TurningMark({ className }: Props) {
     };
     const onRestored = () => {
       running = true;
+      // The clock kept running while the context was gone. Rebasing it here
+      // keeps the first frame back a frame rather than the whole outage.
+      last = performance.now();
+      dirty = true;
       draw();
     };
     canvas.addEventListener("webglcontextlost", onLost);
@@ -354,6 +528,10 @@ export function TurningMark({ className }: Props) {
       cancelAnimationFrame(raf);
       canvas.removeEventListener("webglcontextlost", onLost);
       canvas.removeEventListener("webglcontextrestored", onRestored);
+      host.removeEventListener("pointerdown", onPointerDown);
+      host.removeEventListener("pointermove", onPointerMove);
+      host.removeEventListener("pointerup", endDrag);
+      host.removeEventListener("pointercancel", endDrag);
       observer.disconnect();
       visibility.disconnect();
 
@@ -372,6 +550,23 @@ export function TurningMark({ className }: Props) {
    * That belongs here rather than in a class the caller has to remember: the
    * canvas is sized from this element's rect, so an element with no height
    * silently renders a one-pixel mark.
+   *
+   * Three of these styles are the grab rather than the layout:
+   *
+   *  - `cursor: grab` is the only affordance the mark has. Nothing about a
+   *    turning graphic says it can be taken hold of, and a toy nobody notices
+   *    is not a toy. The effect swaps it for `grabbing` while a hand is down.
+   *  - `touch-action: pan-y` hands vertical gestures back to the page and
+   *    keeps horizontal ones. Without it a touch that lands on the mark can
+   *    never scroll past it, and this section is a pinned one.
+   *  - `user-select: none`, because a drag that starts on the mark otherwise
+   *    sweeps a selection across the install steps beside it.
+   *
+   * It stays `aria-hidden`, and deliberately takes no `tabindex`. The turn is
+   * decoration and the drag is a toy: there is no content behind either, so
+   * there is nothing for assistive technology to miss — whereas a focusable
+   * element inside an `aria-hidden` subtree is a real defect, a stop on the
+   * tab order that a screen reader cannot then describe.
    */
   return (
     <div
@@ -383,6 +578,9 @@ export function TurningMark({ className }: Props) {
         placeItems: "center",
         width: "100%",
         height: "100%",
+        cursor: "grab",
+        touchAction: "pan-y",
+        userSelect: "none",
       }}
     >
       <canvas ref={canvasRef} style={{ display: "block" }} />
