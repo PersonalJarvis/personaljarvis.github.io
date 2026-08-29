@@ -4,23 +4,50 @@
  *
  * Two states of one scene: the same person at the same desk, once working the
  * keyboard and mouse by hand, once leaning back with a microphone. The contrast
- * IS the argument, which is why nothing but opacity is allowed to move between
- * the frames. See docs/section-3-voice.md.
+ * IS the argument. See docs/section-3-voice.md.
  *
- * Widths come from the `.layout` grid in src/styles/layout.css: the eyebrow and
- * the headline sit on the `prose` column, the tabs, the picture and the figures
- * on `content`. That grid is what lets one section carry two width steps without
- * naming a max-width of its own — which docs/layout.md forbids and
- * scripts/check-style.mjs enforces.
+ * Two things carry that contrast, and nothing else moves:
+ *
+ *  1. The sheet turns over. The resting state is the GROUND sheet — the page's
+ *     own colour, so it barely reads as a card. The spoken state is the
+ *     INVERTED sheet. Same drawing, opposite ground.
+ *
+ *     The maintainer asked for "white first, then the black one slides in",
+ *     said while the site was cream. The site is dark now, so the pair reads
+ *     dark-then-pale. The relationship they asked for is what is kept, not the
+ *     two literal colours — a hardcoded white resting card on a black page
+ *     would be a lamp, and a black incoming sheet would be invisible.
+ *
+ *  2. The inverted sheet SLIDES IN from the right, over the ground one. A cross-fade
+ *     dissolves one desk into another and reads as a glitch at this size; a
+ *     slide reads as a page being laid on top, which is what it is.
+ *
+ * Widths come from the `.layout` grid in src/styles/layout.css: the eyebrow,
+ * the headline and the paragraph sit on the `prose` column, the tabs, the
+ * picture and the figures on `content`. That grid is what lets one section
+ * carry two width steps without naming a max-width of its own — which
+ * docs/layout.md forbids and scripts/check-style.mjs enforces.
  */
-import { Image } from "astro:assets";
 
-import jarvisScene from "@/assets/scene/jarvis.png";
-import manualScene from "@/assets/scene/manual.png";
+/**
+ * The drawings, as ink masks rather than pictures.
+ *
+ * The originals were photographs of ink on ruled notebook paper, 1.2-1.4 MB
+ * each, with the paper's rules and its red margin line baked in. They are now
+ * a single alpha channel — 1 where there is ink, 0 where there was paper — so
+ * BOTH the ground and the stroke colour are tokens, and one file serves both
+ * sheets alike, in either palette. See docs/section-3-voice.md § "The
+ * sheets" for how they were extracted and how to redo it.
+ *
+ * `?url` is load-bearing: a bare .png import goes to astro:assets and yields an
+ * ImageMetadata object, which is useless inside a CSS url().
+ */
+import jarvisInk from "@/assets/scene/jarvis-ink.png?url";
+import manualInk from "@/assets/scene/manual-ink.png?url";
 
 /**
  * The spoken line in the bubble. It is real DOM text, not part of the drawing —
- * the generated images carry no text at all, on purpose.
+ * the masks carry no text at all, on purpose.
  *
  * Every capability it names is registered in the app: the `gmail`,
  * `google_calendar` and `google_drive` tool plugins (pyproject.toml, the
@@ -28,6 +55,27 @@ import manualScene from "@/assets/scene/manual.png";
  */
 const spokenLine =
   "Hey Jarvis, check my Google Workspace and tell me everything I need to know today.";
+
+/**
+ * One caption per state, under the picture.
+ *
+ * The section used to be a headline, a switch and a picture, which left the
+ * switch making its point in mime. These two lines say what each side of it
+ * actually costs, and they are the reason the control is worth touching.
+ *
+ * Both stay inside what the app does: voice in, spoken answer, and the
+ * Workspace plugins named above. Nothing here is a promise the app cannot keep.
+ */
+const captions = {
+  manual: {
+    lead: "Hands on the keyboard.",
+    rest: "Every answer starts with you finding the window, the tab and the right button — and it ends with you reading the result yourself.",
+  },
+  jarvis: {
+    lead: "Hands nowhere near it.",
+    rest: "You say it once. It reads the mail, checks the calendar, and answers out loud while you keep looking at whatever you were looking at.",
+  },
+};
 
 /**
  * The figures under the picture. Each one is countable in the app's own source;
@@ -84,6 +132,12 @@ const figures = [
       Nothing on this desk changed except who does the typing.
     </h2>
 
+    <p class="mt-5 text-balance text-center" data-voice-standfirst>
+      Jarvis runs on your own machine, listens when you speak to it, and works
+      the apps you already have. The keyboard still does everything it did — it
+      just stops being the only way in.
+    </p>
+
     <div
       class="wide mt-8 flex justify-center gap-2"
       role="tablist"
@@ -114,37 +168,78 @@ const figures = [
     </div>
 
     <!--
-      Both frames are stacked in the same box and only their opacity changes.
-      Both load eagerly: a lazy second frame flashes white the first time the
-      visitor switches, which reads as a page bug rather than a transition.
+      The rail wraps the picture: down its left edge, then along its bottom. It
+      is a scroll indicator, so it belongs to the reader's position, not to the
+      switch — see the script.
     -->
-    <div
-      class="wide mt-8"
-      id="voice-panel"
-      role="tabpanel"
-      aria-labelledby="voice-tab-manual"
-      tabindex="0"
-      data-stage
-    >
-      <Image
-        src={manualScene}
-        alt="An ink drawing on ruled paper: a person hunched over a desk with both hands on the keyboard and one on the mouse, brow furrowed and a bead of sweat at the temple, facing a monitor filled with a scribbled mess of overlapping windows. A coffee mug steams at the left."
-        loading="eager"
-        data-frame="manual"
-        data-active="true"
-      />
-      <Image
-        src={jarvisScene}
-        alt="The same desk, the same person, the same mug and monitor. Now leaning back with a small desk microphone held near the mouth, both hands away from the keyboard and mouse, smiling. An empty speech bubble rises to the upper left and the monitor shows a few tidy lines."
-        loading="eager"
-        data-frame="jarvis"
-        data-active="false"
-      />
+    <div class="wide mt-8 relative" data-rail-wrap>
+      <div class="rail-track" data-rail="down" aria-hidden="true">
+        <span class="rail-fill"></span>
+      </div>
+      <div class="rail-track" data-rail="along" aria-hidden="true">
+        <span class="rail-fill"></span>
+      </div>
+      <span class="rail-head" aria-hidden="true"></span>
 
-      <p data-bubble>
-        <span class="sr-only">{spokenLine}</span>
-        <span data-typed aria-hidden="true">{spokenLine}</span>
-      </p>
+      <!--
+        Both sheets are stacked in the same box. The white one never moves; the
+        ink one slides over it and back off to the right. Both masks are in the
+        markup from the first paint — a mask fetched on first switch flashes an
+        empty box, which reads as a page bug rather than a transition.
+      -->
+      <div
+        id="voice-panel"
+        role="tabpanel"
+        aria-labelledby="voice-tab-manual"
+        tabindex="0"
+        data-stage
+      >
+        <div
+          data-frame="manual"
+          data-active="true"
+          style={`--sheet: url(${manualInk})`}
+          role="img"
+          aria-label="An ink drawing: a person hunched over a desk with both hands on the keyboard and one on the mouse, brow furrowed and a bead of sweat at the temple, facing a monitor filled with a scribbled mess of overlapping windows. A coffee mug steams at the left."
+        >
+        </div>
+
+        <!--
+          The ground behind the ink sheet's pale strokes. A separate box because
+          the mask punches the strokes OUT of the element that carries it — the
+          ground has to be an element the mask does not touch. It travels with
+          the sheet, so the two read as one page being laid down.
+        -->
+        <div data-sheet-ground aria-hidden="true"></div>
+
+        <div
+          data-frame="jarvis"
+          data-active="false"
+          style={`--sheet: url(${jarvisInk})`}
+          role="img"
+          aria-label="The same drawing with the sheet turned over: the same desk, the same person, the same mug and monitor. Now leaning back with a small desk microphone held near the mouth, both hands away from the keyboard and mouse, smiling. An empty speech bubble rises to the upper left and the monitor shows a few tidy lines."
+        >
+        </div>
+
+        <p data-bubble>
+          <span class="sr-only">{spokenLine}</span>
+          <span data-typed aria-hidden="true">{spokenLine}</span>
+        </p>
+      </div>
+    </div>
+
+    <!--
+      One caption per state, cross-faded. Both are in the DOM so a screen reader
+      and a search engine get the whole argument, not just the resting half.
+    -->
+    <div class="wide mt-6" data-captions>
+      {
+        (["manual", "jarvis"] as const).map((mode) => (
+          <p data-caption={mode}>
+            <span class="caption-lead">{captions[mode].lead}</span>{" "}
+            <span class="caption-rest">{captions[mode].rest}</span>
+          </p>
+        ))
+      }
     </div>
 
     <dl class="wide mt-8" data-figures>
@@ -161,9 +256,9 @@ const figures = [
 </section>
 
 <!--
-  Global rather than scoped: the frames are rendered by astro:assets' <Image>,
-  and a scoped rule cannot be relied on to reach inside another component. Every
-  selector is anchored on [data-voice-switch], so the section still owns them.
+  Global rather than scoped: every selector is anchored on [data-voice-switch],
+  so the section still owns them, and a global block is what lets one rule reach
+  the masked sheets without fighting Astro's scoping hashes.
 -->
 <style is:global>
   /* The brief's 14px, taken from the token rather than Tailwind's `text-sm`.
@@ -179,6 +274,15 @@ const figures = [
     font-size: var(--text-display-lg);
     letter-spacing: var(--tracking-display-lg);
     line-height: 1.2;
+  }
+
+  /* Sized off the token for the same reason as the eyebrow. It sits on the
+   * prose column, so it wraps to two or three lines and never runs as a ribbon
+   * across a wide screen. */
+  [data-voice-switch] [data-voice-standfirst] {
+    font-size: var(--text-body);
+    color: var(--body);
+    line-height: 1.6;
   }
 
   /* --- Tabs -------------------------------------------------------------
@@ -207,6 +311,80 @@ const figures = [
     color: var(--on-ink);
   }
 
+  /* --- The scroll rail ---------------------------------------------------
+   * An L around the picture: down the left edge, then along the bottom. The
+   * head travels the first leg over the first half of the section's passage
+   * through the viewport and the second leg over the rest, so the corner is
+   * the halfway mark.
+   *
+   * Ink on a hairline track. It is a reading position, not a warning, so it
+   * takes no semantic colour — the drawn red on the old notebook paper was the
+   * paper's margin rule, never an intentional accent.
+   *
+   * --p is written by the script, 0 to 1.
+   */
+  [data-voice-switch] [data-rail-wrap] {
+    --p: 0;
+    --rail-gap: 20px;
+    --rail-weight: 2px;
+    --leg-down: clamp(0, var(--p) * 2, 1);
+    --leg-along: clamp(0, var(--p) * 2 - 1, 1);
+  }
+
+  [data-voice-switch] .rail-track {
+    position: absolute;
+    background: var(--hairline-strong);
+  }
+
+  [data-voice-switch] .rail-fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--ink);
+    transform-origin: 0 0;
+  }
+
+  [data-voice-switch] [data-rail="down"] {
+    left: calc(-1 * var(--rail-gap));
+    top: 0;
+    bottom: calc(-1 * var(--rail-gap));
+    width: var(--rail-weight);
+  }
+
+  [data-voice-switch] [data-rail="down"] .rail-fill {
+    transform: scaleY(var(--leg-down));
+  }
+
+  [data-voice-switch] [data-rail="along"] {
+    left: calc(-1 * var(--rail-gap));
+    right: 0;
+    bottom: calc(-1 * var(--rail-gap));
+    height: var(--rail-weight);
+  }
+
+  [data-voice-switch] [data-rail="along"] .rail-fill {
+    transform: scaleX(var(--leg-along));
+  }
+
+  /* The head sits at the end of whichever leg is still filling. Both offsets
+   * are computed for every position; the one belonging to the finished leg is
+   * simply pinned at its corner, so the marker walks the corner instead of
+   * jumping across it. */
+  [data-voice-switch] .rail-head {
+    position: absolute;
+    left: calc(-1 * var(--rail-gap) - 5px + (100% + var(--rail-gap)) * var(--leg-along));
+    top: calc((100% + var(--rail-gap)) * var(--leg-down) - 6px);
+    width: 12px;
+    height: 12px;
+    box-sizing: border-box;
+    border-radius: var(--radius-pill);
+    /* A ring in the page colour, not a shadow — this system has no shadow
+     * tokens and the gate rejects one. It is what keeps the marker readable
+     * where it passes the picture's own edge. */
+    border: 2px solid var(--canvas);
+    background: var(--ink);
+  }
+
   /* --- The picture ------------------------------------------------------- */
   [data-voice-switch] [data-stage] {
     position: relative;
@@ -221,25 +399,57 @@ const figures = [
     container-type: inline-size;
   }
 
+  /* A sheet: a ground, with the drawing punched out of it by the mask. The
+   * mask is the ink coverage, so the stroke colour is whatever this element's
+   * background is — which is how one file serves both sheets. */
   [data-voice-switch] [data-frame] {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0;
-    /* Opacity and nothing else. A slide, wipe or zoom would say "somewhere
-     * else", and the whole point is "the same place, a different state". */
-    transition: opacity 0.45s ease;
+    -webkit-mask-image: var(--sheet);
+    mask-image: var(--sheet);
+    -webkit-mask-size: cover;
+    mask-size: cover;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
   }
 
-  [data-voice-switch] [data-frame][data-active="true"] {
-    opacity: 1;
+  /* The ground sheet: the stage's own surface, so only the strokes are painted
+   * here. It never moves and never leaves; the inverted sheet covers it. */
+  [data-voice-switch] [data-frame="manual"] {
+    background: var(--ink);
+  }
+
+  /* The inverted sheet: a full-bleed ground of its own, strokes in the page
+   * colour, arriving from the right. `will-change` keeps the slide off the main
+   * thread on the long side of the picture. */
+  [data-voice-switch] [data-frame="jarvis"] {
+    background: var(--canvas);
+    transform: translateX(101%);
+    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+  }
+
+  /* The inverted sheet's ground — see the markup for why it is its own box. It
+   * slides on the same curve as the sheet, so the two arrive as one. */
+  [data-voice-switch] [data-sheet-ground] {
+    position: absolute;
+    inset: 0;
+    background: var(--ink);
+    transform: translateX(101%);
+    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+  }
+
+  [data-voice-switch][data-mode="jarvis"] [data-frame="jarvis"],
+  [data-voice-switch][data-mode="jarvis"] [data-sheet-ground] {
+    transform: translateX(0);
   }
 
   /* --- The speech bubble -------------------------------------------------
    * Positioned in percentages of the picture, measured against the drawn
-   * bubble in jarvis.png (its body spans 9-30% across and 1-32% down at
+   * bubble in the jarvis mask (its body spans 9-30% across and 1-32% down at
    * 1920x1080). The site's own body face, never a handwriting imitation.
    */
   [data-voice-switch] [data-bubble] {
@@ -254,7 +464,8 @@ const figures = [
     margin: 0;
     text-align: center;
     text-wrap: balance;
-    color: var(--ink);
+    /* It sits on the inverted sheet, so it takes that sheet's stroke colour. */
+    color: var(--canvas);
     font-size: 1.35cqw;
     line-height: 1.35;
     pointer-events: none;
@@ -267,9 +478,40 @@ const figures = [
 
   [data-voice-switch][data-mode="jarvis"] [data-bubble] {
     opacity: 1;
-    /* 450ms for the cross-fade to finish, then the 200ms the brief asks for.
-     * Arriving mid-fade muddies both. */
-    transition: opacity 0.3s ease 0.65s;
+    /* 550ms for the slide to land, then the 200ms the brief asks for. Arriving
+     * mid-slide drags the line across the picture behind its own bubble. */
+    transition: opacity 0.3s ease 0.75s;
+  }
+
+  /* --- The captions ------------------------------------------------------
+   * Stacked in one box so the block does not change height when the state
+   * changes; a caption that reflows the figures below it turns a switch into a
+   * page jump.
+   */
+  [data-voice-switch] [data-captions] {
+    display: grid;
+  }
+
+  [data-voice-switch] [data-caption] {
+    grid-area: 1 / 1;
+    margin: 0;
+    max-inline-size: 62ch;
+    font-size: var(--text-body);
+    line-height: 1.6;
+    color: var(--body);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  [data-voice-switch] .caption-lead {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  [data-voice-switch][data-mode="manual"] [data-caption="manual"],
+  [data-voice-switch][data-mode="jarvis"] [data-caption="jarvis"] {
+    opacity: 1;
+    transition: opacity 0.3s ease 0.25s;
   }
 
   /* --- The figures -------------------------------------------------------
@@ -316,13 +558,25 @@ const figures = [
     text-align: center;
   }
 
+  /* Below the picture there is no room for a rail beside it, and a 20px
+   * outdent would push it off the screen edge. */
+  @media (max-width: 767px) {
+    [data-voice-switch] [data-rail-wrap] {
+      --rail-gap: 10px;
+    }
+  }
+
   /* --- Reduced motion ----------------------------------------------------
-   * No cross-fade, no delay. The autoplay and the typewriter are switched off
-   * in the script, which reads the same query.
+   * No slide, no fade, no delay. The autoplay and the typewriter are switched
+   * off in the script, which reads the same query. The rail still moves with
+   * the scroll — it reports a position the visitor is causing themselves, and
+   * freezing it would make it wrong rather than calm.
    */
   @media (prefers-reduced-motion: reduce) {
-    [data-voice-switch] [data-frame],
-    [data-voice-switch] [data-bubble] {
+    [data-voice-switch] [data-frame="jarvis"],
+    [data-voice-switch] [data-sheet-ground],
+    [data-voice-switch] [data-bubble],
+    [data-voice-switch] [data-caption] {
       transition: none;
     }
   }
@@ -330,7 +584,11 @@ const figures = [
 
 <script>
   /*
-   * Tab behaviour for the two frames.
+   * Two independent behaviours, deliberately not entangled:
+   *
+   *  1. The tabs, which the visitor drives (with an autoplay that gives up at
+   *     the first touch).
+   *  2. The rail, which the SCROLL drives and the visitor never controls.
    *
    * Autoplay exists so a visitor who never touches anything still sees the
    * point being made. It stops permanently at the first interaction — a demo
@@ -339,7 +597,7 @@ const figures = [
   const RESET = "manual";
   const CYCLE_MS = 4000;
   /* The bubble's own transition delay; typing may not start before it shows. */
-  const BUBBLE_DELAY_MS = 650;
+  const BUBBLE_DELAY_MS = 750;
   const TYPE_MS = 30;
 
   const section = document.querySelector<HTMLElement>("[data-voice-switch]");
@@ -394,11 +652,11 @@ const figures = [
       section.dataset.mode = mode;
 
       stopTyping();
-      /* Whatever was typed fades out as it stands; rewriting it mid-fade shows
-       * the line snapping back to full length. The next arrival retypes it, and
-       * the screen-reader copy never changed in the first place. */
+      /* Whatever was typed leaves with the sheet it was written on; rewriting
+       * it mid-slide shows the line snapping back to full length. The next
+       * arrival retypes it, and the screen-reader copy never changed. */
       if (mode === RESET) return;
-      /* Let the picture settle and the bubble arrive before the line starts. */
+      /* Let the sheet land and the bubble arrive before the line starts. */
       window.setTimeout(runTypewriter, calm.matches ? 0 : BUBBLE_DELAY_MS);
     };
 
@@ -452,5 +710,40 @@ const figures = [
     calm.addEventListener("change", () => {
       if (calm.matches) takeOver();
     });
+
+    /* --- The rail --------------------------------------------------------
+     * How far the section has travelled through the viewport, 0 to 1. Measured
+     * against the section rather than the document so the marker means "how far
+     * through THIS" — a page-long bar would sit still while the section it
+     * borders scrolls right past.
+     *
+     * Written to a custom property and read by CSS. Nothing here touches
+     * layout, so the read is cheap, and it is throttled to one frame anyway.
+     */
+    const railWrap = section.querySelector<HTMLElement>("[data-rail-wrap]");
+
+    if (railWrap) {
+      let queued = false;
+
+      const measure = () => {
+        queued = false;
+        const box = section.getBoundingClientRect();
+        const travel = box.height + window.innerHeight;
+        /* Zero at the moment the section's top edge enters from below, one when
+         * its bottom edge leaves at the top. */
+        const p = travel > 0 ? (window.innerHeight - box.top) / travel : 0;
+        railWrap.style.setProperty("--p", String(Math.min(1, Math.max(0, p))));
+      };
+
+      const onScroll = () => {
+        if (queued) return;
+        queued = true;
+        window.requestAnimationFrame(measure);
+      };
+
+      measure();
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onScroll, { passive: true });
+    }
   }
 </script>

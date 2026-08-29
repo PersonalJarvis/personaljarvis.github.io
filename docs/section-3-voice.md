@@ -105,12 +105,18 @@ on column 1132 in both, and a 50/50 blend leaves the desk, legs, mug, monitor,
 stand, keyboard, mouse, stool and head outline solid black — meaning
 pixel-identical. Only the arms, the microphone, the bubble, the face and the
 screen contents differ. Image 2 is drawn with a slightly heavier stroke; that
-survives a pure opacity fade unnoticed.
+survives the switch unnoticed.
+
+Both are now masks rather than pictures, so this check applies to the paper
+originals in `f8ee1e0`; redo it there if the pair is ever regenerated.
 
 ### Style block (copied verbatim into both prompts)
 
 ```
 Simple hand-drawn cartoon in black ink on off-white notebook paper.
+(The paper is removed again on the way in — see "How the masks were
+extracted". It is in the prompt because it is what makes the generator
+draw a felt-tip line, not because it reaches the page.)
 Bold uniform outline, no shading, no gradients, no color fills.
 Stick-figure proportions: round head, dot eyes, simple curved line
 for the mouth, noodle arms, minimal detail. Flat side-on view,
@@ -202,19 +208,130 @@ Two tabs above the picture, labelled with the states.
 
 ---
 
-## The cross-fade
+## The sheets
 
-Both frames sit in the same box, `position: absolute`, `inset: 0`,
-`object-fit: cover`. Both load eagerly — a lazy second frame flashes white the
-first time someone switches.
+The drawings are no longer pictures. They are **ink masks**: a single alpha
+channel, 1 where the pen touched the page and 0 where the paper was. Both the
+ground and the stroke colour are then tokens, and one file serves both sheets.
 
-```css
-[data-frame]                    { position: absolute; inset: 0; opacity: 0; transition: opacity .45s ease; }
-[data-frame][data-active="true"]{ opacity: 1; }
+- Resting state — the **ground sheet**: the stage's own surface, strokes in
+  `--ink`.
+- Spoken state — the **inverted sheet**: an `--ink` ground of its own, strokes
+  in `--canvas`.
+
+The maintainer asked for "white first, then the black one slides in", said
+while the site was still cream. The site went dark on 2026-08-29, so the pair
+now reads dark-then-pale. **The relationship is what is kept, not the two
+literal colours**: resting takes the page's own ground and the incoming sheet
+is its opposite. Hardcoding white and black would put a lamp on a black page
+for the resting state and make the incoming sheet invisible.
+
+Two things this bought, beyond the look the maintainer asked for: the paper's
+ruled lines and its red margin rule are gone with the paper, and the pair
+dropped from 2.6 MB to 293 KB.
+
+### How the masks were extracted
+
+From the paper photographs, which are in the history at `f8ee1e0` and are the
+only source if this has to be redone:
+
+```python
+a = np.asarray(Image.open(src).convert("RGB"), dtype=np.float32) / 255
+v = a.max(axis=2)                              # NOT luminance — see below
+cov = 1 - np.clip((v - 0.30) / (0.62 - 0.30), 0, 1)
+Image.fromarray(np.dstack([white_rgb, (cov * 255).astype(np.uint8)]), "RGBA")
 ```
 
-Opacity and nothing else. No slide, no wipe, no zoom, no filter fade. The claim
-is "the same place, a different state", and any movement destroys it.
+`max(r, g, b)` rather than luminance is the whole trick. The notebook's margin
+rule is red, so its red channel is high and `max()` reads it as almost-paper,
+which the curve then wipes. Luminance would average it down to a mid-grey and
+leave a pink line running down every sheet.
+
+The band is 0.30 to 0.62 because the ink sits below 0.10 and the paper — rules
+included — sits between 0.70 and 0.80. Anything above 0.62 is paper and is
+erased; the gap keeps the strokes anti-aliased instead of jagged.
+
+### The ground is its own element
+
+A mask punches the strokes **out of** the element carrying it, so the element
+is the strokes and nothing else. The ink sheet therefore needs a second box
+behind it for its black ground. The two carry the same transform and arrive
+together.
+
+---
+
+## The slide
+
+The ink sheet enters from the right, over the white one, and leaves the same
+way. `transform` only — 550ms on a standard ease.
+
+```css
+[data-frame="jarvis"],
+[data-sheet-ground]              { transform: translateX(101%); transition: transform .55s cubic-bezier(.4,0,.2,1); }
+[data-mode="jarvis"] [data-frame="jarvis"],
+[data-mode="jarvis"] [data-sheet-ground] { transform: translateX(0); }
+```
+
+**This replaces the cross-fade, on the maintainer's instruction (2026-08-29).**
+The earlier rule here was "opacity and nothing else", reasoning that the claim
+is "the same place, a different state" and movement works against it. That
+reasoning still holds for a *dissolve between two photographs*, which is what
+it was written about. It does not survive the sheets: two grounds cross-fading
+through each other spend 300ms as a muddy grey, and the moment that reads worst
+is the middle of every switch. A sheet laid over another sheet is a thing that
+happens to paper, so the movement now says something true rather than nothing.
+
+The stage keeps `overflow: hidden`, which is what stops the off-canvas sheet
+from being visible or scrollable. It is load-bearing, not decoration.
+
+---
+
+## The captions
+
+One line per state, under the picture, cross-faded with the sheets.
+
+The section used to be an eyebrow, a headline, a switch and a picture, which
+left the switch making its point in mime — the visitor had to supply the
+argument themselves from two drawings. Each caption says what its side of the
+switch actually costs, and that is what makes the control worth touching.
+
+Both are in the DOM at all times, stacked in one grid cell so the block cannot
+change height. A caption that reflows the figures under it turns a switch into
+a page jump.
+
+Everything they claim is something the app does: voice in, a spoken answer, and
+the Workspace plugins the bubble already names. The rule against invented
+figures applies to prose too.
+
+There is also a standfirst under the headline, on the `prose` column. It exists
+because the headline alone is an assertion with nothing behind it until the
+picture loads.
+
+---
+
+## The scroll rail
+
+An L around the picture — down its left edge, then along its bottom — with a
+marker showing how far the section has travelled through the viewport.
+
+- `--p`, 0 to 1, is written to the wrapper by the script and read by CSS. It is
+  measured against **the section**, not the document: a page-long bar would sit
+  still while the section it borders scrolled past
+- The first leg fills over the first half of that travel, the second over the
+  rest, so the corner is the halfway mark and the marker walks the corner
+  rather than jumping it
+- Ink on a `--hairline-strong` track. **Not red.** The red the maintainer
+  pointed at was the notebook paper's own margin rule, which the masks removed;
+  it was never an accent, and this system has no accent to reach for
+- The marker's ring is a `border` in the page colour. This system has no shadow
+  tokens and the gate rejects one
+- It reports a position the visitor is causing themselves, so it keeps moving
+  under `prefers-reduced-motion`. Freezing it would make it wrong, not calm
+- The rail is `aria-hidden`. Scroll position is not information a screen reader
+  needs restated
+
+The 20px outdent is the only thing in this section that leaves its column. It
+drops to 10px below `768px`, where the gutter no longer has room for it.
 
 ---
 
@@ -263,7 +380,9 @@ Changing that later needs four evidenced "before" values, not a design decision.
 - Text inside a generated image — every word is DOM
 - The title of a book series, a cartoon character or an illustrator in a prompt
 - Two independently generated frames whose figure or room visibly differ
-- Slide, wipe, zoom or filter transitions. Opacity only
+- A cross-fade between the two sheets — see § "The slide"
+- Removing `overflow: hidden` from the stage; the off-canvas sheet needs it
+- Recolouring a sheet in the raster. Ground and strokes are tokens
 - Invented figures
 - Third-party logos or marks inside the drawings
 - A bespoke `max-width` instead of a step from `layout.md`
