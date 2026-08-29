@@ -11,6 +11,19 @@ export default defineConfig({
   integrations: [react(), sitemap()],
   vite: {
     plugins: [tailwindcss(), pinDevReactRuntime()],
+    // `three` reaches the browser through ONE island that is imported at
+    // runtime: <TurningMark client:media="(min-width: 1024px)" /> in
+    // Install.astro. Vite's cold-start scan never walks that edge, so the
+    // dependency is absent from the pre-bundle. The browser's first request for
+    // it then kicks off an on-demand optimize run, and Vite answers 504 while
+    // that runs. `astro-island` retries three times, gives up, and the mark
+    // stays dead with nothing on screen to say so -- the same silent shape as
+    // the jsx-dev-runtime failure documented above.
+    //
+    // Naming it here puts `three` in the pre-bundle at startup, so the wait
+    // costs one cold start instead of a broken island. A production build is
+    // unaffected: it walks the full import graph either way.
+    optimizeDeps: { include: ["three"] },
   },
 });
 
