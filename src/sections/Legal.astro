@@ -44,31 +44,46 @@ const year = new Date().getFullYear();
      page and there is no reason for the last boundary to be the one that is
      shaped differently — see docs/layout.md § "One boundary, one shape". No
      `SectionTrack`: the marker walks the sections a reader scrolls THROUGH,
-     and this is the end of the page. -->
-<footer class="legal relative flex flex-col">
-  <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
-    <div class="section-bounds legal-inner">
-      <div class="legal-top">
-        <p class="legal-mark">
-          Personal Jarvis
-          <span class="legal-sep" aria-hidden="true">·</span>
-          Apache 2.0
-        </p>
+     and this is the end of the page.
 
-        <nav aria-label="Legal and project documents">
-          <ul class="legal-links">
-            {
-              documents.map((doc) => (
-                <li>
-                  <a href={doc.href} target="_blank" rel="noopener">
-                    {doc.label}
-                  </a>
-                </li>
-              ))
-            }
-          </ul>
-        </nav>
+     The one thing about this band that is not like the others is who pays for
+     the air under its closing rule. Everywhere else that is the Container's
+     padding; here it is `.section-close`, a painted block of the same height.
+     The rails are a fixed layer nothing in the flow can shorten, so the only
+     way they end at the last rule instead of running out of the window under
+     it is for something opaque to stand in front of them. -->
+
+<footer class="legal relative flex flex-col">
+  <Container width="content" class="section-inset section-inset--close flex min-h-0 flex-1 flex-col">
+    <div class="section-bounds legal-inner">
+      <!-- Who the page belongs to, and under what. Two lines rather than one
+           run of text with a separator in it: the name is the anchor of the
+           block and the licence is the answer to the first question anyone
+           has about it, and neither is a caption of the other. -->
+      <div class="legal-identity">
+        <p class="legal-mark">Personal Jarvis</p>
+        <p class="legal-licence">Apache 2.0</p>
       </div>
+
+      <!-- The documents stand as a column on the right rail rather than a row
+           under the name. Six labels in a row ran the full width of the
+           content column and left the whole right half of the foot empty
+           under it; as a column they fill that half, the fine print keeps its
+           measure on the left, and the two blocks close the page as one
+           spread instead of two ragged lines. -->
+      <nav class="legal-docs" aria-label="Legal and project documents">
+        <ul>
+          {
+            documents.map((doc) => (
+              <li>
+                <a href={doc.href} target="_blank" rel="noopener">
+                  {doc.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
 
       <div class="legal-fine">
         {/*
@@ -94,10 +109,16 @@ const year = new Date().getFullYear();
           YouTube is contacted and not before.
         </p>
 
-        <p>&copy; {year} the Personal Jarvis contributors</p>
+        <p class="legal-copyright">&copy; {year} the Personal Jarvis contributors</p>
       </div>
     </div>
   </Container>
+
+  <!-- The page's last inset. It is a real element rather than padding for one
+       reason: it has to PAINT, so the rails stop on the rule above it instead
+       of running out of the bottom of the window. Decorative and empty, so it
+       is hidden from the accessibility tree. -->
+  <div class="section-close" aria-hidden="true"></div>
 </footer>
 
 <style>
@@ -106,41 +127,64 @@ const year = new Date().getFullYear();
      between a rule and the thing under it; the band supplies `--section-pad`
      like every other section now. */
 
-  /* The name and the documents on one line, and under each other as soon as
-     the row would have to squeeze. */
-  .legal-top {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-base) var(--space-xl);
+  /* Two columns: everything that reads left to right on the left, the document
+     list held against the right rail. The list spans both rows so it starts on
+     the name's baseline and runs down beside the fine print.
+
+     NO PADDING OR BORDER ON THE INLINE AXIS. This element is `.section-bounds`,
+     which is laid directly against the rails; inline padding here would pull
+     the two rules off them (docs/layout.md § "The marker has to be re-pointed
+     at the band"). The columns are a grid gap, which costs neither. */
+  .legal-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "identity docs"
+      "fine     docs";
+    column-gap: var(--space-xxl);
+    row-gap: var(--space-xl);
+    align-items: start;
   }
 
+  .legal-identity {
+    grid-area: identity;
+  }
+
+  /* The one step up in size on the whole foot, and it is what makes the block
+     read as a signature rather than as more fine print. Everything else here
+     stays at `--text-caption`. */
   .legal-mark {
+    font-size: var(--text-title-sm);
+    color: var(--ink);
+  }
+
+  .legal-licence {
+    margin-top: var(--space-xxs);
     font-size: var(--text-caption);
     color: var(--body);
   }
 
-  .legal-sep {
-    color: var(--muted-soft);
-    padding-inline: var(--space-xxs);
+  .legal-docs {
+    grid-area: docs;
+    justify-self: end;
   }
 
-  .legal-links {
+  .legal-docs ul {
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-xs) var(--space-lg);
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-sm);
     font-size: var(--text-caption);
   }
 
-  .legal-links a {
+  .legal-docs a {
     color: var(--muted);
     text-decoration: none;
     transition: color 160ms ease;
   }
 
-  .legal-links a:hover,
-  .legal-links a:focus-visible {
+  .legal-docs a:hover,
+  .legal-docs a:focus-visible {
     color: var(--ink);
   }
 
@@ -148,7 +192,7 @@ const year = new Date().getFullYear();
      a `ch` limit is what "readable line length" actually protects, and it does
      not put a second left edge on the page the way a prose container would. */
   .legal-fine {
-    margin-top: var(--space-xl);
+    grid-area: fine;
     max-inline-size: 78ch; /* layout-allow: a measure in ch, not a layout width — the block still sits in the content container */
     font-size: var(--text-caption);
     /* `--muted`, not `--muted-soft`. On this canvas the soft tone is 3.7:1,
@@ -159,8 +203,41 @@ const year = new Date().getFullYear();
     gap: var(--space-sm);
   }
 
+  /* The last line of the page, and it gets air of its own so it is not read as
+     a third clause of the sentence above it. */
+  .legal-copyright {
+    margin-top: var(--space-md);
+  }
+
+  /* Below the container's breakpoint the two columns have nowhere to go: the
+     rails are gone, the measure is the screen, and a column of six labels held
+     against a right edge that no longer exists reads as a stray block. They
+     stack, and the list goes back to a wrapping row — which is what it was
+     built as, and what it is good at when it has the full width. */
+  @media (max-width: 767px) {
+    .legal-inner {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        "identity"
+        "docs"
+        "fine";
+      row-gap: var(--space-lg);
+    }
+
+    .legal-docs {
+      justify-self: start;
+    }
+
+    .legal-docs ul {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: var(--space-xs) var(--space-lg);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .legal-links a {
+    .legal-docs a {
       transition: none;
     }
   }

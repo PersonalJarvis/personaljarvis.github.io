@@ -551,6 +551,59 @@ body > section::before {
   padding-block: var(--section-inset);
 }
 
+/* The last band on the page hands its closing inset to a PAINTED block.
+ *
+ * The air itself does not change: the footer still ends on `--section-inset`
+ * below its bottom rule, exactly like every other band. What changes is who
+ * supplies it — the Container's padding, which is transparent, or an element
+ * with the page colour on it, which is not. See `.section-close` below for
+ * what that buys and why the footer is the only place it is allowed.
+ *
+ * ONLY THE LAST BLOCK ON THE PAGE MAY TAKE THIS PAIR. On anything with a
+ * section under it, an opaque block breaks the rails in the middle of the
+ * page — one gap per section, the failure global.css warns about.
+ */
+.section-inset--close {
+  padding-block-end: 0;
+}
+
+/* The page's last inset, painted rather than empty — and what stops the rails.
+ *
+ * THE PROBLEM. The rails are a FIXED layer the full height of the window (see
+ * "Page chrome" above): there is no length to shorten and no element that ends
+ * them, so at the bottom of the document they ran straight past the footer's
+ * closing rule and out of the window with nothing under them. The page did not
+ * end, it stopped.
+ *
+ * WHAT DOES NOT WORK. Simply dropping the footer's closing inset makes the
+ * bottom rule the last row of the document, and the rails do then end on it —
+ * but at the end of the scroll that row IS the bottom edge of the window, so
+ * the line the page closes on is the one line the reader cannot see. Measured
+ * in Chrome on 2026-08-29: the rule sat at exactly `innerHeight`, and read as
+ * a page cut off rather than a page finished.
+ *
+ * WHAT DOES. A block the height of one inset, filled with the page colour, in
+ * flow under the band. An in-flow background paints ABOVE a `z-index: -1`
+ * layer, so the rails are covered for exactly its height: they come down the
+ * page, meet the closing rule, and stop there. Under it is one inset of quiet
+ * ground, so the last rule is a line with air beneath it — visible, and read
+ * as the end.
+ *
+ * Everywhere else on this page an opaque ground over the rails is a defect,
+ * because it takes a bite out of the middle of two lines that are meant to run
+ * unbroken. Here there is no "after": the bite is the end of the line.
+ *
+ * `--canvas` explicitly, not `inherit` or `transparent`. The whole point is
+ * that this block PAINTS; a transparent one covers nothing and the rails run
+ * through it. It is the same black `body` already carries (global.css § "One
+ * ground"), so nothing about the page's colour changes — only what is in front
+ * of the chrome layer.
+ */
+.section-close {
+  block-size: var(--section-inset);
+  background: var(--canvas);
+}
+
 /* The band: the box the two rules bound, and the box the marker walks.
  *
  * THIS ELEMENT IS THE MARKER'S TRACKED BOX. SectionTrack measures whatever

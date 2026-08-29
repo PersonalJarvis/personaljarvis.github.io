@@ -722,6 +722,28 @@ steps 56px of screen for nothing — and 56px is enough to push the section past
 the window height at which it gives up pinning, which is why that query moved
 with this change.
 
+### The last band closes the rails
+
+The rails are fixed and the full height of the window, so nothing in the flow
+can shorten them: at the bottom of the document they ran past the footer's
+closing rule and out of the window under it. Dropping the footer's closing
+inset puts that rule on the last row of the document, where the rails do end on
+it — and where it is also the bottom edge of the window, so the page closes on
+a line nobody can see.
+
+So the last inset is **painted** instead of empty. The footer's Container takes
+`.section-inset--close` (no bottom padding) and the same height comes back as
+`.section-close`, filled with `--canvas`. An in-flow background paints above the
+`z-index: -1` chrome layer, so the rails are covered for exactly that height:
+down the page, into the closing rule, stop. The rhythm is untouched — same
+inset, same rule, same air — the air is just opaque now.
+
+**Only the last block on the page.** Anywhere else this is the defect
+["One ground, no section tone"](#one-ground-no-section-tone) warns about: an
+opaque ground over the rails takes a bite out of the middle of two lines meant
+to run unbroken. At the end of the page there is no middle to take a bite out
+of. See [`footer.md`](footer.md) § "The page closes on its last line".
+
 ### A run of sections may opt out — together
 
 Plugins, skills and CLIs read as one run: no band, no frame, no ground of their

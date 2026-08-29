@@ -65,11 +65,51 @@ more entries in the document list.
 | Element | Value |
 |---|---|
 | Width | step `content` — the same two rails as everything above |
-| Boundary | `.section-rule` at the top, so the foot hangs from a line |
-| Padding | `clamp(2rem, 4svh, 3rem)` above, `clamp(2.5rem, 5svh, 4rem)` below |
-| Type | `--text-caption` throughout |
-| Colour | `--muted` for the links, `--muted` for the fine print |
+| Boundary | `.section-bounds` — the page's one band shape, two rules an inset in |
+| Padding | `--section-inset` outside the rules, `--section-pad` inside them |
+| Type | `--text-caption` throughout, except the wordmark at `--text-title-sm` |
+| Colour | `--ink` for the wordmark, `--body` for the licence, `--muted` for the rest |
 | Measure | 78ch on the fine print, inside the content column |
+
+**One step up in size, and only one.** The wordmark is
+`--text-title-sm`/`--ink`; everything else stays caption-sized. Without it the
+whole foot is one grey block of small type and reads as a disclaimer someone
+forgot to lay out — with it the block has a signature at the top and the rest
+hangs off it. A second size here would start rebuilding the page inside the
+footer, which is what the "deliberately NOT here" list is guarding against.
+
+---
+
+## The page closes on its last line
+
+The rails are a **fixed** layer the full height of the window
+(`layout.md` § "Page chrome"). Nothing in the flow can shorten them, so at the
+bottom of the document they used to run straight past the footer's closing rule
+and out of the window with nothing under them: the page did not end, it
+stopped.
+
+**Dropping the closing inset is not the fix.** It makes the bottom rule the
+last row of the document, and the rails do end on it — but at the end of the
+scroll that row *is* the bottom edge of the window, so the line the page closes
+on is the one line the reader cannot see. Measured in Chrome on 2026-08-29: the
+rule sat at exactly `innerHeight`, and the result read as a page cut off rather
+than a page finished.
+
+**The fix is to paint the last inset instead of leaving it empty.** The
+Container takes `.section-inset--close` (no bottom padding) and the same height
+comes back as `.section-close`, a block filled with `--canvas` under the band.
+An in-flow background paints *above* a `z-index: -1` layer, so the rails are
+covered for exactly its height: they come down the page, meet the closing rule,
+and stop. Under it is one inset of quiet ground, and the last rule is a line
+with air beneath it.
+
+The vertical rhythm is unchanged — same inset, same rule, same air. The only
+difference is that the air is opaque.
+
+**Only the last block on the page may do this.** Anywhere else an opaque ground
+over the rails takes a bite out of the middle of two lines meant to run
+unbroken — one gap per section, the failure `global.css` warns about. Here
+there is no "after": the bite is the end of the line.
 
 **`--muted`, never `--muted-soft`.** On `--canvas` the soft tone is 3.7:1,
 under AA for text this size. Legal wording is the last thing on a page that may
@@ -83,8 +123,26 @@ the `content` container and keeps the page's one left edge. It carries a
 
 ## Build
 
-- Name and licence left, the document list right, on one line; both wrap onto
-  their own lines when the row would have to squeeze
+Two columns, and the second one is what makes the foot read as laid out rather
+than as leftover:
+
+| Column | Holds | Sits |
+|---|---|---|
+| left | wordmark, licence, fine print, copyright | on the left rail |
+| right | the document list, one label per line | held against the right rail |
+
+- **The list is a column, not a row.** Six labels in a row ran the full width of
+  the content column and left the entire right half of the foot empty under it.
+  As a column they fill that half, the fine print keeps its 78ch measure on the
+  left, and the two blocks close the page as one spread.
+- **The list spans both rows of the grid**, so it starts on the wordmark's
+  baseline and runs down beside the fine print.
+- **The columns are a grid gap, never padding.** The band is `.section-bounds`,
+  which is laid directly against the rails; inline padding on it pulls both
+  rules off them (`layout.md` § "The marker has to be re-pointed at the band").
+- **Below 768px they stack** and the list goes back to a wrapping row. The rails
+  are gone at that width and the measure is the screen, so a column of labels
+  held against a right edge that no longer exists reads as a stray block.
 - Every document link is external: `target="_blank"`, `rel="noopener"`
 - The list is a `<nav>` with an `aria-label`, because "License, Notice,
   Trademarks…" out of context is a set of unlabelled links
@@ -101,3 +159,7 @@ the `content` container and keeps the page's one left edge. It carries a
   about this page, and that paragraph is the reason the page needs no cookie
   banner
 - Its own `max-width`. It stands on the same rails as every other block
+- Inline padding on the band, which is what pulls its two rules off the rails
+- A second type size. One step up on the wordmark, and the rest is caption
+- `.section-close` anywhere but here. It is the end of the rails, and there is
+  exactly one end
