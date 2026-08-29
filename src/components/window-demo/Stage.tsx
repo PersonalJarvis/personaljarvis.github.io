@@ -124,6 +124,17 @@ export interface DemoStageProps {
   description: string;
   /** Called on the first pointer press anywhere in the stage. */
   onTakeOver?: () => void;
+  /**
+   * The well's own shape, for a demo whose window is not a feature card's.
+   *
+   * The default is the feature cards' well: a 7/6 box beside the copy, going
+   * full-height once the split has room. A demo that spans the whole content
+   * column has neither of those facts — a 7/6 well around a 16/10 window is a
+   * third of a screen of backdrop above and below it — so it hands its own
+   * shape in. The prop takes classes rather than a boolean because the next
+   * such demo will want a third shape, and a boolean would then be two.
+   */
+  wellShape?: string;
   children: ReactNode;
 }
 
@@ -139,6 +150,7 @@ export function DemoStage({
   canvasHeight,
   description,
   onTakeOver,
+  wellShape = "aspect-[7/6] lg:aspect-auto lg:h-full",
   children,
 }: DemoStageProps) {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -170,7 +182,7 @@ export function DemoStage({
          * Every interactive element inside already calls takeOver itself, so
          * this only has to catch a press on dead space.
          */
-        className="relative grid aspect-[7/6] w-full place-items-center overflow-hidden rounded-[var(--radius-lg)] border border-hairline bg-canvas p-6 lg:aspect-auto lg:h-full"
+        className={`relative grid w-full place-items-center overflow-hidden rounded-[var(--radius-lg)] border border-hairline bg-canvas p-6 ${wellShape}`}
       >
         {/*
           The same painting the hero window floats on.

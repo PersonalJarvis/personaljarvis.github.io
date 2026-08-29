@@ -10,6 +10,7 @@
     "check:style": "node scripts/check-style.mjs",
     "check:geocode": "node scripts/test-geocode.mjs",
     "data:stargazers": "node scripts/fetch-stargazers.mjs",
+    "data:repo-map": "node scripts/fetch-repo-map.mjs",
     "data:gazetteer": "node scripts/build-gazetteer.mjs",
     "data:land-mask": "node scripts/build-land-mask.mjs",
     "verify": "npm run check:style && npm run check:geocode && astro check && npm run build"

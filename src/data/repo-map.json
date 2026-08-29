@@ -1,0 +1,693 @@
+{
+  "repo": "PersonalJarvis/PersonalJarvis",
+  "branch": "main",
+  "description": "Self-hosted voice assistant. Speak to your computer: it answers aloud, types your dictation, and operates your apps.",
+  "license": "Apache-2.0",
+  "language": "Python",
+  "topics": [
+    "agent-orchestration",
+    "ai-agent",
+    "ai-coding-assistant",
+    "claude-code",
+    "coding-agent",
+    "computer-use"
+  ],
+  "stars": 31,
+  "forks": 12,
+  "openIssues": 4,
+  "lastCommit": {
+    "message": "fix(onboarding): a failed config write must not end first run at step 04",
+    "sha": "3db9b6a",
+    "date": "2026-08-29T08:39:21Z"
+  },
+  "readAt": "2026-08-29T16:00:01.779Z",
+  "pages": {
+    "root": {
+      "path": "",
+      "entries": [
+        {
+          "name": ".agents",
+          "type": "dir"
+        },
+        {
+          "name": ".claude",
+          "type": "dir"
+        },
+        {
+          "name": ".codex",
+          "type": "dir"
+        },
+        {
+          "name": ".dockerignore",
+          "type": "file"
+        },
+        {
+          "name": ".env.example",
+          "type": "file"
+        },
+        {
+          "name": ".gitattributes",
+          "type": "file"
+        },
+        {
+          "name": ".githooks",
+          "type": "dir"
+        },
+        {
+          "name": ".github",
+          "type": "dir"
+        },
+        {
+          "name": ".gitignore",
+          "type": "file"
+        },
+        {
+          "name": ".mailmap",
+          "type": "file"
+        },
+        {
+          "name": ".pre-commit-config.yaml",
+          "type": "file"
+        },
+        {
+          "name": "AGENTS.md",
+          "type": "file"
+        },
+        {
+          "name": "CHANGELOG.md",
+          "type": "file"
+        },
+        {
+          "name": "CLAUDE.md",
+          "type": "file"
+        },
+        {
+          "name": "CODE_OF_CONDUCT.md",
+          "type": "file"
+        },
+        {
+          "name": "CONTRIBUTING.md",
+          "type": "file"
+        },
+        {
+          "name": "Dockerfile",
+          "type": "file"
+        },
+        {
+          "name": "LICENSE",
+          "type": "file"
+        },
+        {
+          "name": "NOTICE",
+          "type": "file"
+        },
+        {
+          "name": "README.md",
+          "type": "file"
+        },
+        {
+          "name": "SECURITY.md",
+          "type": "file"
+        },
+        {
+          "name": "TRADEMARK.md",
+          "type": "file"
+        },
+        {
+          "name": "assets",
+          "type": "dir"
+        },
+        {
+          "name": "board-backend",
+          "type": "dir"
+        },
+        {
+          "name": "build.bat",
+          "type": "file"
+        },
+        {
+          "name": "conductor",
+          "type": "dir"
+        },
+        {
+          "name": "conftest.py",
+          "type": "file"
+        },
+        {
+          "name": "desktop-ttu-baseline.json",
+          "type": "file"
+        },
+        {
+          "name": "desktop-ttu-latest.json",
+          "type": "file"
+        },
+        {
+          "name": "dev.bat",
+          "type": "file"
+        },
+        {
+          "name": "docker-compose.yml",
+          "type": "file"
+        },
+        {
+          "name": "docs",
+          "type": "dir"
+        },
+        {
+          "name": "homebrew-tap",
+          "type": "dir"
+        },
+        {
+          "name": "install",
+          "type": "dir"
+        },
+        {
+          "name": "jarvis.spec",
+          "type": "file"
+        },
+        {
+          "name": "jarvis.toml.example",
+          "type": "file"
+        },
+        {
+          "name": "jarvis",
+          "type": "dir"
+        },
+        {
+          "name": "keyproxy",
+          "type": "dir"
+        },
+        {
+          "name": "mcp.json.example",
+          "type": "file"
+        },
+        {
+          "name": "mcps",
+          "type": "dir"
+        },
+        {
+          "name": "packaging",
+          "type": "dir"
+        },
+        {
+          "name": "pyproject.toml",
+          "type": "file"
+        },
+        {
+          "name": "qa",
+          "type": "dir"
+        },
+        {
+          "name": "requirements.in",
+          "type": "file"
+        },
+        {
+          "name": "requirements.txt",
+          "type": "file"
+        },
+        {
+          "name": "run-dev.bat",
+          "type": "file"
+        },
+        {
+          "name": "run-dev.sh",
+          "type": "file"
+        },
+        {
+          "name": "run-mascot.bat",
+          "type": "file"
+        },
+        {
+          "name": "run-orb.bat",
+          "type": "file"
+        },
+        {
+          "name": "run.bat",
+          "type": "file"
+        },
+        {
+          "name": "run.sh",
+          "type": "file"
+        },
+        {
+          "name": "scoop-bucket",
+          "type": "dir"
+        },
+        {
+          "name": "scripts",
+          "type": "dir"
+        },
+        {
+          "name": "skillbook",
+          "type": "dir"
+        },
+        {
+          "name": "src",
+          "type": "dir"
+        },
+        {
+          "name": "tests",
+          "type": "dir"
+        },
+        {
+          "name": "tools",
+          "type": "dir"
+        },
+        {
+          "name": "ui",
+          "type": "dir"
+        },
+        {
+          "name": "uv.lock",
+          "type": "file"
+        },
+        {
+          "name": "verify-wave6.sh",
+          "type": "file"
+        },
+        {
+          "name": "video",
+          "type": "dir"
+        },
+        {
+          "name": "voice.bat",
+          "type": "file"
+        },
+        {
+          "name": "wiki-video",
+          "type": "dir"
+        },
+        {
+          "name": "wiki",
+          "type": "dir"
+        }
+      ]
+    },
+    "install": {
+      "path": "install",
+      "entries": [
+        {
+          "name": "README.md",
+          "type": "file"
+        },
+        {
+          "name": "TRUST_ROOT.md",
+          "type": "file"
+        },
+        {
+          "name": "in-toto",
+          "type": "dir"
+        },
+        {
+          "name": "install-verify.ps1",
+          "type": "file"
+        },
+        {
+          "name": "install-verify.sh",
+          "type": "file"
+        },
+        {
+          "name": "install.ps1",
+          "type": "file"
+        },
+        {
+          "name": "install.sh",
+          "type": "file"
+        },
+        {
+          "name": "installer.py",
+          "type": "file"
+        },
+        {
+          "name": "keys",
+          "type": "dir"
+        },
+        {
+          "name": "tuf",
+          "type": "dir"
+        },
+        {
+          "name": "uninstall.ps1",
+          "type": "file"
+        },
+        {
+          "name": "uninstall.sh",
+          "type": "file"
+        }
+      ]
+    },
+    "jarvis": {
+      "path": "jarvis",
+      "entries": [
+        {
+          "name": "__init__.py",
+          "type": "file"
+        },
+        {
+          "name": "__main__.py",
+          "type": "file"
+        },
+        {
+          "name": "admin",
+          "type": "dir"
+        },
+        {
+          "name": "agent_accounts.py",
+          "type": "file"
+        },
+        {
+          "name": "agent_chat",
+          "type": "dir"
+        },
+        {
+          "name": "agent_cli_probe.py",
+          "type": "file"
+        },
+        {
+          "name": "agent_config_parity.py",
+          "type": "file"
+        },
+        {
+          "name": "agent_login_flow.py",
+          "type": "file"
+        },
+        {
+          "name": "agent_usage.py",
+          "type": "file"
+        },
+        {
+          "name": "agentic_ide",
+          "type": "dir"
+        },
+        {
+          "name": "agents",
+          "type": "dir"
+        },
+        {
+          "name": "api_family_quota_state.py",
+          "type": "file"
+        },
+        {
+          "name": "artifacts",
+          "type": "dir"
+        },
+        {
+          "name": "assets",
+          "type": "dir"
+        },
+        {
+          "name": "audio",
+          "type": "dir"
+        },
+        {
+          "name": "autostart",
+          "type": "dir"
+        },
+        {
+          "name": "awareness",
+          "type": "dir"
+        },
+        {
+          "name": "board",
+          "type": "dir"
+        },
+        {
+          "name": "brain",
+          "type": "dir"
+        },
+        {
+          "name": "browser_voice",
+          "type": "dir"
+        },
+        {
+          "name": "channels",
+          "type": "dir"
+        },
+        {
+          "name": "claude_auth.py",
+          "type": "file"
+        },
+        {
+          "name": "claude_auth_state.py",
+          "type": "file"
+        },
+        {
+          "name": "claude_credentials.py",
+          "type": "file"
+        },
+        {
+          "name": "claude_quota_state.py",
+          "type": "file"
+        },
+        {
+          "name": "cli",
+          "type": "dir"
+        },
+        {
+          "name": "cli_ctl",
+          "type": "dir"
+        },
+        {
+          "name": "clis",
+          "type": "dir"
+        },
+        {
+          "name": "codex_app_server.py",
+          "type": "file"
+        },
+        {
+          "name": "codex_auth.py",
+          "type": "file"
+        },
+        {
+          "name": "codex_auth_state.py",
+          "type": "file"
+        },
+        {
+          "name": "codex_login_guard.py",
+          "type": "file"
+        },
+        {
+          "name": "codex_quota_state.py",
+          "type": "file"
+        },
+        {
+          "name": "commands",
+          "type": "dir"
+        },
+        {
+          "name": "contacts",
+          "type": "dir"
+        },
+        {
+          "name": "control",
+          "type": "dir"
+        },
+        {
+          "name": "core",
+          "type": "dir"
+        },
+        {
+          "name": "costs",
+          "type": "dir"
+        },
+        {
+          "name": "cu",
+          "type": "dir"
+        },
+        {
+          "name": "diagnostics",
+          "type": "dir"
+        },
+        {
+          "name": "dictation",
+          "type": "dir"
+        },
+        {
+          "name": "docs",
+          "type": "dir"
+        },
+        {
+          "name": "documents",
+          "type": "dir"
+        },
+        {
+          "name": "friends",
+          "type": "dir"
+        },
+        {
+          "name": "google_cli",
+          "type": "dir"
+        },
+        {
+          "name": "grok_build_auth.py",
+          "type": "file"
+        },
+        {
+          "name": "hardware",
+          "type": "dir"
+        },
+        {
+          "name": "harness",
+          "type": "dir"
+        },
+        {
+          "name": "intent",
+          "type": "dir"
+        },
+        {
+          "name": "local_models",
+          "type": "dir"
+        },
+        {
+          "name": "marketplace",
+          "type": "dir"
+        },
+        {
+          "name": "mcp",
+          "type": "dir"
+        },
+        {
+          "name": "memory",
+          "type": "dir"
+        },
+        {
+          "name": "missions",
+          "type": "dir"
+        },
+        {
+          "name": "orchestrator",
+          "type": "dir"
+        },
+        {
+          "name": "overlay",
+          "type": "dir"
+        },
+        {
+          "name": "platform",
+          "type": "dir"
+        },
+        {
+          "name": "plugins",
+          "type": "dir"
+        },
+        {
+          "name": "pointer",
+          "type": "dir"
+        },
+        {
+          "name": "preview",
+          "type": "dir"
+        },
+        {
+          "name": "realtime",
+          "type": "dir"
+        },
+        {
+          "name": "runs",
+          "type": "dir"
+        },
+        {
+          "name": "safety",
+          "type": "dir"
+        },
+        {
+          "name": "screen_context",
+          "type": "dir"
+        },
+        {
+          "name": "sessions",
+          "type": "dir"
+        },
+        {
+          "name": "setup",
+          "type": "dir"
+        },
+        {
+          "name": "skills",
+          "type": "dir"
+        },
+        {
+          "name": "speech",
+          "type": "dir"
+        },
+        {
+          "name": "state",
+          "type": "dir"
+        },
+        {
+          "name": "tasks",
+          "type": "dir"
+        },
+        {
+          "name": "telemetry",
+          "type": "dir"
+        },
+        {
+          "name": "telephony",
+          "type": "dir"
+        },
+        {
+          "name": "terminal",
+          "type": "dir"
+        },
+        {
+          "name": "tools",
+          "type": "dir"
+        },
+        {
+          "name": "trigger",
+          "type": "dir"
+        },
+        {
+          "name": "ui",
+          "type": "dir"
+        },
+        {
+          "name": "vision",
+          "type": "dir"
+        },
+        {
+          "name": "visuals",
+          "type": "dir"
+        },
+        {
+          "name": "voice",
+          "type": "dir"
+        },
+        {
+          "name": "workflows",
+          "type": "dir"
+        },
+        {
+          "name": "workspace",
+          "type": "dir"
+        }
+      ]
+    }
+  },
+  "file": {
+    "path": "install/install.ps1",
+    "lines": [
+      "# Personal Jarvis - Windows quick-install bootstrap (Stage 1)",
+      "#",
+      "# Usage (from PowerShell):",
+      "#   irm https://raw.githubusercontent.com/PersonalJarvis/PersonalJarvis/main/install/install.ps1 | iex",
+      "#",
+      "# This bootstrap is intentionally small. It:",
+      "#   1. Verifies Python 3.11+ and git are available.",
+      "#   2. Offers to install either missing prerequisite, then re-checks in place.",
+      "#   3. Checks for Node.js 18+ (optional - a missing Node never blocks the install).",
+      "#   4. Clones (or updates) personal-jarvis into ~\\.personal-jarvis.",
+      "#   5. Creates a Python venv, installs `rich` + `packaging`.",
+      "#   6. Hands control to install/installer.py (the Stage 2 orchestrator).",
+      "#",
+      "# All heavy logic lives in installer.py so it can be unit-tested and",
+      "# kept cross-platform. The shell-native prerequisite block is delimited so it",
+      "# can be tested directly even on machines where Python is not installed yet.",
+      "#",
+      "# SOURCE-ENCODING RULE: this file is served BOM-less (a BOM breaks"
+    ],
+    "totalLines": 841
+  }
+}
