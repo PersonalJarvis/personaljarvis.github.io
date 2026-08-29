@@ -166,19 +166,12 @@ const visibility = [
   }
 
   /*
-   * The seam. On a real board it is the gap between the two halves, and it is
-   * what tells the eye the card is split before anything moves.
+   * There is deliberately no seam line. A real board has a visible gap between
+   * its two flaps, and drawing one here did read as a split card — but it also
+   * struck a line through every mark on a strip that is otherwise still, and
+   * that is what a visitor sees for 3.5 of every 5 seconds. The split is
+   * legible from the movement alone.
    */
-  .cell::after {
-    content: "";
-    position: absolute;
-    inset-inline: 0;
-    top: 50%;
-    height: 1px;
-    background: var(--canvas);
-    z-index: 4;
-    pointer-events: none;
-  }
 
   @keyframes cell-front {
     0%,
@@ -226,7 +219,13 @@ const visibility = [
   }
 
   .flap-top {
-    clip-path: inset(0 0 50% 0);
+    /*
+     * Half plus a hair. Cutting both halves at exactly 50% leaves a sub-pixel
+     * gap on fractional card heights, and the page shows through it as the
+     * very line this strip is not supposed to have. The overlap is a third of
+     * a pixel and falls away with the flap.
+     */
+    clip-path: inset(0 0 49.7% 0);
     transform-origin: center bottom;
     animation-name: flap-top;
   }
