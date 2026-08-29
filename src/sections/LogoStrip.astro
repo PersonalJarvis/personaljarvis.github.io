@@ -8,8 +8,9 @@
  *
  * There are far more marks than cells, so each cell cycles a stack of them.
  * The card does not move at all: it is a fixed opening, and the marks are
- * wound up past it from below, one at a time. Nothing rotates, nothing scales,
- * nothing fades — a mark is out of sight because it is outside the opening.
+ * drawn down past it from above, one at a time. Nothing rotates, nothing
+ * scales, nothing fades — a mark is out of sight because it is outside the
+ * opening.
  *
  * That plainness is the point, and it was arrived at rather than assumed. Two
  * mechanisms came before it, and both are worth recording:
@@ -43,10 +44,11 @@ const CELLS = 8;
 const PER_CELL = 7;
 
 /**
- * One mark's turn: it travels up into place, holds, then travels on out of the
- * top while the next one follows it in. The two move together at the same
- * speed and stay a fixed distance apart, so the column reads as one continuous
- * band being wound past the opening rather than as two separate marks.
+ * One mark's turn: it drops into place from above, holds, then travels on out
+ * of the bottom while the next one follows it down. The two move together at
+ * the same speed and stay a fixed distance apart, so the column reads as one
+ * continuous band being drawn past the opening rather than as two separate
+ * marks.
  *
  * The slot and the cycle are unchanged from the effect this replaced, so the
  * strip keeps the same pace — only the movement inside a cell is different.
@@ -157,7 +159,7 @@ const visibility = [
    *
    * That is why the border, the ground and the clipping all live here rather
    * than on the moving element: the visitor should see one fixed opening with
-   * marks being wound past it. Put the border on the moving element instead
+   * marks being drawn past it. Put the border on the moving element instead
    * and the card itself appears to slide, which is a different effect and a
    * much busier one — eight cards sliding is the whole row in motion.
    *
@@ -200,11 +202,15 @@ const visibility = [
    * The change takes 0.9s of a 6s slot. Against the 42s cycle a slot is
    * 14.286% and the change is 2.143%.
    *
-   * A mark waits one card-height BELOW the opening, travels up into it, holds,
-   * and travels on out of the top. The next one is the same animation a slot
+   * A mark waits one card-height ABOVE the opening, drops into it, holds, and
+   * travels on out of the bottom. The next one is the same animation a slot
    * later, so the two move at the same moment, at the same speed, staying
    * exactly 115% apart the whole way. That is what sells it as one band being
-   * wound past the opening instead of two marks passing each other.
+   * drawn past the opening instead of two marks passing each other.
+   *
+   * Downwards rather than up, which is the maintainer's call and not an
+   * arbitrary one: falling is the direction a departure board, a flip clock
+   * and a dealt card all move, so it is the reading the eye offers first.
    *
    * Both halves of the movement use the same curve for the same reason: give
    * the departing and arriving marks different easing and the gap between them
@@ -221,7 +227,7 @@ const visibility = [
    */
   @keyframes surface {
     0% {
-      transform: translateY(115%);
+      transform: translateY(-115%);
       animation-timing-function: cubic-bezier(0.5, 0, 0.3, 1);
     }
     2.14% {
@@ -232,10 +238,10 @@ const visibility = [
       animation-timing-function: cubic-bezier(0.5, 0, 0.3, 1);
     }
     16.43% {
-      transform: translateY(-115%);
+      transform: translateY(115%);
     }
     100% {
-      transform: translateY(-115%);
+      transform: translateY(115%);
     }
   }
 

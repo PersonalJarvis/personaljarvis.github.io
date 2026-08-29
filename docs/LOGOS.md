@@ -11,7 +11,7 @@ command-line tools it drives, and the plugins it connects. It is one section,
 `src/components/logos/marks.ts`.
 
 There are fifty marks and eight cells, so each cell cycles a stack of them:
-the card is a fixed opening, and the marks are wound up past it from below.
+the card is a fixed opening, and the marks are drawn down past it from above.
 
 ---
 
@@ -145,8 +145,13 @@ in `LogoStrip.astro` — not the fifty values in `marks.ts`.
 ## The change
 
 Each cell holds seven marks and shows one at a time. **The card never moves.**
-It is a fixed opening, and the marks are wound up past it from below: one
-travels out of the top while the next follows it in.
+It is a fixed opening, and the marks are drawn down past it from above: one
+travels out of the bottom while the next follows it down.
+
+**Downwards, not up.** The maintainer's call, and not an arbitrary one:
+falling is the direction a departure board, a flip clock and a dealt card all
+move, so it is the reading the eye offers first. Reversing it is two signs in
+the keyframes and nothing else.
 
 That the card stays put is the whole character of it. Border, ground and
 clipping therefore live on the cell, not on the moving element — put the border
