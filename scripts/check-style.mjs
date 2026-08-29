@@ -64,6 +64,17 @@ const rules = [
     only: SECTION_DIRS,
   },
   {
+    id: "fixed-step-width",
+    // The three steps used to be Tailwind max-w utilities with constant values.
+    // They are a formula now — max(floor, share) — because a constant hits the
+    // intended proportion at exactly one screen width. A session still holding
+    // the old contract in its head reaches for these two class names first, so
+    // catch them by name and say what replaced them.
+    re: /max-w-(?:2xl|7xl)/,
+    msg: "max-w-2xl/7xl are the OLD fixed width steps — use <Container width=\"prose|content\">; widths are max(floor, share) now",
+    doc: "layout.md",
+  },
+  {
     id: "no-shadow",
     // Depth in this system is hairlines and ink-on-cream. A shadow flattens it
     // into a generic SaaS page.
