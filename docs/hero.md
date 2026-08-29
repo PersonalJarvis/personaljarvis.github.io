@@ -8,9 +8,21 @@
 
 ## Vertical budget
 
-The hero fills exactly one viewport: `min-height: 100svh`. **Not `100vh`** — on
-iOS the address bar slides in on scroll and the section changes height mid-
-animation. The section has `overflow: hidden`.
+The hero is one viewport minus a tail: `min-height: calc(100svh - var(--space-xxl))`.
+**Not `100vh`** — on iOS the address bar slides in on scroll and the section
+changes height mid-animation. The section has `overflow: hidden`.
+
+**Why the 48px tail, and not a flat `100svh`.** A boundary on this page is one
+line and it belongs to the section BELOW, so the line that closes the hero is
+`LogoStrip`'s opening `.section-rule`. At exactly `100svh` that line lands on
+the fold's own pixel row and the window edge eats it: the first screen opened
+with a rule under the nav and had nothing answering it at the bottom. Ending
+the section one `--space-xxl` short pulls the same line up to ~96% of the
+viewport, with air beneath it.
+
+The hero does **not** draw a closing rule of its own. It would sit a few dozen
+pixels above `LogoStrip`'s, and two lines at one boundary is what the
+single-rule convention exists to prevent (`layout.md` § "A bounded section").
 
 The section is a **three-row grid**, `grid-rows-[auto_auto_minmax(0,1fr)]`:
 
@@ -38,8 +50,9 @@ Measured at 2560x1250. These are the numbers to check a change against:
 |---|---|
 | Headline | ~11% of viewport height |
 | CTAs | ~29% |
-| Stage top | ~36% |
-| Stage bottom | ~92% |
+| Stage top | ~34% |
+| Stage bottom | ~90% |
+| Closing rule | ~96% |
 
 ### Fit, and the air below it
 
@@ -56,9 +69,12 @@ Two rules hold it:
   inside it — `min(width / STAGE_W, height / STAGE_H)`, never width alone. A
   short viewport shrinks the window rather than pushing its lower half out of
   the frame.
-- The row carries `pb-[10svh]`, so the frame ends with a clear band of page
+- The row carries `pb-[6svh]`, so the frame ends with a clear band of page
   under it instead of touching the fold. In `svh`, so a tall monitor gets
-  proportionally more air rather than the same 100px.
+  proportionally more air rather than the same 100px. It was `10svh` before the
+  section grew its tail — the band under the frame is now that padding plus the
+  48px below the closing rule, which comes to the same distance. The frame keeps
+  the height it had; the band it sits in gained a line partway down.
 
 The cost is real and worth naming: on a short laptop the frame gets shallow and
 the window inside it small. That is the honest trade — a small readable whole

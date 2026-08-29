@@ -29,7 +29,28 @@ import backdrop from "@/assets/hero/stage-backdrop.webp";
 const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <img sizes> fetch hint, not a layout width
 ---
 
-<section class="grid min-h-svh grid-rows-[auto_minmax(0,1fr)] overflow-hidden">
+<!--
+  ONE VIEWPORT MINUS A TAIL, NOT EXACTLY ONE.
+
+  A boundary on this page is ONE line, and it belongs to the section BELOW:
+  LogoStrip opens with the `.section-rule` that closes this hero. At exactly
+  `100svh` that line lands on the fold's own pixel row and the window edge eats
+  it, so the first screen opened with a rule under the nav and had nothing to
+  answer it at the bottom — the page just ran out from under the reader.
+
+  Holding the section one `--space-xxl` short pulls that same line up into the
+  screen with air beneath it. The line is still drawn by the section below, and
+  there is still only one of them (maintainer, 2026-08-29).
+
+  WHY NOT A CLOSING RULE INSIDE THE HERO. A second `.section-rule` as the last
+  child would draw the hero's own bottom line — and LogoStrip's opening rule
+  would still draw its own a few dozen pixels lower. Two lines at one boundary
+  is the exact thing the single-rule convention exists to prevent, and moving
+  the section's own edge costs no element at all.
+-->
+<section
+  class="grid min-h-[calc(100svh_-_var(--space-xxl))] grid-rows-[auto_minmax(0,1fr)] overflow-hidden"
+>
   <!--
     Nav sits on the `full` step: background edge to edge, content inside.
 
@@ -115,8 +136,14 @@ const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <
       The stage row. `min-h-0` lets the row shrink past its content's intrinsic
       height — without it the grid track grows to fit the board and the hero
       spills past the fold again.
+
+      The padding is 6svh and not the 10svh it was, because the band under the
+      frame is now built from two pieces rather than one: this padding, then the
+      section's 48px tail below the closing rule. Together they come to the same
+      distance the old single padding did, so the frame keeps the height it had
+      — the band beneath it simply gained a line partway down.
     -->
-    <Container width="content" class="min-h-0 pt-6 pb-[10svh]">
+    <Container width="content" class="min-h-0 pt-6 pb-[6svh]">
       <!--
         `hairline-strong`, not the usual hairline (kept from 09943cb): the frame
         now holds a pale painting on a near-black page, and the stronger edge is
