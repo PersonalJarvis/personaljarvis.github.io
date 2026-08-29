@@ -43,6 +43,7 @@ words off this section.
 | Inline inset | 56px, 32px below `lg` — `px` only, see below |
 | Columns | 5/12 copy, 7/12 demo, 48px gap |
 | Space above and below | `--section-inset`, from `.section-inset` |
+| Joint to the next block | one 1px `var(--rule)` hairline, `.section-run-rule` |
 
 **The section deliberately does not fill a viewport.** No `100svh`, no
 `min-h-screen`. It is about half a screen tall. That is what separates it from
@@ -62,16 +63,19 @@ section is on.
 **These three sections draw no box of their own.** There is no card, no
 surface, no border and no radius around the copy and the demo — and no framed
 band and no ground either. Between the logo strip's closing rule and the voice
-section's opening one the page shows nothing but its two rails, and the three
-blocks breathe at the standard inset. The maintainer asked for this on
-2026-08-29: framed cards inside framed bands were reading as boxes stacked in a
-column.
+section's opening one the page shows its two rails, three blocks breathing at
+the standard inset, and one hairline at each of the two joints between them. The
+maintainer asked for this on 2026-08-29: framed cards inside framed bands were
+reading as boxes stacked in a column, and the run that first replaced them had
+no lines at all, which read as one block too long to tell apart. **A divider,
+not a box** is the whole brief.
 
-`Plugins.astro` carries the reasoning and names the three things that are
-load-bearing about it — no `.section-bounds`, no ground of its own, and
-`<SectionTrack open />` on the section. See also `layout.md` § "A run of
-sections may opt out — together": the condition is that all three opt out at
-once, so the run still has exactly one boundary at each end.
+`Plugins.astro` carries the reasoning and names the four things that are
+load-bearing about it — no `.section-bounds`, no ground of its own,
+`.section-run-rule` on every block but the last, and the marker tracked on the
+section. See also `layout.md` § "A run of sections may opt out — together": the
+condition is that all three opt out at once, so the run still has exactly one
+boundary at each end and one line at each joint.
 
 Depth survives, one level down, inside the demo — two radii inside one another,
 never a shadow, because the site has no shadow tokens and the style gate
@@ -87,6 +91,10 @@ rejects one.
                      └────────────────────────────────┘
    ╷                                                  ╷
    └── the two rails are the only frame ──────────────┘
+   ────────────────────────────────────────────────────  ← the joint: one
+                                                            hairline, rail to
+                                                            rail, and the only
+                                                            line the run draws
 ```
 
 Recessed well, window floating in it. The well carries 24px of its own padding
@@ -272,21 +280,29 @@ filters, three statuses and no dialogs at all.
 - **Giving one of the three a frame back while the other two go without.** They
   opt out of the shell together or not at all — `layout.md` § "A run of sections
   may opt out — together"
-- **`<SectionTrack nested />` here, or dropping `open`.** `nested` breaks the
-  square's run into three with a gap at each joint; without `open` it turns
-  right along a rule that is not drawn
+- **A second line at a joint**, or a line under the last block. Each joint
+  inside the run is one `.section-run-rule`, and the run's outer boundaries
+  belong to its neighbours
+- **`<SectionTrack nested />` here.** It breaks the square's run into three,
+  with a gap at each joint
+- **`open` on a block that draws a rule, or a missing `open` on the one that
+  does not.** The first sends the square straight past a line the reader can
+  see; the second turns it right along a rule that is not drawn
 
 ---
 
 ## Skeleton
 
 ```astro
-<!-- No .section-bounds and no ground of its own: this is the run that opts out. -->
-<section class="relative flex flex-col">
+<!-- No .section-bounds and no ground of its own: this is the run that opts out.
+     `.section-run-rule` is the single hairline closing this block off from the
+     next — the LAST of the three drops it and takes `open` on the marker
+     instead. -->
+<section class="section-run-rule relative flex flex-col">
   <!-- On the section, not `nested`, so the square runs unbroken across all
-       three; `open`, so it stays on the left rail instead of crossing a rule
-       that is not drawn. -->
-  <SectionTrack open />
+       three. Closed, because a rule IS drawn under this one: the square turns
+       along it to the far rail, and the next block starts from that corner. -->
+  <SectionTrack />
   <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
     <div class="grid items-center gap-12 px-8 lg:aspect-[16/9]
                 lg:min-h-[560px] lg:grid-cols-12 lg:px-14">

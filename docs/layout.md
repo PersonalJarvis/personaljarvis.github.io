@@ -372,6 +372,14 @@ on a rail.
 That is the whole convention now — see "One boundary, one shape" below for the
 shell that does it and for what it replaced.
 
+**One exception, and it is on the section on purpose: `.section-run-rule`.** It
+is not a rule *inside* a section, it *is* a section's bottom edge — the joint
+between two blocks of the run that opts out of the shell, where the marker's
+tracked box is the `<section>` itself and nothing inside the Container is on
+that edge. It dodges the overshoot the other way, by taking the container's
+padding box (`--w-content-inner`) as its width rather than a border box. See
+"A run of sections may opt out — together".
+
 **`.section-rule` is not how a section opens any more.** One user is left: the
 line under the sticky nav in `Hero.astro`, which is the nav band's bottom edge
 and not a section boundary at all. Reaching for it to open a section is what
@@ -455,12 +463,19 @@ does not.
 
 **That is what `open` is for**, and it is a prop precisely because it is the one
 thing document order cannot tell you: whether a rule is drawn under a section is
-a fact about that section's own markup. Plugins, skills and CLIs are the run
-that uses it — the square descends the LEFT rail across all three without
-stopping (maintainer, 2026-08-29), and the three `<section>` elements tile the
-document, so its progress is unbroken. Track those three on the section rather
-than `nested` inside a band for exactly that reason: a band is held an inset
-inside its section, so the square would stop at the band's bottom, wait out
+a fact about that section's own markup. One section uses it: `Clis.astro`, the
+last block of the run that opts out of the shell, whose neighbour below opens on
+a pinned frame an inset further down, so there is nothing at that joint to
+cross. The two blocks above it close on `.section-run-rule` and are ordinary
+closed sections — the square comes down the left rail through plugins, crosses
+to the right, comes down through skills, crosses back, and descends through CLIs
+to hand over on the left. **A block that draws a rule must not be `open`**, or
+the square runs straight past a line the reader can see.
+
+Track all three on the section rather than `nested` inside a band, and that part
+is unchanged: the three `<section>` elements tile the document, so the marker's
+progress is unbroken across them, whereas a band is held an inset inside its
+section — the square would stop at the band's bottom, wait out
 `2 × --section-inset` of air, and reappear at the top of the next one.
 
 **The path length is the pacing.** A closed section is 100 + 100 = 200, so the
@@ -686,13 +701,35 @@ with this change.
 
 ### A run of sections may opt out — together
 
-Plugins, skills and CLIs read as one run with no line between them (maintainer,
-2026-08-29). That is allowed, and the condition is in the word *together*: the
-run has exactly one boundary at each end, drawn by its neighbours, so the
-property this shell protects still holds. **A single section leaving the shell
-is the old bug back**, because it changes what one joint looks like and nothing
-else. See `Plugins.astro`, which carries the reasoning and the three things
-that are load-bearing about it.
+Plugins, skills and CLIs read as one run: no band, no frame, no ground of their
+own (maintainer, 2026-08-29). That is allowed, and the condition is in the word
+*together*: the run has exactly one boundary at each end, drawn by its
+neighbours, so the property this shell protects still holds. **A single section
+leaving the shell is the old bug back**, because it changes what one joint looks
+like and nothing else. See `Plugins.astro`, which carries the reasoning and the
+four things that are load-bearing about it.
+
+**Inside the run, each joint is ONE hairline — `.section-run-rule`.** The run
+first shipped with no lines at all between the three, and read as a single block
+too long to tell apart; the maintainer asked the same day for the blocks to be
+separated again, quietly. A divider, not a box:
+
+- It is a `::after` on the `<section>`, at `top: 100%` — the section's own
+  bottom edge, which is where a `border-bottom` would sit and where the marker's
+  flat `+0.5px` correction expects the closing line. It is the one horizontal
+  rule on this page that is *not* inside a Container, and it may be: it is not a
+  rule inside a section, it *is* the section's edge, and nothing inside the
+  Container is on that edge — the content stops `--section-inset` above it. It
+  avoids the overshoot the usual convention guards against by taking
+  `--w-content-inner`, the container's padding box, as its width.
+- **Only the joints, never the ends.** The last block of the run draws no line;
+  the run's outer boundaries are its neighbours'. A rule there as well is the
+  doubled boundary this shell exists to prevent.
+- **Both neighbours share it**, and each pays `--section-inset` on its side. A
+  banded joint is closing line, `2 x --section-inset`, opening line; this one is
+  the same rhythm with half the ink, which is the whole point.
+- **The blocks that carry it are not `open`.** A drawn rule is a rule the marker
+  crosses — see below.
 
 ### The marker has to be re-pointed at the band
 
@@ -820,7 +857,11 @@ nothing — test with a real one.)
   the end cards would still bend it)
 - A one-viewport section closed by a rule flush with its bottom edge. That line
   lands on the edge of the window and is never seen with the opening one — the
-  shell holds both lines an inset inside the section for exactly this reason
+  shell holds both lines an inset inside the section for exactly this reason.
+  (`.section-run-rule` *is* flush with a bottom edge and is not this: those
+  blocks are about half a screen, so the joint sits in the middle of the window
+  with the block above it and the block below it both in view, which is the
+  whole reason it reads as a divider between two things)
 - **A section that opens with a `.section-rule` and also draws a framed body.**
   Two lines at one boundary, and with the block above them in view, three. It
   is the defect this shell exists to make unrepresentable

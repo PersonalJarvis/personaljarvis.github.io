@@ -8,9 +8,12 @@
  * from src/components/window-demo/. Two blocks that are nearly the same read as
  * a mistake; two that are exactly the same read as one product.
  *
- * The three draw no boundary between them and no ground of their own: they are
- * one run between the logo strip's closing rule and the voice section's opening
- * one, and the marker descends the left rail across all three without stopping.
+ * The three draw no band and no ground of their own: they are one run between
+ * the logo strip's closing rule and the voice section's opening one, told apart
+ * by a single hairline at each joint. This is the LAST block, so it draws no
+ * line of its own — the run's outer boundaries belong to its neighbours, and a
+ * rule here as well would be the doubled boundary the shell exists to prevent.
+ * That is also why this is the one block of the three still marked `open`.
  * Plugins.astro carries the whole reasoning; change it there, not here.
  *
  * See docs/feature-section.md.
@@ -21,10 +24,13 @@ import { ClisDemo } from "@/components/clis-demo/ClisDemo";
 ---
 
 <!--
-  No shell, and no ground: one of the three sections that read as one run. See
-  Plugins.astro for the whole reasoning, including why the marker is tracked on
-  the section rather than `nested`, and why `open` is what keeps the square on
-  the left rail across all three.
+  No shell, no ground, and no closing rule: the last of the three sections that
+  read as one run. `open` because nothing is drawn under this block for the
+  square to cross — the voice section below opens on its own pinned frame, an
+  inset further down — so the marker hands over on the rail it came down. The
+  other two close on `.section-run-rule` and are not `open`. See Plugins.astro
+  for the whole reasoning, including why the marker is tracked on the section
+  rather than `nested`.
 -->
 <section id="clis" class="relative flex flex-col">
   <SectionTrack open />

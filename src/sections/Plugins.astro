@@ -7,32 +7,37 @@
  * distance, not so much that the scroll stalls.
  *
  * THE FIRST OF THREE SECTIONS THAT READ AS ONE RUN, and the exception to
- * docs/layout.md § "One boundary, one shape". Plugins, Skills and CLIs draw NO
- * boundary of their own — no framed band, no card, no ground of their own.
- * Between the logo strip's closing rule and the voice section's opening one
- * there is nothing but the two rails and three blocks of content breathing at
- * the standard inset. Asked for by the maintainer on 2026-08-29: the frames and
- * the lines between these three were reading as boxes stacked in a column.
+ * docs/layout.md § "One boundary, one shape". Plugins, Skills and CLIs draw no
+ * band and no ground of their own — no framed sheet, no card, no tone. Between
+ * the logo strip's closing rule and the voice section's opening one there is
+ * nothing but the two rails, three blocks of content breathing at the standard
+ * inset, and ONE hairline at each joint inside the run. Asked for by the
+ * maintainer on 2026-08-29: the frames were reading as boxes stacked in a
+ * column, and the run that replaced them read as one block too long to tell
+ * apart. A divider, not a box.
  *
  * WHAT THAT COSTS, AND WHY IT IS PAID HERE AND NOWHERE ELSE. The shared shell
  * exists so that no two sections meet in a way nobody chose. These three opt
  * out of it TOGETHER, as one run, so the property it protects still holds: the
- * run has exactly one boundary at each end, drawn by the neighbour, and the
- * joints inside it are the only joints on the page with no line at all — by
- * decision. A single section leaving the shell would be the old bug back.
+ * run has exactly one boundary at each end, drawn by the neighbour, one line at
+ * each joint inside it, and never two lines anywhere. A single section leaving
+ * the shell would be the old bug back.
  *
- * THREE THINGS ARE LOAD-BEARING AND EASY TO "TIDY" BACK IN:
+ * FOUR THINGS ARE LOAD-BEARING AND EASY TO "TIDY" BACK IN:
  *
- *   - No `.section-bounds`. It is what drew the box.
+ *   - No `.section-bounds`. It is what drew the box, and it draws TWO rules an
+ *     inset inside the section — the joint here is one shared line instead.
  *   - No section background. The page has one ground and these three stand on
- *     it like everything else; painting one under this run would put a seam
- *     back at exactly the joints this change removed. See layout.css § "The
- *     page has ONE ground".
- *   - `<SectionTrack open />` on the SECTION, not `nested` inside a band. See
- *     the marker note below.
- *
- * Depth is the well inside the demo and hairlines. There are no shadow tokens
- * in this system, and no card frame here any more.
+ *     it like everything else; painting one under this run would put a seam at
+ *     every section's top edge and double the joint's own line. See layout.css
+ *     § "The page has ONE ground".
+ *   - `.section-run-rule` on the SECTION, not a rule inside the Container. The
+ *     line IS this section's bottom edge and the Container's content stops
+ *     `--section-inset` above it; layout.css carries the whole reasoning,
+ *     including why the usual "a rule goes inside the container" does not
+ *     reach this case. The LAST block of the run does not get one.
+ *   - `<SectionTrack />` on the SECTION, not `nested` inside a band, and not
+ *     `open` while a rule is drawn. See the marker note below.
  */
 import Container from "@/components/Container.astro";
 import SectionTrack from "@/components/SectionTrack.astro";
@@ -40,8 +45,8 @@ import { PluginsDemo } from "@/components/plugins-demo/PluginsDemo";
 ---
 
 <!--
-  No shell: this section draws no boundary and no ground. See the note above
-  for what that buys and what it costs.
+  No shell: this section draws no band and no ground, only the single hairline
+  that closes it. See the note above for what that buys and what it costs.
 
   THE MARKER IS TRACKED ON THE SECTION ITSELF, and both halves of that matter:
 
@@ -49,15 +54,17 @@ import { PluginsDemo } from "@/components/plugins-demo/PluginsDemo";
     document for the square to run without stopping. A band is held an inset
     inside its section, so the square would reach the band's bottom, then wait
     out `2 x --section-inset` of air before reappearing at the top of the next
-    one — three short runs with two gaps, instead of one unbroken line.
-  - `open`, because nothing is drawn under this section for the square to cross.
-    An open section hands over on the rail it came down, so Plugins, Skills and
-    CLIs are one continuous descent on the LEFT rail — which is what the
-    maintainer asked for. Take `open` off and the square turns right along a
-    rule that does not exist.
+    one — three short runs with two gaps, instead of one continuous descent.
+  - NOT `open`, because `.section-run-rule` draws a line under this section for
+    the square to cross. It comes down the left rail, turns along that line to
+    the right one, and Skills starts at the corner it stopped on — the same
+    serpentine every other section on this page walks. `open` here would send
+    it straight past a rule that is now drawn, which is the marker tracing a
+    boundary that does not match the page. (It was `open` while the run had no
+    lines inside it; CLIs, the last block, still is.)
 -->
-<section id="features" class="relative flex flex-col">
-  <SectionTrack open />
+<section id="features" class="section-run-rule relative flex flex-col">
+  <SectionTrack />
   <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
     <!--
       No frame, no surface: the copy and the demo stand on the page itself,

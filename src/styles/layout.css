@@ -595,3 +595,68 @@ body > section {
   flex: 1 1 auto;
   padding-block: var(--space-lg);
 }
+
+/* ---------------------------------------------------------------------------
+ * The joint inside a run — ONE hairline, and nothing else
+ *
+ * Plugins, Skills and CLIs opt out of the section shell together (see above and
+ * docs/layout.md § "A run of sections may opt out — together"): no band, no
+ * frame, no ground of their own. For a while they also had NO line between
+ * them, and the run read as one very long block — the maintainer asked on
+ * 2026-08-29 for the three to be told apart again, but quietly: a divider, not
+ * a box.
+ *
+ * This is that divider, and the whole of it. It is deliberately NOT
+ * `.section-bounds`:
+ *
+ *   - `.section-bounds` draws TWO rules an inset inside the section, so a joint
+ *     between two banded sections is closing line, `2 x --section-inset` of
+ *     air, opening line. Here the two neighbours share ONE line and pay
+ *     `--section-inset` each side of it. Same rhythm, half the ink — which is
+ *     what "dezente Abgrenzung" asks for.
+ *   - It brings a surface and a `--section-pad` back with it, and a card around
+ *     these three is the exact change the maintainer had undone.
+ *
+ * WHY IT IS ON THE SECTION AND NOT INSIDE THE CONTAINER, which is the rule
+ * everywhere else on this page (docs/layout.md § "Horizontal rules"). That rule
+ * exists because a border on a Container's border box overshoots both rails by
+ * a gutter. The reason it does not apply here is that this line is not a rule
+ * INSIDE a section — it IS the section's bottom edge, and the tracked box the
+ * marker walks is the `<section>` itself, not a band held an inset inside it.
+ * So the line has to lie exactly on that edge, and no element inside the
+ * Container is on it: the Container's own content ends `--section-inset` above.
+ *
+ * The overshoot is avoided the other way instead — the pseudo-element takes the
+ * container's PADDING box as its width, `--w-content-inner`, which is the
+ * documented edge for anything that has to line up with the rails. There is
+ * still one width formula and no second set of numbers.
+ *
+ * `top: 100%` puts it at [height, height + 1] of the tracked box, which is
+ * where a `border-bottom` would sit and where `SectionTrack`'s flat +0.5px
+ * correction in y expects to find the closing line. A pixel higher and the
+ * square rides just above its own rule. See docs/layout.md § "The marker has to
+ * be re-pointed at the band" for why the two ends of a section are never drawn
+ * by the same means.
+ *
+ * Centred with `inset-inline: 0; margin-inline: auto` rather than a transform:
+ * a transform on the pseudo-element is a composited layer for a 1px line, and
+ * this system has had enough trouble with hairlines at layer boundaries (see
+ * `--nav-height` above).
+ *
+ * THE LAST BLOCK OF A RUN DOES NOT GET ONE. The run's outer boundaries are its
+ * neighbours' to draw — that is the condition the opt-out is allowed under —
+ * and a line here as well would be the doubled boundary the shell exists to
+ * prevent.
+ * ------------------------------------------------------------------------ */
+
+.section-run-rule::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  inset-inline: 0;
+  margin-inline: auto;
+  width: var(--w-content-inner);
+  height: 1px;
+  background: var(--rule);
+  pointer-events: none;
+}

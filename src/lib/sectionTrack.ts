@@ -32,12 +32,14 @@
  *         ▼                                               ▼
  * (0,100) ●  no closing rule to cross                     ● (100,100)
  *
- * Three sections of this page — Plugins, Skills, CLIs — deliberately have no
- * rule between them: the maintainer asked on 2026-08-29 for that run to read as
- * one block with nothing but the two rails around it. There is therefore no
- * line for the square to cross at those boundaries, so an open section walks
- * its entry rail and nothing else, and hands over on the SAME rail. Draw the
- * crossing leg anyway and the square would trace a line that is not there.
+ * One section of this page is open: CLIs, the last of the three blocks that opt
+ * out of the section shell. Its neighbour below opens on a pinned frame held an
+ * inset further down, so nothing is drawn at that joint for the square to cross
+ * and it walks its entry rail and nothing else, handing over on the SAME rail.
+ * Draw the crossing leg anyway and the square would trace a line that is not
+ * there. The other two blocks of that run close on a hairline of their own
+ * (`.section-run-rule`, added 2026-08-29 when the maintainer asked for the
+ * three to be told apart again) and are ordinary closed sections.
  *
  * WHICH MAKES THE SIDE A RUNNING TOTAL, NOT A PARITY. A closed section flips
  * the side for the one below it; an open section keeps it. `sidesForTracks`

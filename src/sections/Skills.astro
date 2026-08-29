@@ -8,9 +8,10 @@
  * from src/components/window-demo/. Two blocks that are nearly the same read as
  * a mistake; two that are exactly the same read as one product.
  *
- * The three draw no boundary between them and no ground of their own: they are
- * one run between the logo strip's closing rule and the voice section's opening
- * one, and the marker descends the left rail across all three without stopping.
+ * The three draw no band and no ground of their own: they are one run between
+ * the logo strip's closing rule and the voice section's opening one, told apart
+ * by a single hairline at each joint. This is the middle block, so it closes on
+ * one — `.section-run-rule` — and the marker crosses it back to the left rail.
  * Plugins.astro carries the whole reasoning; change it there, not here.
  *
  * See docs/feature-section.md.
@@ -21,13 +22,13 @@ import { SkillsDemo } from "@/components/skills-demo/SkillsDemo";
 ---
 
 <!--
-  No shell, and no ground: one of the three sections that read as one run. See
-  Plugins.astro for the whole reasoning, including why the marker is tracked on
-  the section rather than `nested`, and why `open` is what keeps the square on
-  the left rail across all three.
+  No shell, and no ground: one of the three sections that read as one run, with
+  a single line closing this one off from CLIs. See Plugins.astro for the whole
+  reasoning, including why the marker is tracked on the section rather than
+  `nested`, and why a closed section is what keeps the square on the serpentine.
 -->
-<section id="skills" class="relative flex flex-col">
-  <SectionTrack open />
+<section id="skills" class="section-run-rule relative flex flex-col">
+  <SectionTrack />
   <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
     <!--
       `lg:p-14` and not `lg:px-14`: the block padding is what keeps the well

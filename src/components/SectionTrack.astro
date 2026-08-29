@@ -21,10 +21,13 @@
  *
  * `open` IS THE ONE THING THIS COMPONENT CANNOT DERIVE, and that is why it IS a
  * prop. Whether a rule is drawn under a section is a local fact about that
- * section's own markup, not about its place in the page: pass `open` when the
- * section below carries no `.section-rule`, so there is no line for the square
- * to cross and it hands over on the rail it came down. Plugins, Skills and CLIs
- * are that run — one block, no rules between them (maintainer, 2026-08-29).
+ * section's own markup, not about its place in the page: pass `open` when
+ * nothing is drawn at this section's bottom edge, so there is no line for the
+ * square to cross and it hands over on the rail it came down. The page has one
+ * such section — `Clis.astro`, the last block of the run that opts out of the
+ * shell, whose neighbour below opens on a pinned frame an inset further down.
+ * The other two blocks of that run close on `.section-run-rule` and are
+ * ordinary closed sections (maintainer, 2026-08-29).
  *
  * WHERE TO PUT IT. Drop it inside the box the reader sees the section AS, and
  * give that box `position: relative`. For an ordinary section that is the
