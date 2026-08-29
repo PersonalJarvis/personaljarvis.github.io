@@ -40,9 +40,14 @@ const documents = [
 const year = new Date().getFullYear();
 ---
 
-<footer class="legal">
-  <Container width="content">
-    <div class="section-rule legal-inner">
+<!-- The standard section shell, footer included. It is the last band on the
+     page and there is no reason for the last boundary to be the one that is
+     shaped differently — see docs/layout.md § "One boundary, one shape". No
+     `SectionTrack`: the marker walks the sections a reader scrolls THROUGH,
+     and this is the end of the page. -->
+<footer class="legal section-tone flex flex-col" data-tone="deep">
+  <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
+    <div class="section-bounds legal-inner">
       <div class="legal-top">
         <p class="legal-mark">
           Personal Jarvis
@@ -96,9 +101,10 @@ const year = new Date().getFullYear();
 </footer>
 
 <style>
-  .legal-inner {
-    padding-block: clamp(2rem, 4svh, 3rem) clamp(2.5rem, 5svh, 4rem);
-  }
+  /* No `padding-block` here any more. It used to be a pair of clamps of this
+     footer's own, which is how the page ended up with six different figures
+     between a rule and the thing under it; the band supplies `--section-pad`
+     like every other section now. */
 
   /* The name and the documents on one line, and under each other as soon as
      the row would have to squeeze. */

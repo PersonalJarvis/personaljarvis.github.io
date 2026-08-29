@@ -13,6 +13,32 @@
  * MINIMUM: on a short window the content grows past one screen and the page
  * scrolls instead of clipping.
  *
+ * AND IT HOLDS THE READER FOR A BEAT. The section is a `[data-track]` with a
+ * `position: sticky` child, the same construction as `VoiceSwitch` and
+ * `Install` — see docs/layout.md § "A section that is one viewport and still
+ * scrolls". Here it drives NOTHING: there is no scrub, no sequence, and the
+ * pinned screen is identical at every scroll position inside it. The pause IS
+ * the effect (maintainer, 2026-08-29). A globe that is gone before it has
+ * turned once reads as a decoration the page scrolled past; held for a beat it
+ * reads as something to look at.
+ *
+ * WHICH IS WHY THE TRACK IS SHORT. `--track: 180svh` is 0.8 of a screen of
+ * waiting — two or three turns of a wheel. The other two tracks are three and
+ * four screens because they have a timeline to spend it on; a still picture
+ * held that long is a page the reader thinks has stopped responding.
+ *
+ * THE MARKER IS WHAT SAYS THE PAGE IS STILL ALIVE. `[data-scroll-span]` on the
+ * track hands `SectionTrack` the pinned span rather than the box, so the square
+ * walks the frame while nothing else moves. Without it the one thing on screen
+ * that could show the scroll is being received freezes in a corner, and a
+ * deliberate pause is indistinguishable from a hang.
+ *
+ * IT KEEPS `.section-bounds`, unlike the other two pinned sections. They cannot
+ * use those classes because their pinned box is a bespoke frame; this one's is
+ * the ordinary band, still on the ordinary Container, so wrapping a track
+ * around it changes the pacing and not one pixel of the section. The shell's
+ * two measurements stay exactly where docs/layout.md puts them.
+ *
  * The globe is what makes that work or not, because it is square and therefore
  * as tall as it is wide. It is capped at `min(column width, viewport height)`,
  * so on a wide screen the column governs and on a short one the screen does.
@@ -72,59 +98,134 @@ const places = placed === 1 ? "one place" : `${clusters.length} places`;
   Framed, both lines stand inside the screen at once and the section reads as
   one object (maintainer, 2026-08-29).
 */}
-<section id="stargazers" class="section-full-height flex flex-col">
-  <Container
-    width="content"
-    class="section-inset flex min-h-0 flex-1 flex-col"
-  >
-    <div
-      class="section-bounds section-bounds--fill stargazers-body flex flex-col justify-center"
-    >
-      {/* `nested`, because `.section-bounds` already sits on the content
-          column: a second `content` Container would apply its gutter and its
-          max-width again and stand the marker a gutter inside both rails. */}
-      <SectionTrack nested />
+<section id="stargazers" class="section-tone" data-tone="deep">
+  {/*
+    The scroll track. Its only job is to be tall — the height IS the pause, and
+    the sticky child inside it is the one screen anyone sees. `data-scroll-span`
+    is what tells `SectionTrack` to read this element's passage through the
+    window instead of the pinned box's, which does not move while it is pinned.
 
-      <div class="grid items-center gap-12 lg:grid-cols-12 lg:gap-10">
-        <div class="stargazers-copy lg:col-span-4">
-          <p class="stargazers-eyebrow">In the open</p>
+    Below the desktop breakpoint, on a short window and under reduced motion the
+    track collapses to `auto` and the section is the ordinary block it was —
+    see the styles. The height chain is written so that both cases are the same
+    chain: this box, a full-height flex column, the Container that fills it.
+  */}
+  <div data-track data-scroll-span>
+    <div data-viewport class="section-full-height flex flex-col">
+      <Container
+        width="content"
+        class="section-inset flex min-h-0 flex-1 flex-col"
+      >
+        <div
+          class="section-bounds section-bounds--fill stargazers-body flex flex-col justify-center"
+        >
+          {/* `nested`, because `.section-bounds` already sits on the content
+              column: a second `content` Container would apply its gutter and
+              its max-width again and stand the marker a gutter inside both
+              rails. */}
+          <SectionTrack nested />
 
-          <!-- The unit sits beside the figure on its own baseline rather than
-               in a sentence below it. A number needs to say what it counts,
-               and "31" over "people have starred Personal Jarvis" made the
-               reader hold the figure in mind for a line before finding out. -->
-          <p class="stargazers-figure">
-            <span class="stargazers-count">
-              <StarCount client:visible repo={repo} value={count} />
-            </span>
-            <span class="stargazers-unit">GitHub stars</span>
-          </p>
+          <div class="grid items-center gap-12 lg:grid-cols-12 lg:gap-10">
+            <div class="stargazers-copy lg:col-span-4">
+              <p class="stargazers-eyebrow">In the open</p>
 
-          <hr class="stargazers-hr" />
+              <!-- The unit sits beside the figure on its own baseline rather
+                   than in a sentence below it. A number needs to say what it
+                   counts, and "31" over "people have starred Personal Jarvis"
+                   made the reader hold the figure in mind for a line before
+                   finding out. -->
+              <p class="stargazers-figure">
+                <span class="stargazers-count">
+                  <StarCount client:visible repo={repo} value={count} />
+                </span>
+                <span class="stargazers-unit">GitHub stars</span>
+              </p>
 
-          <p class="stargazers-note">
-            Live from GitHub, counted again every time this page loads.
-          </p>
+              <hr class="stargazers-hr" />
 
-          <p class="stargazers-note stargazers-note-muted">
-            The globe marks {places}. Most GitHub profiles carry no location at
-            all, so most stargazers cannot be placed — and none are placed by
-            guesswork.
-          </p>
+              <p class="stargazers-note">
+                Live from GitHub, counted again every time this page loads.
+              </p>
+
+              <p class="stargazers-note stargazers-note-muted">
+                The globe marks {places}. Most GitHub profiles carry no location
+                at all, so most stargazers cannot be placed — and none are
+                placed by guesswork.
+              </p>
+            </div>
+
+            <div class="stargazers-globe lg:col-span-8">
+              <!-- client:visible, not client:load: the globe is most of the way
+                   down the page, and a rotation nobody is looking at is a frame
+                   budget spent on nothing. -->
+              <StarGlobe client:visible clusters={clusters} />
+            </div>
+          </div>
         </div>
-
-        <div class="stargazers-globe lg:col-span-8">
-          <!-- client:visible, not client:load: the globe is most of the way
-               down the page, and a rotation nobody is looking at is a frame
-               budget spent on nothing. -->
-          <StarGlobe client:visible clusters={clusters} />
-        </div>
-      </div>
+      </Container>
     </div>
-  </Container>
+  </div>
 </section>
 
 <style>
+  /* --- The track and its one visible screen -------------------------------
+   *
+   * `--track` is how long the section holds the reader. They scroll
+   * `track - viewport` of distance and the screen does not change, because
+   * there is nothing here for that distance to drive — the holding is the
+   * point. See the note at the top of this file for why it is 0.8 of a screen
+   * and not the three or four the other two tracks take.
+   *
+   * NO `overflow: hidden` on the viewport, unlike `VoiceSwitch`. There the
+   * picture is bled to the frame's edges and has to be cut; here everything is
+   * capped against `svh` and fits by construction, so hiding the overflow could
+   * only ever hide a fault instead of showing it.
+   */
+  [data-track] {
+    --track: 180svh;
+
+    height: var(--track);
+  }
+
+  /* `section-full-height` is on this element in the markup, so the pinned box
+     and the fallback block are the same box with one property different: it is
+     `height: 100svh` while it pins and `auto` when it does not, over a floor of
+     one screen either way. */
+  [data-viewport] {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+  }
+
+  /*
+   * WHERE THE PIN IS DROPPED, and the conditions are the page's, not this
+   * section's — `VoiceSwitch` and `Install` fall out of their tracks on exactly
+   * these three, and a third set of numbers would mean the page changed
+   * behaviour at three window sizes instead of one.
+   *
+   *   narrow    the grid has collapsed to one column, so the section is two
+   *             screens of content and there is nothing to pin
+   *   short     the same section printed into a window that cannot hold it —
+   *             pinning it would hold the reader on a view that is already
+   *             running off the bottom
+   *   calm      prefers-reduced-motion. A pause the reader did not ask for is
+   *             motion in the sense that matters: the page not answering the
+   *             gesture they just made.
+   *
+   * The section is then exactly what it was before the track existed: one
+   * ordinary full-height block. Nothing else in the file knows the difference.
+   */
+  @media (max-width: 1023px), (max-height: 879px), (prefers-reduced-motion: reduce) {
+    [data-track] {
+      height: auto;
+    }
+
+    [data-viewport] {
+      position: static;
+      height: auto;
+    }
+  }
+
   /* A floor, not a fixed amount. On a tall monitor the flex box is taller than
      its content and `justify-center` spreads the surplus evenly; on a short
      laptop the floor is all there is and the section grows past one screen,

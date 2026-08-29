@@ -324,53 +324,92 @@ body > section {
 }
 
 /* ---------------------------------------------------------------------------
- * Section rule
+ * Section rule — a single line, for the one place that still needs one
  *
- * The horizontal line between two sections. It goes on an element INSIDE the
- * container, never on the section or the container itself: the container's own
- * border box is a gutter wider than its padding box, so a border there would
- * overshoot both rails by 32px and the joint would read as a cross rather than
- * a corner. Inside, the line starts and ends exactly on a rail.
+ * The horizontal line goes on an element INSIDE the container, never on the
+ * section or the container itself: the container's own border box is a gutter
+ * wider than its padding box, so a border there would overshoot both rails by
+ * 32px and the joint would read as a cross rather than a corner. Inside, the
+ * line starts and ends exactly on a rail.
  *
- * Vertical padding belongs below the line, so it goes on the same element.
+ * THIS IS NO LONGER HOW A SECTION IS BOUNDED. Every section on this page is a
+ * framed band now (see below) and draws its own two lines; the last user of
+ * this class is the line under the sticky nav in `Hero.astro`, which is the
+ * nav band's bottom edge and not a section boundary at all.
+ *
+ * Reaching for it to open a section is what produced the doubled boundaries
+ * the maintainer reported on 2026-08-29: a section that opened with this line
+ * AND carried a framed body drew two rules a few dozen pixels apart, and with
+ * the previous section's card border above them, three. See docs/layout.md
+ * § "One boundary, one shape".
  * ------------------------------------------------------------------------ */
 
-/* A SECOND `.section-rule`, as the last child of a section, closes it.
- *
- * The default arrangement needs only the opening line, because the next
- * section's rule closes this one. That breaks at exactly one kind of joint:
- * where the next section is BOUNDED, its two lines stand an inset inside its
- * own edges and neither lands on this boundary, so the section above runs out
- * of the bottom of the screen with nothing drawn under it. A section sitting
- * above a bounded one therefore closes itself, and a one-viewport section
- * becomes bounded instead (see docs/layout.md - a line on its bottom edge
- * lands on the edge of the window and is never seen with the opening one).
- *
- * An empty element's border-top and border-bottom occupy the same pixel, so
- * the closing line needs no class of its own.
- */
 .section-rule {
   border-top: 1px solid var(--rule);
 }
 
 /* ---------------------------------------------------------------------------
- * Bounded section — a band framed by two rules, inset from the section's edges
+ * The nav band's height — a WHOLE number of pixels, deliberately
  *
- * The ordinary arrangement draws one line per boundary: `.section-rule` opens a
- * section flush with its top edge, and the NEXT section's rule closes it. A
- * BOUNDED section draws both of its own lines and holds them a fixed distance
- * inside its own top and bottom edges, so it reads as a framed band — empty
- * space, line, the section, line, empty space.
+ * The band is 4rem tall and the root font size scales with the viewport, so the
+ * raw value is a fraction: 75.83px in a 2560px window. That fraction is what
+ * kept the rule above off the screen, and moving the line inside the band did
+ * not finish the job.
  *
- * It is additive on purpose. `.section-rule` is used by five sections and
- * changing what it means underneath them is how one section's redesign breaks
- * four others. Reach for this only when a section is meant to sit inside its
- * own frame; the plain rule stays the default.
+ * A sticky opaque band is a COMPOSITED LAYER, and a layer's bounds are snapped
+ * to whole device pixels before it is painted. At 75.83 the snap eats the row
+ * the line is on: the rule sits at y=74.83, so 83% of it falls in the row the
+ * layer gives up and 17% is all that reaches the screen. The line was present
+ * in the DOM, correct in the box model, and a ghost on the maintainer's
+ * monitor — reported 2026-08-29 against a build that already drew it inside
+ * the band.
+ *
+ * `round()` keeps the band scaling with the page — this is NOT a return to a
+ * frozen 64px nav — and only takes the fraction off the end, so the layer's
+ * bounds and the layout box agree and the rule is painted whole.
+ *
+ * The plain 4rem is the fallback for a browser without `round()`, where a
+ * dropped `height` would collapse the band altogether. It renders the old faint
+ * line rather than no nav at all.
+ * ------------------------------------------------------------------------ */
+
+:root {
+  --nav-height: 4rem;
+}
+
+@supports (height: round(4rem, 1px)) {
+  :root {
+    --nav-height: round(4rem, 1px);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * The section shell — ONE boundary shape, used by every section
+ *
+ * A section is a band framed by two rules, held a fixed distance inside its own
+ * top and bottom edges: empty space, line, the section, line, empty space. Two
+ * consecutive sections therefore always meet the same way — closing line,
+ * `2 x --section-inset` of air, opening line — and there is no second
+ * arrangement to get wrong.
+ *
+ * IT IS NOT A VARIANT ANY MORE. Until 2026-08-29 this shell was one of three:
+ * most sections opened with a bare `.section-rule` and relied on the next
+ * section to close them, two sticky sections drew a framed body AND opened with
+ * a rule, and two sections were framed like this. Every joint between two
+ * different shells produced a different gap — measured on the built page: 78,
+ * 113, 114, 80, 160 and 303 pixels — and the joints where a rule met a framed
+ * body drew two lines 33 to 76px apart, three with the card border above them.
+ * The maintainer reported exactly that, with meuze.ai as the reference: one
+ * framed sheet per section, the same air around every one of them.
+ *
+ * The reference's own numbers, for the record: 80px outside the frame, 72px
+ * inside it, 1px rule, no radius. `--section-inset` was already 80 at the top
+ * of its clamp, so only the inner figure below is new.
  *
  * The whole pattern is two classes on two elements that are already in the
  * markup — the Container, and the block inside it:
  *
- *   <section class="flex min-h-svh flex-col">
+ *   <section class="section-tone flex min-h-svh flex-col" data-tone="raised">
  *     <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
  *       <div class="section-bounds section-bounds--fill">
  *         <SectionTrack nested />
@@ -379,7 +418,15 @@ body > section {
  *     </Container>
  *   </section>
  *
- * See docs/layout.md § "A bounded section".
+ * A section whose body is a pinned frame — VoiceSwitch, Install — cannot use
+ * these classes, because the box the reader sees is inside a sticky child three
+ * screens down. It reproduces the same two measurements instead: the sticky
+ * viewport takes `--section-inset` as its vertical padding and the frame draws
+ * `border-block: 1px solid var(--rule)`. Same shape, same numbers, arrived at
+ * from the other direction. What it must NOT also do is open with a
+ * `.section-rule` — that is where two of the doubled lines came from.
+ *
+ * See docs/layout.md § "One boundary, one shape".
  * ------------------------------------------------------------------------ */
 
 :root {
@@ -397,8 +444,85 @@ body > section {
    * vertical budget — 126px at 1440x900 — and whatever it sizes against a
    * viewport-derived cap has to account for it. `svh`, never `vh`: this is a
    * height and the iOS address bar would otherwise animate it.
+   *
+   * THE GAP BETWEEN TWO SECTIONS IS TWICE THIS, and that is the point: both
+   * sections pay the same, so the rhythm cannot depend on which two happen to
+   * be neighbours. It is also the ONE number that tunes the page's pacing.
    */
   --section-inset: clamp(var(--space-xl), 7svh, var(--space-section));
+
+  /* And how far the content stands inside the two rules. The reference uses a
+   * flat 72px; this is the same figure written the same way as the inset above
+   * so both ends travel with the window instead of one of them freezing.
+   *
+   * Only an AUTO-HEIGHT band uses it. A band that fills a one-screen section
+   * centres its content in a height the screen has already fixed, so padding
+   * there is not breathing room, it is content the section loses — see
+   * `.section-bounds--fill`.
+   */
+  --section-pad: clamp(var(--space-xxl), 6svh, var(--space-section));
+}
+
+/* ---------------------------------------------------------------------------
+ * Section tone — the ground a section stands on
+ *
+ * The page used to be one flat colour from the nav to the footer, with the
+ * boundaries carried entirely by hairlines. Each section now paints its own
+ * ground a few points off the floor (`--tone-floor`, `--tone-deep`,
+ * `--tone-raised` in tokens.css), so neighbours separate by tone as well as by
+ * a line, and a shallow wash inside each one keeps a single section from
+ * reading as a flat slab either. Requested by the maintainer on 2026-08-29,
+ * with meuze.ai's white/near-black alternation as the reference.
+ *
+ * WHY A PSEUDO-ELEMENT AT z-index -2 RATHER THAN `background` ON THE SECTION.
+ * The rails are a fixed layer at z-index -1, between the page background and
+ * the content, and an opaque background on an in-flow section paints ABOVE that
+ * layer — the rails would come out in pieces, one gap per section, which is the
+ * exact failure global.css warns about. A negative-z child paints in the root
+ * stacking context BELOW -1 and above the canvas, so the rails run unbroken
+ * over every tone.
+ *
+ * The section must therefore not become a stacking context of its own, or the
+ * layer is trapped inside it and lands back on top of the rails. `position:
+ * relative` with `z-index: auto` is safe; `transform`, `filter`, `opacity < 1`,
+ * `isolation` and `will-change` are not. `overflow: hidden` is fine.
+ *
+ * The gradient is derived from the one tone rather than declared as a pair:
+ * two variables per section is two chances for a section to carry half a
+ * change. 1.5% of ink is about one value step — visible as a wash across 900px
+ * of section, invisible as a band edge.
+ * ------------------------------------------------------------------------ */
+
+.section-tone {
+  position: relative;
+}
+
+.section-tone::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--tone) 98.5%, var(--ink)),
+    var(--tone)
+  );
+  pointer-events: none;
+}
+
+/* The three grounds. `data-tone` and not a class, because a tone is a value a
+ * section HAS rather than behaviour it opts into, and an attribute cannot be
+ * quietly combined with a second one. */
+.section-tone {
+  --tone: var(--tone-floor);
+}
+
+.section-tone[data-tone="deep"] {
+  --tone: var(--tone-deep);
+}
+
+.section-tone[data-tone="raised"] {
+  --tone: var(--tone-raised);
 }
 
 /* The inset itself, on the Container that already wraps the band.
@@ -467,6 +591,7 @@ body > section {
   position: relative;
   min-height: 0;
   border-bottom: 1px solid var(--rule);
+  padding-block: var(--section-pad);
 }
 
 .section-bounds::before {
@@ -487,7 +612,17 @@ body > section {
  * section's bottom edge, which is the whole point of the frame. It is a
  * modifier and not part of the base because a bounded band in an auto-height
  * section is a legitimate use and must not grab space from its siblings.
+ *
+ * IT ALSO SPENDS LESS INSIDE THE RULES, and that is not an inconsistency. An
+ * auto-height band grows to fit, so `--section-pad` above and below its content
+ * is breathing room the section simply takes. A filling band's height is
+ * already fixed by the screen and its content is centred in it, so the same
+ * padding is not air around the content — it is content the section loses, and
+ * a one-screen section is the one place there is nothing to give. The pinned
+ * frames in VoiceSwitch and Install settled on `--space-lg` for the same
+ * reason; this matches them rather than inventing a third figure.
  */
 .section-bounds--fill {
   flex: 1 1 auto;
+  padding-block: var(--space-lg);
 }

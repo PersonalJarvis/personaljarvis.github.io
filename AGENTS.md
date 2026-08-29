@@ -53,8 +53,18 @@ The short version:
 - **Type scales with the viewport too**, via the root font size and a
   floor-plus-share `clamp()` on display type — a wide screen gets a bigger page,
   not the same page with more empty space.
-- **Tuning is four numbers**, all in `src/styles/layout.css`: the two shares
-  (`--prose-share`, `--content-share`) and the two floors.
+- **One boundary shape, used by every section.** A section is a band framed by
+  two rules held `--section-inset` inside its own edges, so two sections always
+  meet the same way: closing line, twice the inset of air, opening line. A
+  section never opens with a bare `.section-rule` on top of a framed body —
+  that is what drew two and three lines at one joint. A run of sections may
+  opt out together; a single one may not.
+- **Each section paints its own ground** with `data-tone` on `.section-tone`,
+  so neighbours separate by tone as well as by a line. Never as a `background`
+  on the section — that paints over the rails.
+- **Tuning is four numbers for width**, all in `src/styles/layout.css`: the two
+  shares (`--prose-share`, `--content-share`) and the two floors. Vertical
+  pacing is two more in the same file: `--section-inset` and `--section-pad`.
 
 Run `npm run check:style` before you commit. A violation fails the build. If
 an exception is genuinely right, mark the line `layout-allow: <why>` — a reason

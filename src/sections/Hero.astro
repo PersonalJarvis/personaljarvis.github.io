@@ -32,24 +32,25 @@ const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <
 <!--
   ONE VIEWPORT MINUS A TAIL, NOT EXACTLY ONE.
 
-  A boundary on this page is ONE line, and it belongs to the section BELOW:
-  LogoStrip opens with the `.section-rule` that closes this hero. At exactly
-  `100svh` that line lands on the fold's own pixel row and the window edge eats
-  it, so the first screen opened with a rule under the nav and had nothing to
-  answer it at the bottom — the page just ran out from under the reader.
+  The hero closes on its own stage frame — the box under the headline draws a
+  bottom rule like every other section's band does. At exactly `100svh` that
+  line lands on the fold's own pixel row and the window edge eats it, so the
+  first screen opened with a rule under the nav and had nothing to answer it at
+  the bottom: the page just ran out from under the reader.
 
-  Holding the section one `--space-xxl` short pulls that same line up into the
-  screen with air beneath it. The line is still drawn by the section below, and
-  there is still only one of them (maintainer, 2026-08-29).
+  Holding the section one `--section-inset` short pulls the line up into the
+  screen with air beneath it — and it is `--section-inset` rather than the
+  `--space-xxl` it used to be so that the tail matches what every section below
+  spends on the same job. The joint with the logo strip is then the standard
+  one: this section's closing line, `2 x --section-inset` of air, that band's
+  opening line. See docs/layout.md § "One boundary, one shape".
 
-  WHY NOT A CLOSING RULE INSIDE THE HERO. A second `.section-rule` as the last
-  child would draw the hero's own bottom line — and LogoStrip's opening rule
-  would still draw its own a few dozen pixels lower. Two lines at one boundary
-  is the exact thing the single-rule convention exists to prevent, and moving
-  the section's own edge costs no element at all.
+  THE NAV'S LINE IS NOT A SECTION BOUNDARY. It is the bottom edge of the sticky
+  band and the last `.section-rule` on the page — see the comment on it below.
 -->
 <section
-  class="grid min-h-[calc(100svh_-_var(--space-xxl))] grid-rows-[auto_minmax(0,1fr)] overflow-hidden"
+  class="section-tone grid min-h-[calc(100svh_-_var(--section-inset))] grid-rows-[auto_minmax(0,1fr)] overflow-hidden"
+  data-tone="floor"
 >
   <!--
     Nav sits on the `full` step: background edge to edge, content inside.
@@ -70,8 +71,8 @@ const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <
     under the nav for as long as the nav is pinned, which is what the eye
     expects of a band with an edge.
   -->
-  <header class="sticky top-0 z-30 h-16 bg-canvas relative">
-    <Container width="content" class="flex h-16 items-center justify-between">
+  <header class="sticky top-0 z-30 h-[var(--nav-height)] bg-canvas relative">
+    <Container width="content" class="flex h-[var(--nav-height)] items-center justify-between">
       <span class="text-[18px] font-semibold text-ink">Personal Jarvis</span>
       <nav class="flex items-center gap-7 text-[14px] font-medium text-body">
         <a href="#features" class="hover:text-ink">Features</a>

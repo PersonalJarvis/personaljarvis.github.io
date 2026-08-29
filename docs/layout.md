@@ -346,6 +346,10 @@ and the choice is about what the block is:
   runs down the rail, around the block's corner, along its side and out the
   bottom — unbroken. The section cards in `Plugins`/`Skills`/`Clis`,
   `BuiltInPublic`'s video card and `VoiceSwitch`'s picture all do this.
+- **The block is a row of near-canvas cards standing on the rails.** Wrapping
+  `--rule` around the end cards would bend the line around their radius, which
+  still reads as an interruption. Redraw the rails on top of the row so the
+  line runs straight through. `LogoStrip` does this.
 - **The block is narrower.** Then it does not stand on a rail at all and needs
   nothing.
 
@@ -358,52 +362,31 @@ which worked only while the rails and the dividers were the same colour.
 
 ### Horizontal rules
 
-Every section gets `border-top: 1px solid var(--rule)` on an element
-**inside** the container — the `.section-rule` class. Not on the section, and
-not on the container either: the container's border box is one gutter wider
+A rule goes on an element **inside** the container, never on the section and
+never on the container itself: the container's border box is one gutter wider
 than its padding box, so a border there overshoots both rails and the joint
-reads as a cross instead of a corner. Vertical padding moves onto the same
-element, so the line marks the boundary rather than floating below it.
+reads as a cross instead of a corner. Inside, the line starts and ends exactly
+on a rail.
 
-**One rule per boundary, drawn by the section below it.** A section opens with
-its own rule and is closed by the next section's. That holds everywhere except
-above a **bounded** section: a bounded section's two lines stand an inset inside
-its own edges, so neither of them lands on that boundary and the section above
-it is left open at the bottom.
+**Every section draws its own two, and nothing else on the page draws one.**
+That is the whole convention now — see "One boundary, one shape" below for the
+shell that does it and for what it replaced.
 
-The section above a bounded one therefore closes itself. Two ways, and they are
-not equivalent:
-
-- **Be bounded too** — the right answer when the section is **exactly one
-  viewport**. A closing rule flush with the bottom edge is structurally correct
-  and changes nothing the reader sees: it sits on the bottom edge of the
-  *window*, never in the same view as the opening line, and one line alone at
-  the top of the screen does not read as a boundary. Framed, both lines stand
-  inside the screen at once. `Stargazers.astro` was converted for exactly this
-  (2026-08-29).
-- **A second `.section-rule` as the last child** — enough when the section is
-  taller or shorter than a screen, so the reader passes both lines anyway.
-  `Install.astro` does this. An empty element's `border-top` and `border-bottom`
-  occupy the same pixel, so the closing line needs no class of its own.
-
-**The hero's rule is the line under the nav**, and it is the nav's only bottom
-edge — the band itself carries no `border-b`. It used to, and that border was
-the one horizontal line on the page running the full width of the window
-instead of rail to rail, which also left the hero with no corner for the marker
-to start from. One line, drawn like every other boundary, does both jobs.
+**`.section-rule` is not how a section opens any more.** One user is left: the
+line under the sticky nav in `Hero.astro`, which is the nav band's bottom edge
+and not a section boundary at all. Reaching for it to open a section is what
+produced the doubled and tripled boundaries the maintainer reported on
+2026-08-29.
 
 **That line is drawn INSIDE the nav band, not at the top of the hero's box.** It
-is the one rule on the page whose position is not its section's own top edge,
-and it has to be: `h-16` is 4rem against a root size that scales with the
-viewport, so the band's bottom edge lands on a fraction of a device pixel
-(75.83px at 1.5x), and a sticky opaque band is a composited layer that snaps its
-own edge up to the next whole pixel — straight over a hairline beginning exactly
-where it ends. The line is present in the DOM, correct in the box model, and
-invisible on screen. Inside the band the same layer paints it and nothing can
-round over it. A vertical rail never shows this because its blur is spread down
-its whole length; a 1px horizontal line at a layer boundary is swallowed whole.
-
-Every section below gets its own, the strip under the hero included.
+has to be: `h-16` is 4rem against a root size that scales with the viewport, so
+the band's bottom edge lands on a fraction of a device pixel (75.83px at 1.5x),
+and a sticky opaque band is a composited layer that snaps its own edge up to the
+next whole pixel — straight over a hairline beginning exactly where it ends. The
+line is present in the DOM, correct in the box model, and invisible on screen.
+Inside the band the same layer paints it and nothing can round over it. A
+vertical rail never shows this because its blur is spread down its whole length;
+a 1px horizontal line at a layer boundary is swallowed whole.
 
 ### Vertical dividers between columns
 
@@ -434,27 +417,47 @@ so the box stretches to whatever the section is and no pixel is ever computed:
 ```
 M 0 0 V 100 H 100     enter top-left,  leave at the bottom-right corner
 M 100 0 V 100 H 0     enter top-right, leave at the bottom-left corner
+M 0 0 V 100           open section: down the left rail, and that is all
+M 100 0 V 100         open section: down the right rail
 ```
 
 The square is placed with `getPointAtLength(progress × totalLength)`, which
 gives the corners for free.
 
-**The side alternates down the page — the serpentine. Odd sections — the 1st,
-3rd, 5th — run down the LEFT rail, even ones down the RIGHT**, counted over the
-sections that carry a marker rather than over every section on the page: the
-hero has none and is not a link in the chain. A marker that always ran
-down the left rail would leave every section at the bottom-right corner and
+**The side alternates down the page — the serpentine.** A marker that always
+ran down the left rail would leave every section at the bottom-right corner and
 enter the next one at the top-left: a jump the full width of the column at every
 boundary. Mirrored, each section's exit corner sits directly above the next
 section's entry corner, and the page reads as one line folded back and forth.
 The side is assigned from **document order at runtime**, not from a prop — a
 section inserted in the middle would otherwise break the chain silently.
+Counted over the sections that carry a marker rather than over every section on
+the page: a section without one is not a link in the chain.
 
-**The path length is the pacing.** 100 + 100 = 200, so the marker spends half
-the section's scroll coming down the entry rail and half crossing the closing
-rule. Nothing else times it, and anything that has to line up with it reads its
-milestones back out of that ratio rather than carrying its own numbers —
-`VoiceSwitch`'s wipe does exactly this.
+**But the side is a running total, not `index % 2`.** A section that closes on a
+rule flips the side for the one below it; a section with no rule under it —
+`<SectionTrack open />` — keeps it, because there is no line to cross and the
+square hands over on the rail it came down. `sidesForTracks` folds that down the
+page, which is the one rule that holds for both kinds. Parity is the same answer
+only while every section closes, and it breaks the chain silently the moment one
+does not.
+
+**That is what `open` is for**, and it is a prop precisely because it is the one
+thing document order cannot tell you: whether a rule is drawn under a section is
+a fact about that section's own markup. Plugins, skills and CLIs are the run
+that uses it — the square descends the LEFT rail across all three without
+stopping (maintainer, 2026-08-29), and the three `<section>` elements tile the
+document, so its progress is unbroken. Track those three on the section rather
+than `nested` inside a band for exactly that reason: a band is held an inset
+inside its section, so the square would stop at the band's bottom, wait out
+`2 × --section-inset` of air, and reappear at the top of the next one.
+
+**The path length is the pacing.** A closed section is 100 + 100 = 200, so the
+marker spends half its scroll coming down the entry rail and half crossing the
+closing rule. An open section is 100, all of it on the rail. Nothing else times
+it, and anything that has to line up with it reads its milestones back out of
+that ratio rather than carrying its own numbers — `VoiceSwitch`'s wipe does
+exactly this, and it is a closed section.
 
 **The path ends ON the corner, with no tail.** It used to run 20% further down
 the exit rail and fade out there, which was the right shape while every section
@@ -569,20 +572,66 @@ eye finds on a long page.
 
 ---
 
-## A bounded section
+## One boundary, one shape
 
-The default boundary is one line per section: `.section-rule` opens a section
-flush with its top edge and the next section's rule closes it. A **bounded**
-section draws both of its own lines instead and holds them a fixed distance
-inside its own edges, so it reads as a framed band — empty space, line, the
-section, line, empty space.
+**Every section on this page is a band framed by two rules, held
+`--section-inset` inside its own top and bottom edges.** Empty space, line, the
+section, line, empty space. Two sections therefore always meet the same way —
+closing line, `2 x --section-inset` of air, opening line — and there is no
+second arrangement for a section to pick.
 
-Reach for it when a section is meant to stand apart from its neighbours as a
-single framed object. Everything else keeps the plain rule; `.section-rule` is
-shared by five sections and is not to be redefined for one of them.
+### What it replaced, and why the rule is absolute
+
+Until 2026-08-29 the shell was one of three, and a section chose:
+
+| Shell | Sections | Opening | Air |
+|---|---|---|---|
+| `.section-rule` + padding | logo strip, plugins, skills, CLIs, footer | one line on the section's top edge, closed by the next section | `py-20`, `py-24`, or a pair of clamps of the footer's own |
+| pinned frame | voice, install | a `.section-rule` **and** the frame's own two lines | `4rem`/`--space-xl`, or `--space-lg` |
+| bounded band | stargazers, built in public | two lines, inset | `--section-inset` |
+
+Measured on the built page, the gaps between one boundary line and the next
+came out at 78, 113, 114, 114, 80, 160 and 303 pixels, and one joint — voice to
+the section above it — had no line at all. Worse, the two sticky sections drew
+their `.section-rule` **and** their frame's top line, 76px apart at voice and
+33px at install; with the card border of the section above in the same view,
+that is three horizontal lines at one joint. That is the screenshot the
+maintainer sent, with `meuze.ai` as the reference: one framed sheet per
+section, the same air around every one of them.
+
+The reference's own numbers, measured rather than eyeballed: **80px outside the
+frame, 72px inside it, 1px rule, no radius, and the section's ground changes
+underneath it.** `--section-inset` was already 80 at the top of its clamp, so
+only the inner figure was new.
+
+### The two numbers
+
+```css
+--section-inset: clamp(32px, 7svh, 80px);   /* outside the rules */
+--section-pad:   clamp(48px, 6svh, 80px);   /* inside them       */
+```
+
+`--section-inset` is 63px at a 900px viewport, the full 80px from about 1143px
+up, and floors at 32px below about 457px. A fixed 80 is generous framing on a
+desktop window and a sixth of the whole thing on a laptop in landscape; the
+floor keeps the frame from vanishing on a short window and the ceiling keeps it
+from eating a one-screen section's budget on a tall one.
+
+**The gap between two sections is twice the inset**, and that is the point:
+both neighbours pay the same, so the rhythm cannot depend on which two happen
+to be adjacent. It is also the one number that tunes the page's pacing.
+
+**It costs vertical budget, and a one-screen section pays for it twice.** At
+1440x900 the band is 126px shorter than the section. Any cap computed from the
+viewport — such as section 6's `--stage-cap` — must add `2 x --section-inset`
+to its chrome figure, or the section overflows its screen.
+
+### The markup
+
+Two classes on two elements that are already there:
 
 ```astro
-<section id="…" class="relative flex min-h-svh flex-col">
+<section id="…" class="section-tone flex min-h-svh flex-col" data-tone="raised">
   <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
     <div class="section-bounds section-bounds--fill">
       <SectionTrack nested />
@@ -594,27 +643,46 @@ shared by five sections and is not to be redefined for one of them.
 
 | Class | Element | Job |
 |---|---|---|
+| `.section-tone` + `data-tone` | the `<section>` | Paints the section's ground (see "Section tone") |
 | `.section-inset` | the `Container` | Holds the band `--section-inset` inside the section's top and bottom edges |
-| `.section-bounds` | the block inside it | Draws both hairlines; **is the marker's tracked box** |
-| `.section-bounds--fill` | the same block | Takes the section's leftover height — only for a section that has a height of its own |
+| `.section-bounds` | the block inside it | Draws both hairlines, spends `--section-pad` inside them, and **is the marker's tracked box** |
+| `.section-bounds--fill` | the same block | Takes the section's leftover height — only for a section that has a height of its own, and it spends `--space-lg` inside the rules rather than `--section-pad` |
 
-### The inset is a share
+`--fill` spending less is not an inconsistency. An auto-height band grows to
+fit, so padding above and below its content is breathing room the section
+simply takes; a filling band's height is already fixed by the screen and its
+content is centred in it, so the same padding is not air around the content, it
+is content the section loses.
 
-```css
---section-inset: clamp(32px, 7svh, 80px);
-```
+### A pinned section reaches the same shape from the other side
 
-63px at a 900px viewport, the full 80px from about 1143px up, and a 32px floor
-below about 457px. A fixed 80px is generous framing on a desktop window and a
-sixth of the whole thing on a laptop in landscape; the floor keeps the frame
-from vanishing on a short window and the ceiling keeps it from eating a
-one-screen section's budget on a tall one.
+`VoiceSwitch` and `Install` cannot use those classes: the box the reader sees is
+inside a sticky child, three or four screens down a track. They reproduce the
+two measurements instead — `[data-viewport]` takes `--section-inset` as its
+vertical padding, `[data-frame]` draws `border-block: 1px solid var(--rule)` —
+and the joint comes out identical to every other one.
 
-**It costs vertical budget, and a one-screen section has to pay for it twice.**
-At 1440×900 the band is 126px shorter than the section. Any cap that is
-computed from the viewport — such as section 6's
-`--stage-cap: clamp(190px, calc(100svh - 548px), 460px)` — must add `2 ×
---section-inset` to its chrome figure, or the section overflows its screen.
+**What they must not also do is open with a `.section-rule`.** Both did, and
+that is where two of the doubled lines came from.
+
+`Install` is the one asymmetric case on the page, and it is asymmetric because
+only one of its two ends is a section edge: the top is `--section-inset` like
+everything else, the bottom is `--space-lg`, because what sits there is the
+closing CTA band rather than a rule and the section carries on for three more
+screens of track below it. Paying a second inset there would cost the four
+steps 56px of screen for nothing — and 56px is enough to push the section past
+the window height at which it gives up pinning, which is why that query moved
+with this change.
+
+### A run of sections may opt out — together
+
+Plugins, skills and CLIs read as one run with no line between them (maintainer,
+2026-08-29). That is allowed, and the condition is in the word *together*: the
+run has exactly one boundary at each end, drawn by its neighbours, so the
+property this shell protects still holds. **A single section leaving the shell
+is the old bug back**, because it changes what one joint looks like and nothing
+else. See `Plugins.astro`, which carries the reasoning and the three things
+that are load-bearing about it.
 
 ### The marker has to be re-pointed at the band
 
@@ -651,6 +719,34 @@ direction: it is a framed box because the section is three screens tall, and it
 hosts `<SectionTrack nested />` for exactly this reason.
 
 ---
+
+## Section tone
+
+Each section paints its own ground, a few points off the floor, so neighbours
+separate by tone as well as by a line and the page stops reading as one flat
+slab from the nav to the footer. Set it with `data-tone` on a `.section-tone`
+element; the three values are in `tokens.css`. A shallow gradient is derived
+from the tone so a single section is not a flat slab either.
+
+**No two neighbours share a ground**, which is the only rule the assignment has
+to obey — and the run above counts as one section for it.
+
+**A section that carries cards takes a tone at or below the floor.** A tone is
+spent out of the same range a card lifts through: `--surface-card` is 15 points
+off the floor and only 6 above `--tone-raised`, at which point a card reads as
+a slightly darker hole rather than as a surface. The logo strip was on `raised`
+for one build and is the worked example.
+
+**Why a pseudo-element at `z-index: -2` rather than `background` on the
+section.** The rails are a fixed layer at `z-index: -1`, between the page
+background and the content, and an opaque background on an in-flow section
+paints above that layer — the rails would come out in pieces, one gap per
+section, which is the exact failure `global.css` warns about. A negative-z
+child paints below `-1` and above the canvas, so the rails run unbroken over
+every tone. The section must therefore not become a stacking context of its
+own: `position: relative` with `z-index: auto` is safe, `transform`, `filter`,
+`opacity < 1`, `isolation` and `will-change` are not, and `overflow: hidden` is
+fine.
 
 ## Responsive
 
@@ -697,9 +793,26 @@ nothing — test with a real one.)
 - A block as wide as the `content` column whose outer edge is `--hairline`
   while it is filled near the page colour, which stops both rails dead for its
   own height
+- A row of near-canvas cards standing on both rails without redrawing the
+  rails on top of them (the line stops in mid-air; wrapping `--rule` around
+  the end cards would still bend it)
 - A one-viewport section closed by a rule flush with its bottom edge. That line
-  lands on the edge of the window and is never seen with the opening one — such
-  a section is bounded instead
+  lands on the edge of the window and is never seen with the opening one — the
+  shell holds both lines an inset inside the section for exactly this reason
+- **A section that opens with a `.section-rule` and also draws a framed body.**
+  Two lines at one boundary, and with the block above them in view, three. It
+  is the defect this shell exists to make unrepresentable
+- **A vertical figure of a section's own** between a boundary rule and the
+  content under it. There is one inset and one inner pad on the whole page;
+  `py-20` beside a neighbour's `py-24` is invisible in review and obvious on
+  the built page
+- **A single section leaving the shell.** A run of sections may opt out
+  together, because a run still has one boundary at each end; one section
+  opting out just changes what one joint looks like
+- **A tone on a section that carries cards** above `--tone-floor`. A tone is
+  spent out of the same range the card lifts through
+- **An opaque `background` on a section** for its ground. It paints over the
+  rails; the ground is a `z-index: -2` pseudo-element (`.section-tone`)
 - A section marker in the rails' own `z-index: -1` layer, where every card
   with a surface paints over it
 - A second scroll indicator alongside the section markers — one page-long
@@ -745,7 +858,7 @@ name to explain why it was retired.
 
 ---
 
-## The four numbers to tune
+## The numbers to tune
 
 If the result looks too wide or too narrow, change only these, and only in
 `src/styles/layout.css`:
@@ -759,3 +872,11 @@ If the result looks too wide or too narrow, change only these, and only in
 
 A narrower prose makes the margins read as wider, because the headline wraps
 sooner. Nothing else changes.
+
+Two more govern the page's vertical pacing rather than its width, and they live
+in the same file:
+
+| Variable | Now | Effect |
+|---|---|---|
+| `--section-inset` | `clamp(32px, 7svh, 80px)` | Air outside a section's two rules. The gap between two sections is twice it |
+| `--section-pad` | `clamp(48px, 6svh, 80px)` | Air inside them, in an auto-height band |

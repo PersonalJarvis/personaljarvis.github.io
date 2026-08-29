@@ -33,6 +33,35 @@
   --surface-card: #191815;
   --surface-strong: #282620;
 
+  /* --- Section tone ------------------------------------------------------
+   * The ground a whole section stands on. Three values, a few points either
+   * side of the floor, so consecutive sections separate by TONE as well as by
+   * a line and the page stops reading as one flat slab of black.
+   *
+   * This is the move meuze.ai makes by flipping a section from white to
+   * near-black, dialled down to what a dark page can carry: a full inversion
+   * here would break every app mockup on the page, which is drawn for a dark
+   * ground and is a clone of the product rather than an illustration.
+   *
+   * THE CEILING IS `--surface-card`, DELIBERATELY. A card lifts off its
+   * section by exactly the step between the two; raise a tone to the card
+   * value and the cards in that section disappear. `--tone-raised` stops well
+   * short of it for that reason, and a fourth, lighter tone is not free space
+   * — it is the card step being spent.
+   *
+   * WHICH MAKES ONE RULE: A SECTION THAT CARRIES CARDS TAKES A TONE AT OR
+   * BELOW THE FLOOR. `--tone-raised` leaves a card 6 points of lift where the
+   * floor leaves it 15, and at 6 a card reads as a slightly darker hole rather
+   * than as a surface. The logo strip was on `raised` for one build and is the
+   * worked example — see the note on its `data-tone`.
+   *
+   * Each section paints ONE of these under itself; the gradient that keeps a
+   * single section from being flat too is derived from it in layout.css.
+   */
+  --tone-floor: #0a0a09;
+  --tone-deep: #060605;
+  --tone-raised: #131210;
+
   /* --- Ink ---------------------------------------------------------------
    * The paper colour, carrying the text. Also the primary action colour: the
    * CTA is paper on ink, which is why this system needs no borrowed accent

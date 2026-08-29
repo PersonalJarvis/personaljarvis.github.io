@@ -91,14 +91,19 @@ function segments(body: string) {
 }
 ---
 
-<section id="install">
+<section id="install" class="section-tone" data-tone="raised">
   {/*
-    The line the section opens on, like every other section. It stays put and
-    scrolls away; the frame's own top line below is the one that gets pinned.
+    NO OPENING `.section-rule`. It used to sit here and it was the worst joint
+    on the page: the rule at the section's top edge, the pinned frame's own top
+    line 33px below it, and the closing line of the section above 80px above
+    that — three horizontal lines in one view, which is the screenshot the
+    maintainer sent on 2026-08-29.
+
+    This section is bounded by the pinned frame's two rules, like every other
+    section is bounded by its band's two rules. `[data-viewport]` holds them
+    `--section-inset` inside the section's edges; `[data-frame]` draws them.
+    See docs/layout.md § "One boundary, one shape".
   */}
-  <Container width="content">
-    <div class="section-rule"></div>
-  </Container>
 
   {/*
     THE SCROLL TRACK. The section stops under the reader and the four steps
@@ -255,10 +260,29 @@ function segments(body: string) {
     position: sticky;
     top: 0;
     height: 100svh;
-    /* Tighter than VoiceSwitch's, because this screen carries two blocks: the
-       frame and the band under it. Every pixel here is a pixel the steps do
-       not get. */
-    padding-block: var(--space-lg);
+    /* ASYMMETRIC, AND EACH END FOR ITS OWN REASON.
+     *
+     * The TOP is this section's inset — the air between its own edge and the
+     * frame's opening rule — so it is the same `--section-inset` every other
+     * section spends, and two sections always meet the same way.
+     *
+     * It costs the pinned screen 56px over the `--space-lg` it used to be, and
+     * that is real: at 2560 wide it is the difference between a screen that
+     * fits in a 1249px window and one that does not. It is paid anyway, and
+     * the guard below is what makes paying it safe — where the screen no
+     * longer fits, the section stops pinning instead of squeezing the frame
+     * and pushing its closing rule under the band.
+     *
+     * The BOTTOM is not a boundary at all. What sits there is the closing CTA
+     * band, not a rule, and the section carries on for another three screens
+     * of track below it — so the figure is just air under a block, and paying
+     * a second `--section-inset` for it would cost the four steps 56px of
+     * screen for nothing. This is the one place on the page where the two ends
+     * differ, and it differs because only one of them is a section edge.
+     *
+     * The 24px it does still cost pushes the height at which this section
+     * gives up pinning up by the same amount — see the unpin query below. */
+    padding-block: var(--section-inset) var(--space-lg);
     overflow: hidden;
   }
 
@@ -365,30 +389,31 @@ function segments(body: string) {
   }
 
   /* --- Where the pin is off ----------------------------------------------
-   * Three cases drop out of the sticky layout into an ordinary block, and each
-   * one is the same judgement: pinning is only worth it where the whole frame
-   * actually fits on the screen with room to read it.
+   * Pinning is only worth it where the whole screen — frame AND band — fits
+   * with room to read it. Two cases are structural and one is measured.
    *
    *   narrow    under 1280px the steps column is narrow enough that the four
    *             bodies wrap to five and six lines, and the frame is taller
    *             than any window
-   *   short     TWO bands, because what the screen needs depends on how wide
-   *             it is: the root scale grows with the viewport, so the same
-   *             content is taller on a wide monitor. Measured — frame plus
-   *             band plus the child's padding — it needs 994px of window at
-   *             1280 wide, 1024px at 1920 and 1213px at 2560. Hence 1060px
-   *             below 2000px wide and 1230px above it, each with a margin over
-   *             the measurement. Below those the frame would be shorter than
-   *             its content and the sticky child clips what will not fit —
-   *             which is the bottom of step 4
    *   calm      prefers-reduced-motion. A section that holds the page still
    *             is exactly what that setting is asking not to happen
+   *   short     a floor here, and the real answer in the script
    *
-   * The script reads the same query, spelled identically, so the CSS and the
-   * JS cannot disagree about which mode the section is in — a mismatch leaves
-   * a scrub driving a section that no longer has a track.
+   * THE HEIGHT IS NOT A NUMBER TO TUNE, and this is the third time it has been
+   * one. A hand-measured threshold is a copy of a fact about the content — how
+   * tall four steps, an install box and a band come out at a given root scale
+   * — and every session that touches a step, a padding or the band invalidates
+   * it silently. It has already been wrong twice in one afternoon: once when
+   * the band moved into this screen, and once when the child's top inset went
+   * from 24px to 80px. So the script MEASURES whether the frame can hold its
+   * content and sets `data-unpinned` when it cannot, and the rules below carry
+   * that attribute as well as the query.
+   *
+   * The 1060px in the query is a floor for a reader with no JavaScript, not
+   * the real threshold: below it the pin cannot be right at any width, and
+   * above it the measurement decides.
    */
-  @media (max-width: 1279px), (max-height: 1059px), (min-width: 2000px) and (max-height: 1229px), (prefers-reduced-motion: reduce) {
+  @media (max-width: 1279px), (max-height: 1059px), (prefers-reduced-motion: reduce) {
     [data-track] {
       height: auto;
     }
@@ -402,6 +427,19 @@ function segments(body: string) {
 
     /* The frame KEEPS its two rules here. Pinned or not, the band hangs off
        the bottom one — take it away and the band floats. */
+  }
+
+  /* The measured guard. Same three declarations as the query above, because
+     "not pinned" has to look identical however it was arrived at. */
+  [data-unpinned] [data-track] {
+    height: auto;
+  }
+
+  [data-unpinned] [data-viewport] {
+    position: static;
+    height: auto;
+    padding-block: var(--space-xxl);
+    overflow: visible;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -433,6 +471,17 @@ function segments(body: string) {
    * this decides where the value comes from, and a mismatch leaves a scrub
    * driving a section that no longer has a track.
    *
+   * AND THIS FILE ALSO DECIDES WHETHER THE PIN IS SAFE AT ALL. The sticky
+   * child hides overflow, so a frame shorter than its content loses the bottom
+   * of step 4 with nothing on screen to say so. Which window heights are big
+   * enough is a fact about the content — four steps, an install box, a band,
+   * at a root scale that grows with the viewport — and a hand-measured
+   * threshold is a stale copy of it the moment anyone touches a step or a
+   * padding. That has already gone wrong twice in an afternoon. So the frame
+   * is MEASURED against its own content, and `data-unpinned` goes on the
+   * section when it does not fit; the stylesheet carries that attribute
+   * alongside its query.
+   *
    * Every read is inside a requestAnimationFrame. `getBoundingClientRect`
    * forces layout, and doing that in the scroll handler ties the page's frame
    * rate to the wheel.
@@ -446,8 +495,9 @@ function segments(body: string) {
   if (section && list && track) {
     const items = Array.from(list.querySelectorAll<HTMLElement>("[data-step]"));
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const frameBox = section.querySelector<HTMLElement>("[data-frame]");
     const loose = window.matchMedia(
-      "(max-width: 1279px), (max-height: 1059px), (min-width: 2000px) and (max-height: 1229px), (prefers-reduced-motion: reduce)",
+      "(max-width: 1279px), (max-height: 1059px), (prefers-reduced-motion: reduce)",
     );
 
     if (!reduce.matches && items.length > 0) {
@@ -490,9 +540,44 @@ function segments(body: string) {
         return best;
       };
 
+      /**
+       * Does the pinned screen still hold the steps?
+       *
+       * The test is the failure itself: the last step's list must end above
+       * the line that closes the frame. That is what the reader loses when the
+       * screen is too short — the sticky child hides overflow, so the bottom
+       * of step 4 goes with nothing on screen to say it did.
+       *
+       * NOT `scrollHeight` against `clientHeight`, which is the obvious test
+       * and wrong here twice over. The frame centres its content, so half of
+       * any overflow goes off the TOP, and scrollHeight does not count that
+       * — a screen 40px short reads as 20px short and slips under any sane
+       * tolerance. And the mark's canvas carries an explicit pixel height that
+       * is itself derived from the frame, so "the frame's natural height" is
+       * circular. The list is neither: it is text, and its height depends on
+       * nothing but the column it wraps in.
+       *
+       * Measured with the attribute OFF, because with it on the section is an
+       * ordinary block where everything always fits, and the state would latch
+       * for good.
+       */
+      const checkFit = () => {
+        if (!frameBox) return;
+        section.removeAttribute("data-unpinned");
+        if (loose.matches) return;
+
+        const frameRect = frameBox.getBoundingClientRect();
+        const room = parseFloat(getComputedStyle(frameBox).paddingBottom) || 0;
+        if (list.getBoundingClientRect().bottom > frameRect.bottom - room + 1) {
+          section.setAttribute("data-unpinned", "");
+        }
+      };
+
+      const unpinned = () => loose.matches || section.hasAttribute("data-unpinned");
+
       const measure = () => {
         frame = 0;
-        apply(loose.matches ? fromCentre() : fromTrack());
+        apply(unpinned() ? fromCentre() : fromTrack());
       };
 
       const schedule = () => {
@@ -500,10 +585,24 @@ function segments(body: string) {
         frame = requestAnimationFrame(measure);
       };
 
+      const relayout = () => {
+        checkFit();
+        schedule();
+      };
+
       window.addEventListener("scroll", schedule, { passive: true });
-      window.addEventListener("resize", schedule);
-      loose.addEventListener("change", schedule);
-      measure();
+      window.addEventListener("resize", relayout);
+      loose.addEventListener("change", relayout);
+
+      /* NOT a ResizeObserver on the frame, tempting as it is. `checkFit`
+         changes the frame's height by design — that is how it measures — so an
+         observer watching the frame would see its own effect, re-measure, and
+         latch into a loop that flips the section between pinned and not on
+         every frame. `load` covers the one thing a resize does not: the mark
+         and the install box settling after first paint. */
+      window.addEventListener("load", relayout);
+
+      relayout();
     }
   }
 </script>

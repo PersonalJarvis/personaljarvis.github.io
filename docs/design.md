@@ -71,6 +71,36 @@ action colour, read the other way round.
 The scale runs the opposite way from a light theme: further from the floor means
 **lighter**, not darker. A card lifts by moving toward the ink.
 
+### Section tone
+| Token | Value | Use |
+|---|---|---|
+| `--tone-deep` | `#060605` | A section that sits below the floor |
+| `--tone-floor` | `#0a0a09` | The floor itself — the same value as `--canvas` |
+| `--tone-raised` | `#131210` | A section that lifts off the floor |
+
+The ground a whole section stands on, set with `data-tone` on a `.section-tone`
+element. Each section takes one, **no two neighbours share one**, and a shallow
+gradient is derived from it so a single section is not a flat slab either. The
+page used to be one flat colour from the nav to the footer with the boundaries
+carried entirely by hairlines; the maintainer asked for tonal variation on
+2026-08-29, with meuze.ai's white/near-black alternation as the reference.
+
+It is dialled far down from that reference on purpose. A full inversion here
+would break every app mockup on the page: those are clones of the product's own
+dark theme rather than illustrations, and they cannot be re-lit.
+
+**The ceiling is `--surface-card`, and it is the card step being spent.** A card
+lifts off its section by exactly the distance between the two — 15 points from
+the floor, 6 from `--tone-raised`, at which point a card reads as a slightly
+darker hole rather than as a surface. **A section that carries cards therefore
+takes a tone at or below the floor.** The logo strip was on `raised` for one
+build and is the worked example.
+
+The mechanics — why the ground is a `z-index: -2` pseudo-element and never a
+`background` on the section — are in
+[`layout.md`](layout.md) § "Section tone", because what they protect is the
+rails.
+
 ### Ink and text
 | Token | Value | Use |
 |---|---|---|
@@ -272,6 +302,10 @@ inverts to ink — a pale panel — instead of wearing a coloured ribbon.
 - Don't use the stage pastels for status, decoration, or charts.
 - Don't inline a hex value. Add a token or use one.
 - Don't reintroduce another product's accent colour or typeface.
+- **Don't give a section its ground with `background`.** It paints over the
+  rails. The ground is `.section-tone` plus `data-tone`.
+- **Don't put a tone above the floor on a section that carries cards.** The
+  tone and the card lift come out of the same range.
 
 ---
 

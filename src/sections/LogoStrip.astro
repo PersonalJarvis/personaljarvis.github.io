@@ -106,17 +106,34 @@ const visibility = [
 ];
 ---
 
-<section aria-labelledby="connects-label" class="relative">
-  <SectionTrack />
-  <Container width="content">
+<!-- The standard section shell — see docs/layout.md § "One boundary, one
+     shape". This strip used to be the one section on `py-20` while its
+     neighbours were on `py-24`, which is the kind of drift a shared shell
+     exists to stop.
+
+     `deep` AND NOT `raised`, and the cells are the reason. A tone is spent out
+     of the same range the cards lift through: the cells are `--surface-card`,
+     15 points off the floor, and on `--tone-raised` only 6 of those are left —
+     they stop reading as cards and start reading as slightly darker holes. On
+     `--tone-deep` the ground drops away from them instead and they lift by 19.
+     A section that carries cards takes a tone at or below the floor. -->
+<section
+  aria-labelledby="connects-label"
+  class="section-tone flex flex-col"
+  data-tone="deep"
+>
+  <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
     <!--
-      The rule that separates this strip from the hero above it. It sits
-      INSIDE the container, so it starts and ends exactly on the two rails
-      instead of overshooting them by a gutter a side. The section's own
-      vertical padding moved onto it for the same reason every other section
-      does it: the line has to mark the boundary, not float below it.
+      `strip` redraws the two rails ON TOP of the cells. The real rails sit at
+      z-index -1, behind every card; these cells stand on both of them and are
+      filled near the page colour, so they hide the line without reading as a
+      surface — the fault docs/layout.md names under "Blocks that cross a rail".
+      Wrapping `--rule` around the end cards would bend the line around their
+      radius, which still reads as an interruption. A 1px overlay keeps it
+      straight, so the row does not break the page's frame.
     -->
-    <div class="section-rule py-20">
+    <div class="section-bounds strip">
+      <SectionTrack nested />
       <p id="connects-label" class="eyebrow">Everything Jarvis connects</p>
 
       <ul
@@ -144,6 +161,36 @@ const visibility = [
 </section>
 
 <style>
+  /*
+   * Same drawing as `.page-chrome__rails`, painted on top of this band's
+   * cells. `isolation` keeps the overlay's z-index inside this band, so it
+   * cannot climb into the page and land on a neighbour. z-index 1 clears the
+   * cards (auto) and stays under the section marker at 20. Hidden below
+   * 768px, where the rails themselves are.
+   *
+   * Isolation is forbidden on `.section-tone` (it would trap the tone layer
+   * above the real rails). It is safe here: this is the inner band, and the
+   * tone lives on the section around it.
+   */
+  .strip {
+    isolation: isolate;
+  }
+
+  .strip::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-inline: 1px solid var(--rule);
+    pointer-events: none;
+  }
+
+  @media (max-width: 767px) {
+    .strip::after {
+      display: none;
+    }
+  }
+
   .eyebrow {
     text-align: center;
     font-size: var(--text-caption-upper);

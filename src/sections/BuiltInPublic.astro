@@ -163,7 +163,8 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
 <section
   id="built-in-public"
   aria-labelledby="bip-heading"
-  class="flex min-h-svh flex-col"
+  class="section-tone flex min-h-svh flex-col"
+  data-tone="floor"
   data-bip
   data-active={FEATURED.id}
   data-active-uploaded={FEATURED.uploaded}
@@ -214,7 +215,7 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
       inside a frame at both ends and splitting it evenly is what reads as a
       band; parking all of it against the bottom rule would not.
     */}
-    <div class="section-bounds section-bounds--fill flex flex-col justify-center py-6">
+    <div class="section-bounds section-bounds--fill flex flex-col justify-center">
       <SectionTrack nested />
 
       {/*
