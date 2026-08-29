@@ -60,8 +60,24 @@ const INK = new Color(247 / 255, 247 / 255, 244 / 255);
 /** One cell of the matrix covers this many CSS pixels. */
 const CELL_CSS_PX = 1;
 
-/** Seconds per revolution. Slow enough to read as a turn, not a spin. */
-const TURN_SECONDS = 14;
+/**
+ * Seconds per revolution.
+ *
+ * The reference (meuze.ai) turns its mark once every 15 seconds — read off its
+ * own bundle, where the rate is `-(2*PI) / (1000 * secondsPerRevolution)` with
+ * `secondsPerRevolution` defaulting to 15 and no call site overriding it. That
+ * is not what makes it LOOK brisk: its raster is 7 CSS pixels per cell, so a
+ * degree of turn moves whole blocks of dots and the eye reads motion instantly.
+ * Ours is a one-pixel cell, a much finer grain, and the same 15 seconds barely
+ * registers as movement at all.
+ *
+ * So the maintainer's instruction — "make it turn fast, like theirs" — is a
+ * request about the perceived speed, and matching their number would have
+ * changed nothing (we were already at 14). Six seconds is what reads as the
+ * reference does at this grain. Still a turn rather than a spin: a full
+ * revolution takes long enough to follow the face going away and coming back.
+ */
+const TURN_SECONDS = 6;
 
 /** The pose a still frame settles on: turned just enough to show the depth. */
 const RESTING_ANGLE = -0.32;

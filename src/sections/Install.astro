@@ -79,25 +79,34 @@ function segments(body: string) {
     <div class="section-rule"></div>
   </Container>
 
-  <div class="flex flex-1 flex-col justify-center py-20">
+  <div class="install-steps flex flex-1 flex-col justify-center">
     <Container width="content">
       <p class="eyebrow uppercase text-muted">Getting started</p>
       <h2 class="headline mt-4 text-balance">How to install Jarvis</h2>
 
       <div class="mt-12 grid gap-12 lg:grid-cols-12">
         <ol class="relative lg:col-span-7" data-steps>
-          {/*
-            One hairline running the length of the badges. It stops 12px short
-            at each end — half a badge — so it meets the first and last numbers
-            at their centres instead of overshooting into nothing.
-          */}
-          <span
-            aria-hidden="true"
-            class="absolute bottom-3 left-3 top-3 w-px bg-hairline"></span>
-
           {
             steps.map((step, i) => (
               <li class="step relative pl-10 [&:not(:last-child)]:mb-12" data-step>
+                {/*
+                  The connecting hairline, drawn as one segment PER GAP rather
+                  than as a single line down the list. A single line is spanned
+                  against the <ol>, whose box ends at the bottom of the last
+                  step's body — several lines below the last badge — so it ran
+                  on past the final number into empty space. A segment knows
+                  where it has to stop: it starts at its own badge's bottom
+                  edge and reaches exactly one 48px gap down, to the top of the
+                  next badge. The last step has no gap under it and therefore
+                  draws nothing.
+                */}
+                {i < steps.length - 1 && (
+                  <span
+                    aria-hidden="true"
+                    class="absolute -bottom-12 left-3 top-6 w-px bg-hairline"
+                  />
+                )}
+
                 <span class="badge absolute left-0 top-0 grid h-6 w-6 place-items-center rounded-[var(--radius-xs)] border border-hairline bg-canvas font-mono text-muted">
                   {i + 1}
                 </span>
@@ -142,41 +151,92 @@ function segments(body: string) {
       </div>
     </Container>
   </div>
+
+  {/*
+    The line that CLOSES the steps. Its twin at the top opens them, and between
+    the two rails the block is now a bounded box rather than something that
+    fades out downwards.
+  */}
+  <Container width="content">
+    <div class="section-rule"></div>
+  </Container>
+
+  {/*
+    The closing band, inside the section rather than after it.
+
+    It used to be a sibling of the section, and that is what produced the hole
+    the maintainer photographed: the steps claimed a whole viewport and centred
+    ~800px of content in it, so the leftover height fell as dead space BELOW
+    the last step — and the band began under all of it. Inside the section the
+    same leftover height is spent instead of wasted: `flex-1` hands it to the
+    steps, the band is pinned to the bottom of the viewport, and the two read
+    as one closing screen.
+
+    The gap over the band is a gap, not a join — the same relationship the
+    reference (meuze.ai) has between its bordered block and the band beneath
+    it. The tail under it is what keeps the band from sitting on the very edge
+    of the screen.
+
+    Sharp corners, flat ink, no gradient. It breaks with everything above it on
+    purpose. On this palette the accent IS the ink — docs/design.md keeps one
+    action colour and no borrowed hue — so the band is paper and its type is
+    the page floor, 18.5:1, well past AA.
+  */}
+  <div class="install-close">
+    <Container width="content">
+      <div
+        class="cta flex flex-col justify-between gap-8 rounded-none bg-ink p-8 text-on-ink md:min-h-[220px] md:flex-row md:items-center md:p-12"
+      >
+        <div>
+          <h2 class="headline text-balance leading-tight">
+            Talk to your computer.<br />It does the thing.
+          </h2>
+          <p class="cta-sub mt-4 opacity-70">
+            Apache 2.0, running on your own machine. Bring the AI subscription
+            you already pay for, or an API key, or nothing at all and keep it
+            offline.
+          </p>
+        </div>
+
+        <a
+          href={`${REPO}#install`}
+          class="action inline-flex h-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-on-ink px-6 font-medium text-ink transition-opacity hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-ink"
+        >
+          Install Personal Jarvis
+        </a>
+      </div>
+    </Container>
+  </div>
 </section>
 
-{/*
-  The closing band. No margin above it: it begins where the steps end, which is
-  what makes it read as the end of the page rather than one more section.
-
-  Sharp corners, flat ink, no gradient. It breaks with everything above it on
-  purpose. On this palette the accent IS the ink — docs/design.md keeps one
-  action colour and no borrowed hue — so the band is paper and its type is the
-  page floor, 18.5:1, well past AA.
-*/}
-<Container width="content">
-  <div
-    class="cta flex flex-col justify-between gap-8 rounded-none bg-ink p-8 text-on-ink md:min-h-[268px] md:flex-row md:items-center md:p-14"
-  >
-    <div>
-      <h2 class="headline text-balance leading-tight">
-        Talk to your computer.<br />It does the thing.
-      </h2>
-      <p class="cta-sub mt-4 opacity-70">
-        Apache 2.0, running on your own machine. Bring the AI subscription you
-        already pay for, or an API key, or nothing at all and keep it offline.
-      </p>
-    </div>
-
-    <a
-      href={`${REPO}#install`}
-      class="action inline-flex h-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-on-ink px-6 font-medium text-ink transition-opacity hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-ink"
-    >
-      Install Personal Jarvis
-    </a>
-  </div>
-</Container>
-
 <style>
+  /* The section is ONE screen: the steps, the line that closes them, and the
+     band. The three numbers below are what splits that screen up.
+     ---------------------------------------------------------------------
+     `install-steps` is the only flexible part. It takes the height the band
+     and the two gaps leave over, and its padding is a FLOOR, not a fixed
+     amount — on a tall monitor the flex box is taller than its content and
+     `justify-center` spreads the surplus evenly above and below, which is the
+     "a little air top and bottom" the layout is meant to read as. On a short
+     laptop the floor is all there is, the section grows past 100svh, and the
+     page simply scrolls; `section-full-height` is a MINIMUM, so nothing gets
+     clipped when the content no longer fits. */
+  .install-steps {
+    padding-block: clamp(1.75rem, 4svh, 3.75rem);
+  }
+
+  /* Above the band: the gap that separates it from the rule closing the steps.
+     Below it: the tail that keeps it off the bottom edge of the screen.
+
+     These are deliberately smaller than the steps' own padding. Measured on
+     the maintainer's viewport (2560×1249) the section came out 1265px — 16px
+     over one screen — and the three numbers here are what buy it back with
+     room to spare. Anything the section then has left over goes to the steps,
+     not to these gaps: `flex-1` grows only Block A. */
+  .install-close {
+    padding-block: clamp(1.5rem, 3svh, 2.5rem) clamp(1.25rem, 2.75svh, 2rem);
+  }
+
   .eyebrow {
     font-size: var(--text-caption-upper);
     letter-spacing: var(--tracking-caption-upper);
@@ -238,10 +298,13 @@ function segments(body: string) {
   }
 
   /* Square, so the turn never changes the space the mark occupies, and capped
-     at roughly 60% of the section's height. */
+     at roughly 60% of the height the STEPS get — which is no longer the whole
+     screen, because the band shares it. Without the cap the frame follows its
+     grid column, and on a very wide monitor that column is wide enough to make
+     the mark the tallest thing in the section and push the band off-screen. */
   .mark-frame {
     aspect-ratio: 1;
-    max-height: 60svh;
+    max-height: 44svh;
   }
 
   @media (prefers-reduced-motion: reduce) {

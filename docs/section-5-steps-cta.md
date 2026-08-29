@@ -1,9 +1,9 @@
 # Section 5 — the steps, and the closing CTA
 
 > Assumes [`layout.md`](layout.md).
-> Position: **the last two blocks of the page**, directly on top of each other,
-> no gap between them. Two blocks in one file because together they are the
-> end of the page.
+> Position: **the last two blocks of the page, inside ONE section that is one
+> screen tall.** Two blocks in one file because together they are the end of
+> the page — and in one `<section>` because together they are one screen.
 
 ---
 
@@ -17,6 +17,15 @@ colour, not content.
 
 Its rastered artwork is a **dead-on orthographic elevation** — no tilt, no
 perspective. That is the viewpoint the mark uses (maintainer, 2026-08-29).
+
+Three things were read off the reference rather than guessed at, so nobody has
+to squint at it again:
+
+| What | The reference | Here |
+|---|---|---|
+| Block A's boundary | a rule above **and** below, between the two rails | the same |
+| Space between the blocks | one gap, not a join | one gap |
+| Seconds per revolution | 15 (its own bundle: `-(2π)/(1000 · secondsPerRevolution)`, default 15, never overridden) | **6** — see [the artwork](#the-artwork) |
 
 ---
 
@@ -44,15 +53,49 @@ naming what proves it.
 
 | Element | Value |
 |---|---|
-| Section height | `min-height: 100svh`, content vertically centred |
+| Section height | `min-height: 100svh` — **both blocks together**, not Block A alone |
+| Block A's height | whatever the band and the gaps leave over (`flex: 1`) |
+| Block A's padding | `clamp(1.75rem, 4svh, 3.75rem)`, a floor rather than a fixed amount |
 | Width | step `content` |
 | Columns | 7/12 steps left, 5/12 artwork right |
 | Step spacing | 48px between blocks |
 | Number badge | 24×24px, radius 4px, `--font-mono` |
-| Connecting line | 1px, `--hairline`, continuous through all badges |
+| Connecting line | 1px, `--hairline`, one segment per gap |
+| Boundary | `.section-rule` above the steps **and** below them |
 
 Widths come from `<Container>` alone. The step names a `max-width` of its own
 nowhere — `check-style.mjs` enforces that.
+
+### The section is one screen, and the band is what makes it one
+
+Block A alone used to be the `100svh` section, with its content centred in it
+and the band a sibling underneath. On a tall monitor that put ~800px of steps
+in the middle of a 1250px screen and dropped the whole surplus — roughly 220px
+— as dead space between the last step and the band. It read as a hole, and it
+was the first thing the maintainer pointed at (2026-08-29).
+
+The band moving *inside* the section is the fix. The surplus is then spent
+rather than wasted: `flex: 1` on Block A absorbs it, the band lands at the foot
+of the screen, and the reader gets the steps and the close in one view.
+
+The padding is a floor and the height is a `min-height`, so the failure
+direction is safe. On a short laptop where ~800px of steps plus a 220px band
+cannot fit, the section simply grows past one screen and the page scrolls.
+Nothing is clipped and nothing is squeezed — one screen is the target, not a
+constraint to enforce against the content.
+
+### The connecting line stops at the last badge
+
+One segment per **gap**, on each step but the last: from that step's badge
+bottom edge (`top: 24px`) down through the 48px gap to the next badge's top
+(`bottom: -48px`).
+
+Not one line spanned against the `<ol>`. The list's box ends at the bottom of
+the last step's *body*, several lines below the last badge, so a single line
+overshot the final number and ran on into empty space — visible in the
+maintainer's screenshot of 2026-08-29. A line that has to stop at an element it
+is not anchored to cannot be given the right length in CSS; a segment that
+knows both of its own ends can.
 
 ---
 
@@ -87,10 +130,19 @@ the active state.
 The Jarvis mark as a **dither relief**. Recipe, pipeline and acceptance live in
 [`dither-relief.md`](dither-relief.md); this file does not repeat them.
 
-- Vertically centred, about 60% of the section's height, square
+- Vertically centred, square, capped at `44svh` — about 60% of the height Block
+  A now gets, which is no longer the whole screen
 - The flat logo PNG is **not** enough
 - It **turns** — a full revolution, so the recipe's real-time exception applies
   (maintainer, 2026-08-29)
+- **Six seconds per revolution.** The reference turns in 15, and copying that
+  number would have changed nothing — we were at 14. What makes the reference
+  read brisk is its raster: 7 CSS pixels per cell, so a degree of turn shifts
+  whole blocks of dots. Ours is a one-pixel cell, a far finer grain, and the
+  same 15 seconds barely registers as motion. Six is what matches the
+  reference's *perceived* speed at this grain, which is what the instruction
+  ("make it turn fast, like theirs") actually asked for. Change the grain and
+  this number has to be re-judged with it
 - Purely decorative: `aria-hidden="true"`
 - Below 1024px it is dropped, not shrunk. `client:media` means the bundle is
   never fetched there
@@ -113,12 +165,13 @@ Three things about the mark are decisions, not defaults:
 
 | Element | Value |
 |---|---|
-| Width | step `content` |
-| Height | 268px desktop, `auto` under 768px |
+| Width | step `content` — rail to rail, exactly like Block A |
+| Height | 220px desktop, `auto` under 768px |
 | Corners | **sharp**, `border-radius: 0` |
 | Ground | the accent, full bleed |
-| Padding | 56px, 32px under 768px |
-| Space above | 0 to Block A |
+| Padding | 48px, 32px under 768px |
+| Space above | `clamp(1.5rem, 3svh, 2.5rem)`, measured from the rule that closes Block A |
+| Space below | `clamp(1.25rem, 2.75svh, 2rem)` — the tail that keeps it off the screen edge |
 
 ## Build
 
@@ -161,6 +214,9 @@ the button is therefore dark on the pale band.
 - Buttons on every step at once
 - Invented steps that README or the repo cannot prove
 - Rounding, gradients or transparency on the CTA band
-- A gap between Block A and Block B
+- Block B outside the section, or any other arrangement that lets Block A's
+  leftover height fall as dead space between the last step and the band
+- A band narrower or wider than Block A. Both stand on the rails, or the end of
+  the page has two different edges
 - Rastering a flat, unshaded logo. See [`dither-relief.md`](dither-relief.md)
 - A `max-width` of its own instead of step `content` from [`layout.md`](layout.md)
