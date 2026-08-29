@@ -2,6 +2,10 @@ node_modules/
 dist/
 build/
 .astro/
+
+# Where scripts/build-atomic.mjs assembles a build before publishing it. The
+# script removes its own; one only survives a build that was killed.
+.dist-build-*/
 .next/
 coverage/
 

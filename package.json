@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "node scripts/build-atomic.mjs",
     "preview": "astro preview",
     "check": "astro check",
     "check:style": "node scripts/check-style.mjs",
@@ -12,7 +12,7 @@
     "data:stargazers": "node scripts/fetch-stargazers.mjs",
     "data:gazetteer": "node scripts/build-gazetteer.mjs",
     "data:land-mask": "node scripts/build-land-mask.mjs",
-    "verify": "npm run check:style && npm run check:geocode && astro check && astro build"
+    "verify": "npm run check:style && npm run check:geocode && astro check && npm run build"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.4",
