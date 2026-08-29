@@ -108,7 +108,12 @@ export function buildMark(): MarkParts {
     bevelEnabled: true,
     bevelThickness: BEVEL,
     bevelSize: BEVEL,
-    bevelSegments: 4,
+    // Ten, not four. The bevel is the roll between the front face and the
+    // flank, and it is where the turn is read — four segments render it as
+    // four flat facets, which at the size the mark is drawn now come out as a
+    // panel with straight edges pasted onto the corner. Ten reads as a roll.
+    // It costs vertices once, at build time, and nothing per frame.
+    bevelSegments: 10,
     curveSegments: 32,
   });
 

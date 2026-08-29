@@ -25,7 +25,7 @@ to squint at it again:
 |---|---|---|
 | Block A's boundary | a rule above **and** below, between the two rails | the same |
 | Space between the blocks | one gap, not a join | one gap |
-| Seconds per revolution | 15 (its own bundle: `-(2π)/(1000 · secondsPerRevolution)`, default 15, never overridden) | **6** — see [the artwork](#the-artwork) |
+| Seconds per revolution | 15 (its own bundle: `-(2π)/(1000 · secondsPerRevolution)`, default 15, never overridden) | 14 |
 
 ---
 
@@ -55,10 +55,10 @@ naming what proves it.
 |---|---|
 | Section height | `min-height: 100svh` — **both blocks together**, not Block A alone |
 | Block A's height | whatever the band and the gaps leave over (`flex: 1`) |
-| Block A's padding | `clamp(1.75rem, 4svh, 3.75rem)`, a floor rather than a fixed amount |
+| Block A's padding | `clamp(1.5rem, 2.6svh, 3rem)`, a floor rather than a fixed amount |
 | Width | step `content` |
-| Columns | 7/12 steps left, 5/12 artwork right |
-| Step spacing | 48px between blocks |
+| Columns | **6/12 steps left, 6/12 artwork right** |
+| Step spacing | 40px between blocks |
 | Number badge | 24×24px, radius 4px, `--font-mono` |
 | Connecting line | 1px, `--hairline`, one segment per gap |
 | Boundary | `.section-rule` above the steps **and** below them |
@@ -79,10 +79,16 @@ rather than wasted: `flex: 1` on Block A absorbs it, the band lands at the foot
 of the screen, and the reader gets the steps and the close in one view.
 
 The padding is a floor and the height is a `min-height`, so the failure
-direction is safe. On a short laptop where ~800px of steps plus a 220px band
-cannot fit, the section simply grows past one screen and the page scrolls.
-Nothing is clipped and nothing is squeezed — one screen is the target, not a
-constraint to enforce against the content.
+direction is safe. On a short laptop where the steps plus the band cannot fit,
+the section simply grows past one screen and the page scrolls. Nothing is
+clipped and nothing is squeezed.
+
+**One screen is the target, not a constraint to enforce against the content**
+— and that is the settled reading, because the first attempt enforced it and
+was rejected for it (maintainer, 2026-08-29: *"the viewport doesn't do it for
+me; go by the section instead"*). Measured: 1305×2560 lands at exactly one
+screen, 1249 at 23px over, a 1440×900 laptop at 89px over. The section is
+proportioned first and lands near a screen second.
 
 ### The connecting line stops at the last badge
 
@@ -130,19 +136,25 @@ the active state.
 The Jarvis mark as a **dither relief**. Recipe, pipeline and acceptance live in
 [`dither-relief.md`](dither-relief.md); this file does not repeat them.
 
-- Vertically centred, square, capped at `44svh` — about 60% of the height Block
-  A now gets, which is no longer the whole screen
+- Sized from its GRID CELL: its column's width, its row's height, centred in
+  both. Never from the viewport
 - The flat logo PNG is **not** enough
 - It **turns** — a full revolution, so the recipe's real-time exception applies
   (maintainer, 2026-08-29)
-- **Six seconds per revolution.** The reference turns in 15, and copying that
-  number would have changed nothing — we were at 14. What makes the reference
-  read brisk is its raster: 7 CSS pixels per cell, so a degree of turn shifts
-  whole blocks of dots. Ours is a one-pixel cell, a far finer grain, and the
-  same 15 seconds barely registers as motion. Six is what matches the
-  reference's *perceived* speed at this grain, which is what the instruction
-  ("make it turn fast, like theirs") actually asked for. Change the grain and
-  this number has to be re-judged with it
+- **Fourteen seconds per revolution.** Six was tried and rejected: at a
+  one-pixel cell the raster crawls rather than turns, and the mark reads as
+  restless (maintainer, 2026-08-29). Fourteen is also within a second of the
+  reference's own rate
+- **The camera is fitted to the form, not to a hand-picked number.** The frame
+  clears the mark's RADIUS about the turn axis — `max sqrt(x² + z²)` over every
+  vertex, measured at build time — and the frustum is then the canvas expressed
+  in those units. A square canvas with a square frustum, which is what stood
+  here before, wastes the taller half of a non-square cell and draws the mark
+  smaller than its box allows at every angle
+- **It fills its cell.** A grid item with a fixed `aspect-ratio` cannot stretch,
+  so the old square sat at the TOP of a row the steps ran on past, and the mark
+  read as floating in the upper corner over a hole. Drawn size went up about
+  45% between the two
 - Purely decorative: `aria-hidden="true"`
 - Below 1024px it is dropped, not shrunk. `client:media` means the bundle is
   never fetched there
@@ -169,7 +181,7 @@ Three things about the mark are decisions, not defaults:
 | Height | 220px desktop, `auto` under 768px |
 | Corners | **sharp**, `border-radius: 0` |
 | Ground | the accent, full bleed |
-| Padding | 48px, 32px under 768px |
+| Padding | 40px, 32px under 768px |
 | Space above | `clamp(1.5rem, 3svh, 2.5rem)`, measured from the rule that closes Block A |
 | Space below | `clamp(1.25rem, 2.75svh, 2rem)` — the tail that keeps it off the screen edge |
 
@@ -213,6 +225,10 @@ the button is therefore dark on the pale band.
 - More than four steps
 - Buttons on every step at once
 - Invented steps that README or the repo cannot prove
+- Sizing the artwork from the VIEWPORT — an `svh` cap, a fixed aspect ratio.
+  It is framed against the section it sits in, and nothing else
+- A shadow map in the turning scene. See [`dither-relief.md`](dither-relief.md)
+  § "Two rules a moving relief adds"
 - Rounding, gradients or transparency on the CTA band
 - Block B outside the section, or any other arrangement that lets Block A's
   leftover height fall as dead space between the last step and the band

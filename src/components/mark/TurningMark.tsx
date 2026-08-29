@@ -26,16 +26,15 @@
 
 import { useEffect, useRef } from "react";
 import {
-  AmbientLight,
   Box3,
   Camera,
   Color,
   DirectionalLight,
   Group,
+  HemisphereLight,
   Mesh,
   MeshStandardMaterial,
   OrthographicCamera,
-  PCFSoftShadowMap,
   PlaneGeometry,
   SRGBColorSpace,
   Scene,
@@ -63,21 +62,20 @@ const CELL_CSS_PX = 1;
 /**
  * Seconds per revolution.
  *
- * The reference (meuze.ai) turns its mark once every 15 seconds — read off its
- * own bundle, where the rate is `-(2*PI) / (1000 * secondsPerRevolution)` with
- * `secondsPerRevolution` defaulting to 15 and no call site overriding it. That
- * is not what makes it LOOK brisk: its raster is 7 CSS pixels per cell, so a
- * degree of turn moves whole blocks of dots and the eye reads motion instantly.
- * Ours is a one-pixel cell, a much finer grain, and the same 15 seconds barely
- * registers as movement at all.
- *
- * So the maintainer's instruction — "make it turn fast, like theirs" — is a
- * request about the perceived speed, and matching their number would have
- * changed nothing (we were already at 14). Six seconds is what reads as the
- * reference does at this grain. Still a turn rather than a spin: a full
- * revolution takes long enough to follow the face going away and coming back.
+ * Six was tried and rejected: at a one-pixel cell the raster crawls rather than
+ * turns, and the mark reads as restless (maintainer, 2026-08-29). Fourteen is
+ * the settled figure, and it is within a second of the reference's own — its
+ * bundle computes `-(2*PI) / (1000 * secondsPerRevolution)` with
+ * `secondsPerRevolution` defaulting to 15 and no call site overriding it.
  */
-const TURN_SECONDS = 6;
+const TURN_SECONDS = 14;
+
+/**
+ * How much room the frame keeps around the mark, as a share of its own size.
+ * Small on purpose: the frame is sized to the section's column, so every
+ * percent here is a percent off a graphic that is already width-limited.
+ */
+const FRAME_MARGIN = 1.04;
 
 /** The pose a still frame settles on: turned just enough to show the depth. */
 const RESTING_ANGLE = -0.32;
@@ -109,8 +107,6 @@ export function TurningMark({ className }: Props) {
     const ratio = Math.max(1, Math.round(window.devicePixelRatio || 1));
     renderer.setPixelRatio(ratio);
     renderer.setClearColor(0x000000, 0);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = PCFSoftShadowMap;
     renderer.outputColorSpace = SRGBColorSpace;
 
     const scene = new Scene();
@@ -136,15 +132,11 @@ export function TurningMark({ className }: Props) {
 
     paper.forEach((geometry) => {
       const mesh = new Mesh(geometry, paperMaterial);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
       pivot.add(mesh);
       meshes.push(mesh);
     });
     accent.forEach((geometry) => {
       const mesh = new Mesh(geometry, accentMaterial);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
       pivot.add(mesh);
       meshes.push(mesh);
     });
@@ -159,32 +151,89 @@ export function TurningMark({ className }: Props) {
     meshes.forEach((mesh) => mesh.position.sub(centre));
     pivot.scale.setScalar(1 / size.y);
 
+    /**
+     * What the frame has to clear, measured rather than guessed.
+     *
+     * The turn sweeps the mark through every angle about Y, so its widest
+     * moment is not its width — it is its RADIUS about the turn axis,
+     * `max sqrt(x² + z²)` over every vertex. Anything narrower clips an arm at
+     * some angle; anything wider is empty margin, and margin is expensive here
+     * because the graphic is already limited by the column it sits in.
+     *
+     * A hand-picked half-frustum used to stand in for this. It was 0.62 for a
+     * form whose real radius is a good deal less, so the mark rendered smaller
+     * than its box allowed at every angle of the turn.
+     */
+    let radius = 0;
+    let halfHeight = 0;
+    meshes.forEach((mesh) => {
+      const position = mesh.geometry.getAttribute("position");
+      for (let i = 0; i < position.count; i++) {
+        const x = position.getX(i) + mesh.position.x;
+        const y = position.getY(i) + mesh.position.y;
+        const z = position.getZ(i) + mesh.position.z;
+        radius = Math.max(radius, Math.hypot(x, z));
+        halfHeight = Math.max(halfHeight, Math.abs(y));
+      }
+    });
+    radius = (radius / size.y) * FRAME_MARGIN;
+    halfHeight = (halfHeight / size.y) * FRAME_MARGIN;
+
     // Orthographic, as the recipe asks. A perspective camera would taper the
-    // mark and stop it reading as one flat brand shape. The half-frustum
-    // clears the widest moment of the turn, when the body's depth adds to its
-    // half-width.
-    const camera = new OrthographicCamera(-0.62, 0.62, 0.62, -0.62, 0.1, 20);
+    // mark and stop it reading as one flat brand shape. The frustum itself is
+    // set in `resize`, from the frame's real aspect — the frame is no longer
+    // square, and a square frustum in a tall box wastes the height.
+    const camera = new OrthographicCamera(-radius, radius, halfHeight, -halfHeight, 0.1, 20);
     camera.position.set(0, 0, 6);
 
-    const key = new SpotLight(0xffffff, 8, 0, Math.PI / 3.4, 1, 2);
+    /**
+     * The key. A spot, close, because distance falloff is what lays the
+     * gradient across the face — the recipe forbids a directional key for
+     * exactly that reason.
+     *
+     * Weaker than it was. It used to be the only thing lighting the mark, so
+     * it had to be strong enough to carry a face on its own, and the front
+     * then clipped to flat white over half its area while everything the spot
+     * missed fell to nothing. The floor below does that job now, so the key
+     * only has to model.
+     *
+     * IT CASTS NO SHADOW, and that is the point. A shadow map was what put the
+     * hard edges in the turn the maintainer flagged (2026-08-29): a shadow is
+     * binary occlusion of one light, so an arm's shadow landed on ground the
+     * other lights barely reached and came back as a dark bar with a stepped
+     * edge — the exact failure the old comment here promised it had avoided. A
+     * dither has no greys to hide such an edge in; the threshold turns every
+     * jag into a visible run of dots. The relief comes from the falloff and the
+     * normals instead, which is what the recipe says carries it anyway, and the
+     * scene now costs one render pass per frame rather than two.
+     */
+    const key = new SpotLight(0xffffff, 5.2, 0, Math.PI / 3.4, 1, 2);
     key.position.set(-1.05, 0.95, 1.35);
-    key.castShadow = true;
-    key.shadow.mapSize.set(2048, 2048);
-    key.shadow.camera.near = 0.3;
-    key.shadow.camera.far = 6;
-    key.shadow.bias = -0.0016;
-    // Soft enough that an arm lays a contact shadow rather than a hard bar. A
-    // dither has no greys to hide a stair-stepped shadow edge in: the
-    // threshold turns every jag into a visible run of dots.
-    key.shadow.radius = 5;
     scene.add(key);
     scene.add(key.target);
 
-    const fill = new DirectionalLight(0xffffff, 0.62);
+    /**
+     * The floor under the whole thing, and the fix for the turn.
+     *
+     * A hemisphere light shades by the normal's tilt alone, so EVERY face
+     * keeps some light no matter which way the turn has swung it. That is what
+     * the mark was missing: with one key and one fill, both in front and to
+     * one side, the extruded flank went black the moment it came round, and
+     * the arm's cast shadow landed on unlit ground as a solid bar with hard
+     * edges. In a dither, "black" is not dark — it is NO DOTS, a hole in the
+     * middle of the mark. This keeps the darkest visible face at a readable
+     * density and turns that bar into a soft grey.
+     *
+     * It is not an environment map: no texture, no image-based lighting, just
+     * two colours and the normal. The recipe's ban stands.
+     */
+    scene.add(new HemisphereLight(0xffffff, 0x7d7d7d, 0.66));
+
+    // A little directional interest from the opposite side, so the flank the
+    // key never reaches is not lit by the hemisphere alone and flat.
+    const fill = new DirectionalLight(0xffffff, 0.3);
     fill.position.set(2.4, -0.7, 1.1);
     scene.add(fill);
-
-    scene.add(new AmbientLight(0xffffff, 0.1));
 
     const target = new WebGLRenderTarget(1, 1, {
       samples: 4,
@@ -214,12 +263,32 @@ export function TurningMark({ className }: Props) {
     let width = 0;
     let height = 0;
 
+    /**
+     * The canvas takes the frame's real shape, and the camera is fitted to it.
+     *
+     * It used to be squared off to the shorter side and paired with a fixed
+     * square frustum, which cost twice: the taller half of a non-square frame
+     * was thrown away, and the mark then sat inside a frustum wider than it
+     * ever needs. Now the scale is whichever of the two axes runs out first —
+     * `pixels per world unit` — and the frustum is the canvas measured in those
+     * units. The mark is drawn at the largest size its box allows, whatever the
+     * box's aspect, and it stays centred because the frustum is symmetric.
+     */
     const resize = () => {
       const rect = host.getBoundingClientRect();
-      const next = Math.max(1, Math.round(Math.min(rect.width, rect.height)));
-      if (next === width) return;
-      width = next;
-      height = next;
+      const w = Math.max(1, Math.round(rect.width));
+      const h = Math.max(1, Math.round(rect.height));
+      if (w === width && h === height) return;
+      width = w;
+      height = h;
+
+      const perUnit = Math.min(width / (2 * radius), height / (2 * halfHeight));
+      camera.left = -width / (2 * perUnit);
+      camera.right = width / (2 * perUnit);
+      camera.top = height / (2 * perUnit);
+      camera.bottom = -height / (2 * perUnit);
+      camera.updateProjectionMatrix();
+
       renderer.setSize(width, height, false);
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;

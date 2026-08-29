@@ -143,6 +143,30 @@ Running the raster in **screen space** is what keeps the dot grid still while
 the form turns underneath it. A grid that rotated with the object would read as
 moving moire.
 
+### Two rules a moving relief adds
+
+A still asset is lit for one angle. A turning one is lit for all of them, and
+both of these were learned the hard way (maintainer, 2026-08-29):
+
+- **A floor under the key, so no face can reach zero.** The key plus a
+  single-sided fill leaves the extruded flank unlit the moment the turn brings
+  it round — and in a dither, unlit is not dark, it is *no dots*: a hole in the
+  middle of the mark. A hemisphere light shades by the normal's tilt alone, so
+  every face keeps a readable density whichever way it is facing. It is not an
+  environment map — no texture, no image-based lighting — so the ban above
+  stands.
+- **No shadow map.** A shadow is binary occlusion of one light, so wherever the
+  floor is thin it lands as a hard-edged black shape. An arm's shadow across
+  the body came back as a solid bar with a stepped edge, and a dither has no
+  greys to hide such an edge in: the threshold turns every jag into a visible
+  run of dots. The relief comes from the falloff and the normals, which is what
+  this file says carries it anyway.
+
+A **bevel needs segments** for the same reason. It is the roll between the
+front face and the flank, and it is where the eye reads the turn; four segments
+render it as four flat facets, which at any size read as a panel pasted onto
+the corner. Ten reads as a roll and costs nothing per frame.
+
 ---
 
 ## Forbidden

@@ -87,11 +87,11 @@ function segments(body: string) {
       <p class="eyebrow uppercase text-muted">Getting started</p>
       <h2 class="headline mt-4 text-balance">How to install Jarvis</h2>
 
-      <div class="mt-12 grid gap-12 lg:grid-cols-12">
-        <ol class="relative lg:col-span-7" data-steps>
+      <div class="mt-10 grid gap-12 lg:grid-cols-12">
+        <ol class="relative lg:col-span-6" data-steps>
           {
             steps.map((step, i) => (
-              <li class="step relative pl-10 [&:not(:last-child)]:mb-12" data-step>
+              <li class="step relative pl-10 [&:not(:last-child)]:mb-10" data-step>
                 {/*
                   The connecting hairline, drawn as one segment PER GAP rather
                   than as a single line down the list. A single line is spanned
@@ -99,14 +99,14 @@ function segments(body: string) {
                   step's body — several lines below the last badge — so it ran
                   on past the final number into empty space. A segment knows
                   where it has to stop: it starts at its own badge's bottom
-                  edge and reaches exactly one 48px gap down, to the top of the
-                  next badge. The last step has no gap under it and therefore
+                  edge and reaches exactly one step gap down (`-bottom-10`
+                  against `mb-10`), to the top of the next badge. The last step has no gap under it and therefore
                   draws nothing.
                 */}
                 {i < steps.length - 1 && (
                   <span
                     aria-hidden="true"
-                    class="absolute -bottom-12 left-3 top-6 w-px bg-hairline"
+                    class="absolute -bottom-10 left-3 top-6 w-px bg-hairline"
                   />
                 )}
 
@@ -148,7 +148,7 @@ function segments(body: string) {
           renders a few pixels wide. A grid item is blockified whatever its own
           display says, which makes the island fill the frame.
         */}
-        <div class="mark-frame hidden lg:col-span-5 lg:grid">
+        <div class="mark-frame hidden lg:col-span-6 lg:grid">
           <TurningMark client:media="(min-width: 1024px)" />
         </div>
       </div>
@@ -188,7 +188,7 @@ function segments(body: string) {
   <div class="install-close">
     <Container width="content">
       <div
-        class="cta flex flex-col justify-between gap-8 rounded-none bg-ink p-8 text-on-ink md:min-h-[220px] md:flex-row md:items-center md:p-12"
+        class="cta flex flex-col justify-between gap-8 rounded-none bg-ink p-8 text-on-ink md:min-h-[220px] md:flex-row md:items-center md:p-10"
       >
         <div>
           <h2 class="headline text-balance leading-tight">
@@ -225,7 +225,7 @@ function segments(body: string) {
      page simply scrolls; `section-full-height` is a MINIMUM, so nothing gets
      clipped when the content no longer fits. */
   .install-steps {
-    padding-block: clamp(1.75rem, 4svh, 3.75rem);
+    padding-block: clamp(1.5rem, 2.6svh, 3rem);
   }
 
   /* Above the band: the gap that separates it from the rule closing the steps.
@@ -300,14 +300,21 @@ function segments(body: string) {
     color: var(--ink);
   }
 
-  /* Square, so the turn never changes the space the mark occupies, and capped
-     at roughly 60% of the height the STEPS get — which is no longer the whole
-     screen, because the band shares it. Without the cap the frame follows its
-     grid column, and on a very wide monitor that column is wide enough to make
-     the mark the tallest thing in the section and push the band off-screen. */
+  /* The frame takes the whole cell — its column's width, its row's height —
+     and the mark is drawn as large as that box allows, centred in it.
+
+     It used to be a square with a viewport cap (`aspect-ratio: 1`,
+     `max-height: 44svh`), and both were wrong for the same reason: they sized
+     the graphic against the SCREEN rather than against the section it lives in
+     (maintainer, 2026-08-29). A square in a taller row throws the extra height
+     away, and because a grid item with a fixed aspect ratio cannot stretch, the
+     square sat at the TOP of the row while the steps ran on past it — the mark
+     read as floating in the upper corner with a hole underneath.
+
+     Nothing here needs a cap: the row is only ever as tall as the steps, so
+     the mark cannot outgrow the section it is framed against. */
   .mark-frame {
-    aspect-ratio: 1;
-    max-height: 44svh;
+    min-height: 0;
   }
 
   @media (prefers-reduced-motion: reduce) {
