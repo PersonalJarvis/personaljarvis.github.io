@@ -65,7 +65,14 @@ import DemoStage from "@/components/demo/DemoStage";
     border is the scroll cue — see docs/hero.md, "The crop".
   -->
   <Container width="content" class="pt-6">
-    <div class="overflow-hidden rounded-2xl border border-hairline">
+    <!--
+      `hairline-strong`, not the usual hairline: the mockup carries the app's
+      own near-black, which on this page floor is within a shade of it. On the
+      old cream page the window read as elevated by its fill alone; here the
+      edge is the only thing separating the two, so it has to be the stronger
+      one. See tokens.css, "App mockup".
+    -->
+    <div class="overflow-hidden rounded-2xl border border-hairline-strong">
       <DemoStage client:load />
     </div>
   </Container>

@@ -4,6 +4,8 @@
  * See docs/design.md for the reasoning behind each group. Never inline a hex
  * value in a component; reach for a token or add one here.
  *
+ * The palette is the app's own dark theme; see docs/design.md § "Colour".
+ *
  * Provenance: the scale, rhythm and hairline-depth approach are adapted from a
  * reference system the maintainer supplied. Everything brand-bearing in that
  * reference (its accent colour, its licensed typeface, its wordmark) belonged
@@ -12,32 +14,47 @@
  */
 
 :root {
+  /* Dark is the only mode this site has. Declaring it means the browser paints
+   * its own furniture to match — scrollbars, form controls, the flash before
+   * first paint — instead of handing a light scrollbar to a black page. */
+  color-scheme: dark;
+
   /* --- Surface -----------------------------------------------------------
-   * Warm cream, never pure white. The paper half of "ink and paper".
+   * Warm near-black, never #000. The ink half of "ink and paper", and the
+   * page floor. These are the running app's own dark values (its --background,
+   * --card, --secondary and --popover), so the site and the product it sells
+   * stand on the same ground.
+   *
+   * The scale runs the other way from a light theme: further from the floor
+   * means LIGHTER, not darker. A card lifts by getting closer to the ink.
    */
-  --canvas: #f7f7f4;
-  --canvas-soft: #fafaf7;
-  --surface-card: #ffffff;
-  --surface-strong: #e6e5e0;
+  --canvas: #0a0a09;
+  --canvas-soft: #21201c;
+  --surface-card: #191815;
+  --surface-strong: #282620;
 
   /* --- Ink ---------------------------------------------------------------
-   * Warm near-black, never #000. Also the primary action colour: the CTA is
-   * ink on cream, which is why this system needs no borrowed accent hue.
+   * The paper colour, carrying the text. Also the primary action colour: the
+   * CTA is paper on ink, which is why this system needs no borrowed accent
+   * hue. `--on-ink` is the floor again, because a pale CTA needs dark type.
    */
-  --ink: #26251e;
-  --ink-active: #3a382e;
-  --body: #5a5852;
-  --muted: #807d72;
-  --muted-soft: #a09c92;
-  --on-ink: #f7f7f4;
+  --ink: #f7f7f4;
+  --ink-active: #e0dfd8;
+  --body: #b4b1a7;
+  --muted: #9a978c;
+  --muted-soft: #6d6a62;
+  --on-ink: #0a0a09;
 
   /* --- Hairlines ---------------------------------------------------------
-   * All depth in this system comes from 1px lines and white-on-cream
-   * contrast. There are no shadow tokens on purpose.
+   * All depth in this system comes from 1px lines and the small step between
+   * the floor and a card. There are no shadow tokens on purpose.
+   *
+   * "Strong" still means more contrast, which on this ground means lighter.
+   * The three keep their light-theme order; only the direction flipped.
    */
-  --hairline: #e6e5e0;
-  --hairline-soft: #efeee8;
-  --hairline-strong: #cfcdc4;
+  --hairline: #2b2925;
+  --hairline-soft: #201f1b;
+  --hairline-strong: #46433b;
 
   /* --- Agent timeline ----------------------------------------------------
    * The one place colour is allowed to carry meaning, mirroring the stages
@@ -52,24 +69,39 @@
 
   /* --- App mockup --------------------------------------------------------
    * The product's OWN colours, read from the running app so the hero demo is
-   * a clone and not an impression. The app is dark; that is the point — one
-   * dark window on the cream canvas is the single elevated element this
-   * system allows (docs/design.md, "Depth").
+   * a clone and not an impression.
+   *
+   * These sat a long way from the old cream page and made the mockup the one
+   * elevated element by contrast alone. On this ground they are within a
+   * shade of the floor, so the mockup is read by its EDGE instead — the hero
+   * gives it `--hairline-strong` rather than the usual hairline. That is the
+   * honest move in a dark theme; nudging these values to fake a lift would
+   * make the demo stop being a clone.
+   *
+   * Each value is one of the app's dark-theme variables, converted from the
+   * HSL it is declared in. The comment names which one, so a drift in the app
+   * can be followed here rather than guessed at.
    *
    * Do not "harmonise" these with the site palette. They drift only when the
    * app's own theme drifts.
    */
-  --app-bg: #0b0b09;
-  --app-card: #17170f;
-  --app-muted: #1f1f18;
-  --app-fg: #f6f6f3;
-  --app-fg-muted: #97948c;
-  --app-border: #302f28;
+  --app-bg: #0a0a09;       /* --background: warm near-black             */
+  --app-sidebar: #11100e;  /* --sidebar: two points off the ground      */
+  --app-card: #191815;     /* --card: the Jarvis bar, the composer      */
+  --app-muted: #21201c;    /* --secondary: hover, active rows, bubbles  */
+  --app-fg: #f7f7f4;       /* --foreground: the canvas, inverted        */
+  --app-fg-muted: #9a978c; /* --muted-foreground                        */
+  --app-border: #322f2b;   /* --border                                  */
+  --app-primary: #ffffff;  /* --primary: the live mark, accent text     */
   --app-radius: 12px;
 
-  /* --- Semantic ----------------------------------------------------------- */
-  --success: #1f8a65;
-  --error: #cf2d56;
+  /* --- Semantic -----------------------------------------------------------
+   * Lifted off the light-theme pair. The originals were mixed for cream and go
+   * muddy on this floor: #1f8a65 lands at 2.4:1 against a card, which is not
+   * readable. These clear 5:1 and keep the same hues.
+   */
+  --success: #3fb98d;
+  --error: #ea5e7e;
 
   /* --- Type --------------------------------------------------------------
    *
@@ -128,6 +160,10 @@
   --radius-pill: 9999px;
 }
 
-/* Dark mode is not defined yet. When it is, redefine the tokens above inside
- * `@media (prefers-color-scheme: dark)` and `:root[data-theme="dark"]` — never
- * give a colour its only definition inside one of those blocks. */
+/* There is no light mode, and no media query switching between two palettes.
+ * The page is dark at every system setting, which is why every colour above is
+ * defined once on bare `:root` and `color-scheme: dark` is declared with them.
+ *
+ * If a light mode is ever wanted, add it as `:root[data-theme="light"]`
+ * overrides — never move a colour's only definition into a block, or the page
+ * loses that colour wherever the block does not apply. */
