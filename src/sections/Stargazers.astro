@@ -1,0 +1,94 @@
+---
+/**
+ * Section — who is out there.
+ *
+ * One number and one globe. The number is how many people have starred the
+ * repository; the marks are the ones who say on their GitHub profile where
+ * they are. See docs/section-globe.md for the whole contract.
+ *
+ * THE NUMBER IS TRUE AT THE MOMENT IT IS READ. It is rendered here from the
+ * last build, and the browser then asks GitHub for the current figure and
+ * moves to it if it has changed. That call is public and anonymous, so it
+ * needs no token and no server of ours; if it fails for any reason the built
+ * figure stands. See StarGlobe.tsx.
+ *
+ * THE MARKS TRAIL THE NUMBER, AND THE COPY SAYS SO. Locating a stargazer needs
+ * an authenticated request, which a static page cannot make without handing
+ * the token to everyone who reads the source, so the map is drawn at build
+ * time by scripts/fetch-stargazers.mjs and refreshed by a scheduled workflow.
+ * The standfirst therefore claims only what is true: this many people said
+ * where they are, and each mark is one of those places. It never claims to
+ * show everyone.
+ *
+ * THE FIGURE IS NOT A HEADLINE. It is set larger than the hero's h1 tops out
+ * at, which looks like a contradiction of docs/design.md's "exactly one
+ * largest line" and is not: that rule is about display TYPE, and a two-digit
+ * number carries a fraction of the ink of a twelve-word sentence at the same
+ * size. The hero still owns the largest line on the page. This owns the
+ * largest single thing, which is a different job.
+ *
+ * Widths come from the one Container, as everywhere else. No max-width is
+ * named in this file — docs/layout.md reserves that for widths.ts and
+ * layout.css, and scripts/check-style.mjs enforces it.
+ */
+import Container from "@/components/Container.astro";
+import { StarCount, StarGlobe } from "@/components/globe/StarGlobe";
+import stargazers from "@/data/stargazers.json";
+
+const { repo, count, placed, clusters } = stargazers;
+
+/**
+ * "7 of them" reads better than "7 people", and both beat a percentage — a
+ * share implies a sample, and this is a census of a small number.
+ */
+const placedLabel = placed === 1 ? "One of them says" : `${placed} of them say`;
+---
+
+<section id="stargazers">
+  <Container width="content">
+    <!-- The rule sits inside the container so it starts and ends on a rail,
+         and the vertical padding travels with it. Same as every section. -->
+    <div class="section-rule py-24">
+      <div class="grid items-center gap-14 lg:grid-cols-12 lg:gap-8">
+        <div class="lg:col-span-5">
+          <p class="stargazers-eyebrow">In the open</p>
+
+          <p
+            class="mt-5 leading-[1.05] text-ink"
+            style="font-size: clamp(2.5rem, 1.9rem + 2.4vw, 4rem); letter-spacing: var(--tracking-display-mega)"
+          >
+            <StarCount client:visible repo={repo} value={count} />
+          </p>
+
+          <p class="mt-4 text-[var(--text-display-sm)] leading-snug text-ink">
+            people have starred Personal Jarvis.
+          </p>
+
+          <hr class="mt-10 border-0 border-t border-hairline" />
+
+          <p class="mt-5 text-[var(--text-body-sm)] text-muted">
+            {placedLabel} where they are. Each mark on the globe is one of those
+            places.
+          </p>
+        </div>
+
+        <div class="lg:col-span-7">
+          <!-- client:visible, not client:load: the globe is most of the way
+               down the page, and a rotation nobody is looking at is a frame
+               budget spent on nothing. -->
+          <StarGlobe client:visible clusters={clusters} />
+        </div>
+      </div>
+    </div>
+  </Container>
+</section>
+
+<style>
+  .stargazers-eyebrow {
+    color: var(--muted);
+    font-size: var(--text-caption-upper);
+    font-weight: 600;
+    letter-spacing: var(--tracking-caption-upper);
+    text-transform: uppercase;
+  }
+</style>
