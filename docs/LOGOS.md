@@ -249,6 +249,7 @@ outlined and are not.
 | Cells | 8 equal columns, one row | 8 from `2xl`, 6 from `lg`, 4 from `sm`, 3 below |
 | Cell size | 154 × 100px | Width follows the grid; height 6.5rem |
 | Gap | 10px | 10px |
+| Row ends | flush to the container | one gap clear of the section rules |
 | Cell surface | a 2% darker plate, 4px radius, **no border** | card surface, 1px hairline, `--radius-lg` |
 | Mark colour | `currentColor` at full body ink | `currentColor` at `--ink` |
 | Mark size | one shared 40px height | per mark, about 36% of cell height |
@@ -260,6 +261,11 @@ outlined and are not.
   border. The brief asked for hairlines and `design.md` gives cards a 1px
   hairline, so the cells carry one. Removing it means dropping
   `border: 1px solid var(--hairline)` from `.cell`.
+- **The row does not run to the rules.** The reference bar has no vertical
+  rules to clear, so its cells sit flush. Ours stands one gap clear of them at
+  each end: with the cards against the line the row read as cut off rather
+  than framed. The end space is the same value as the gap between cards, so
+  the row keeps one rhythm.
 - **Per-mark sizing.** The reference sets one height for every mark, which
   works there because its logos are wordmarks of similar weight. Ours are
   square icons, where a shared height reads as an accident.

@@ -137,7 +137,7 @@ const visibility = [
       <p id="connects-label" class="eyebrow">Everything Jarvis connects</p>
 
       <ul
-        class="mt-8 grid grid-cols-3 gap-[10px] sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-8"
+        class="row mt-8 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-8"
         style={`--cycle:${CYCLE_S}s`}
       >
         {
@@ -174,6 +174,28 @@ const visibility = [
    */
   .strip {
     isolation: isolate;
+  }
+
+  /*
+   * The row stands clear of the two vertical rules rather than against them.
+   *
+   * Those rules are drawn at the edges of this band, so with the grid running
+   * the full width the first and last card touched the line — which reads as a
+   * row that has been cut off at both ends rather than one sitting inside a
+   * frame. Every other section clears the rules by way of its text measure;
+   * this one is the only section whose content is edge-to-edge, so it is the
+   * only one that has to say so.
+   *
+   * The end space is one gap, from the same value, so the row keeps a single
+   * rhythm: card, gap, card, gap, card, gap, rule. Two literals here would
+   * drift the first time either is tuned. 10px is measured from the reference
+   * bar — see docs/LOGOS.md.
+   */
+  .row {
+    --cell-gap: 10px;
+
+    gap: var(--cell-gap);
+    padding-inline: var(--cell-gap);
   }
 
   .strip::after {
