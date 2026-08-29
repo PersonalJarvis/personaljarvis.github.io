@@ -7,11 +7,11 @@
  * a hairline. See docs/LOGOS.md.
  *
  * There are far more marks than cells, so each cell is a flip board. The card
- * is what moves, not the mark inside it: a card is hinged along its top edge,
- * swings down into place carrying its mark, holds, then keeps falling forward
- * and out while the next one drops in behind it. The whole thing is CSS — no
- * JavaScript reaches the browser, and `prefers-reduced-motion` gets a still
- * frame instead of a special case.
+ * is what moves, not the mark inside it: hinged along its top edge, a card
+ * comes over the front carrying its mark, settles, holds, then tips away
+ * backwards as the next one comes over. The whole thing is CSS — no JavaScript
+ * reaches the browser, and `prefers-reduced-motion` gets a still frame instead
+ * of a special case.
  *
  * Sizes are rem throughout. The root font size scales with the viewport
  * (src/styles/layout.css), so a px height would freeze while everything around
@@ -89,11 +89,14 @@ const visibility = [
 
     <ul
       class="mt-8 grid grid-cols-3 gap-[10px] sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-8"
-      style={`--cycle:${CYCLE_S}s`}
+      style={`--cycle:${CYCLE_S}s; --slot:${SLOT_S}s`}
     >
       {
         columns.map((stack, c) => (
-          <li class={`cell ${visibility[c]}`}>
+          <li
+            class={`cell ${visibility[c]}`}
+            style={`--cell-delay:${(-(cellOffset(c) + SLOT_S / 2)).toFixed(2)}s`}
+          >
             {stack.map(({ name, Mark, rem }, r) => (
               <span
                 class="card"
@@ -128,15 +131,61 @@ const visibility = [
   .cell {
     position: relative;
     height: 6.5rem;
-    /* The fold needs depth to read as a fold rather than a squash. Kept
-       shallow: a strong perspective on a wide cell skews the mark. */
-    perspective: 45rem;
+    /*
+     * Depth is what makes the fold read as a card coming over the front rather
+     * than a card being squashed. At 45rem against a 6.5rem card the near edge
+     * barely grows and the movement is ambiguous; at 16rem it grows by 60% and
+     * shoulders its way out of the row. This is the middle: the lean is plain,
+     * the overhang is about a fifth rather than two thirds.
+     *
+     * The perspective sits on the cell, not the row, so each card is viewed
+     * square from its own centre. On the row it would fan the outer cards away
+     * from the viewer like a book.
+     */
+    perspective: 24rem;
+
+    /*
+     * A card leaning out of the page has to pass in front of its neighbours
+     * rather than vanish behind them, and z-index on the card cannot do it:
+     * `perspective` makes the cell a stacking context, so a card never paints
+     * outside its own cell. The cell is lifted instead, on a short animation
+     * of its own that raises it exactly while its cards are mid-swing.
+     */
+    z-index: 1;
+    animation: cell-front var(--slot) linear infinite;
+    animation-delay: var(--cell-delay);
   }
 
   /*
-   * A card is hinged along its top edge. It starts folded up and out of sight,
-   * swings down into place, holds, then keeps going and falls forward out of
-   * the frame while the next card drops in behind it.
+   * One slot, not one cycle: every card in a cell swings at the same phase, so
+   * the lift repeats every five seconds. The window straddles the slot
+   * boundary, where the outgoing card's fall and the incoming card's arrival
+   * meet — 0.75s of a 5s slot is 15% at each end.
+   */
+  @keyframes cell-front {
+    0%,
+    15% {
+      z-index: 3;
+    }
+    15.01%,
+    84.99% {
+      z-index: 1;
+    }
+    85%,
+    100% {
+      z-index: 3;
+    }
+  }
+
+  /*
+   * A card is hinged along its top edge and comes over the front. It starts
+   * standing out towards the viewer, tips over and down into place, holds,
+   * then carries on backwards and away while the next one comes over the top.
+   *
+   * The direction is the whole point, and it is one sign: with the hinge at the
+   * top, a positive rotateX brings the bottom edge towards the viewer, a
+   * negative one pushes it away. Reversed, the cards arrive out of the depth
+   * behind the page instead of flipping over the front.
    */
   .card {
     position: absolute;
@@ -172,13 +221,13 @@ const visibility = [
    * ends, so no two cards are ever mid-swing together. The remaining 85.7% is
    * spent folded away and invisible while the other six take their turn.
    *
-   * The easing is per phase: the card drops in and settles, then tips out
-   * slowly before accelerating away. A single linear rotation reads as a
+   * The easing is per phase: the card comes over and settles, then tips away
+   * slowly before accelerating out. A single linear rotation reads as a
    * mechanism rather than something falling.
    */
   @keyframes card-fall {
     0% {
-      transform: rotateX(-90deg);
+      transform: rotateX(90deg);
       opacity: 1;
       animation-timing-function: cubic-bezier(0.22, 0.8, 0.3, 1);
     }
@@ -193,11 +242,11 @@ const visibility = [
       animation-timing-function: cubic-bezier(0.7, 0, 0.85, 0.6);
     }
     14.286% {
-      transform: rotateX(90deg);
+      transform: rotateX(-90deg);
       opacity: 0;
     }
     100% {
-      transform: rotateX(90deg);
+      transform: rotateX(-90deg);
       opacity: 0;
     }
   }
@@ -207,6 +256,9 @@ const visibility = [
    * cell stays put and the rest never appear.
    */
   @media (prefers-reduced-motion: reduce) {
+    .cell {
+      animation: none;
+    }
     .card {
       animation: none;
       transform: none;

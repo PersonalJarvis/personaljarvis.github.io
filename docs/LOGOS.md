@@ -151,9 +151,20 @@ part**, hinged along its top edge — not the mark rotating inside a card that
 stays put. A card swings down into place, holds, then keeps falling forward and
 out of frame while the next drops in behind it.
 
-One card's turn is five seconds: 0.75s down, 3.5s holding, 0.75s falling away.
-The next card's fall begins exactly where the previous one's ends, so two cards
-are never mid-swing together. Seven cards make a 35-second cycle.
+It comes over the **front**, not up out of the depth behind the page. That is
+one sign: with the hinge at the top, a positive `rotateX` carries the bottom
+edge towards the viewer and a negative one pushes it away. So a card arrives at
++90 degrees and settles to 0, then leaves towards -90 — arriving it grows by a
+third as it leans out of the page, leaving it only shrinks.
+
+Leaning out means passing in front of the neighbouring cards. `z-index` on the
+card cannot do that, because the cell's `perspective` makes it a stacking
+context a card can never paint outside of; the cell is lifted instead, on a
+short animation of its own timed to the moment its cards are mid-swing.
+
+One card's turn is five seconds: 0.75s over, 3.5s holding, 0.75s tipping away.
+The next card's arrival begins exactly where the previous one's exit ends, so
+two cards are never mid-swing together. Seven cards make a 35-second cycle.
 
 - **CSS only.** No JavaScript reaches the browser. The stagger is an
   `animation-delay` per card, and the delays are **negative**, so every
