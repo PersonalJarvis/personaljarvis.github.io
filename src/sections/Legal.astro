@@ -5,8 +5,7 @@
  * It is a `<footer>` of its own rather than part of the install section,
  * because the section is one screen and this deliberately is not: the band is
  * the last thing a reader is meant to SEE, and this is the material they go
- * looking for. It sits just under the fold, on the same two rails as
- * everything above it.
+ * looking for.
  *
  * NOTHING HERE IS DRAFTED. Every line is a fact the repository can prove, and
  * each carries the file that proves it. A footer is the one place on a site
@@ -14,230 +13,318 @@
  * rule is stricter than the rest of the page: no claim without a source, and
  * no link to a document that does not exist yet.
  *
+ * THE FOOT DRAWS NO PAGE STRUCTURE. No rails, no band, no boundary rule — the
+ * page's structural lines stop under the closing CTA and this block stands on
+ * open ground (maintainer, 2026-08-29). The one line it does draw is the
+ * hairline over its last row, which separates two parts of the same block
+ * rather than one section from another.
+ *
  * See docs/footer.md.
  */
 import Container from "@/components/Container.astro";
 import { REPO } from "@/lib/install";
+import { SOCIAL_STATS, type SocialId } from "@/lib/socialCounts";
 
 /**
- * The documents, in the order someone looks for them. Each is a real file at
- * the top of the repository — a link here that 404s is worse than no link.
+ * The accounts, by platform name.
+ *
+ * The handles themselves are NOT written here. `socialCounts.ts` is the one
+ * place the site states which account is which — the X account is a personal
+ * one and the project-named profile is defunct, so a handle typed from memory
+ * points at a dead page. This map only turns its ids into the words a reader
+ * recognises, which is the one thing that file has no opinion about.
+ *
+ * GitHub is deliberately absent: the repository is already the first entry
+ * under "Project", and the same destination twice in one footer reads as an
+ * oversight rather than as emphasis.
  */
-const documents = [
-  // README § License: "Apache 2.0. Free to use, modify, and distribute…"
-  { label: "License", href: `${REPO}/blob/main/LICENSE` },
-  // README § License names NOTICE alongside LICENSE.
-  { label: "Notice", href: `${REPO}/blob/main/NOTICE` },
-  // README § License: "Third-party names and logos belong to their owners."
-  { label: "Trademarks", href: `${REPO}/blob/main/TRADEMARK.md` },
-  { label: "Security", href: `${REPO}/blob/main/SECURITY.md` },
-  // README § License: docs/licensing.md says why the licence changed.
-  { label: "Licensing history", href: `${REPO}/blob/main/docs/licensing.md` },
-  { label: "Source", href: REPO },
+const PLATFORM_NAMES: Partial<Record<SocialId, string>> = {
+  youtube: "YouTube",
+  x: "X",
+  discord: "Discord",
+};
+
+/**
+ * The columns, in the order someone looks for them: what the project is,
+ * then what it is licensed under, then where it can be followed.
+ *
+ * Every href is a real file or a real account. A link here that 404s is worse
+ * than no link, so each one is checked against the repository before it is
+ * added — see docs/footer.md § "The rule this file exists for".
+ */
+const groups = [
+  {
+    label: "Project",
+    links: [
+      { label: "Source", href: REPO },
+      // The docs live in the repository; this site has no /docs route yet.
+      { label: "Docs", href: `${REPO}/tree/main/docs` },
+      { label: "Security", href: `${REPO}/blob/main/SECURITY.md` },
+    ],
+  },
+  {
+    label: "Legal",
+    links: [
+      // README § License: "Apache 2.0. Free to use, modify, and distribute…"
+      { label: "License", href: `${REPO}/blob/main/LICENSE` },
+      // README § License names NOTICE alongside LICENSE.
+      { label: "Notice", href: `${REPO}/blob/main/NOTICE` },
+      // README § License: "Third-party names and logos belong to their owners."
+      { label: "Trademarks", href: `${REPO}/blob/main/TRADEMARK.md` },
+      // README § License: docs/licensing.md says why the licence changed.
+      { label: "Licensing history", href: `${REPO}/blob/main/docs/licensing.md` },
+    ],
+  },
+  {
+    label: "Follow",
+    links: SOCIAL_STATS.filter((s) => PLATFORM_NAMES[s.id]).map((s) => ({
+      label: PLATFORM_NAMES[s.id] as string,
+      href: s.href,
+    })),
+  },
 ];
 
 /** The copyright year is the year the page is built, not a literal. */
 const year = new Date().getFullYear();
 ---
 
-<!-- The standard section shell, footer included. It is the last band on the
-     page and there is no reason for the last boundary to be the one that is
-     shaped differently — see docs/layout.md § "One boundary, one shape". No
-     `SectionTrack`: the marker walks the sections a reader scrolls THROUGH,
-     and this is the end of the page.
+<footer class="legal">
+  <Container width="content">
+    <div class="legal-inner">
+      <div class="legal-top">
+        <!-- Who the page belongs to, and the two claims the project actually
+             makes. This is the column the reader lands in; the link columns
+             beside it are what they came to click. -->
+        <div class="legal-identity">
+          <p class="legal-mark">Personal Jarvis</p>
 
-     The one thing about this band that is not like the others is who pays for
-     the air under its closing rule. Everywhere else that is the Container's
-     padding; here it is `.section-close`, a painted block of the same height.
-     The rails are a fixed layer nothing in the flow can shorten, so the only
-     way they end at the last rule instead of running out of the window under
-     it is for something opaque to stand in front of them. -->
+          <div class="legal-fine">
+            {/*
+              README § License, verbatim in substance: Apache 2.0 with an
+              explicit patent grant, and every release up to 1.6.0 stays MIT
+              permanently.
+            */}
+            <p>
+              Free to use, modify and distribute, commercially included, with a
+              patent grant from every contributor. Releases up to 1.6.0 remain
+              MIT, permanently. Third-party names and logos belong to their
+              owners.
+            </p>
 
-<footer class="legal relative flex flex-col">
-  <Container width="content" class="section-inset section-inset--close flex min-h-0 flex-1 flex-col">
-    <div class="section-bounds legal-inner">
-      <!-- Who the page belongs to, and under what. Two lines rather than one
-           run of text with a separator in it: the name is the anchor of the
-           block and the licence is the answer to the first question anyone
-           has about it, and neither is a caption of the other. -->
-      <div class="legal-identity">
-        <p class="legal-mark">Personal Jarvis</p>
-        <p class="legal-licence">Apache 2.0</p>
-      </div>
+            {/*
+              A claim about THIS page, and true of this build: no analytics
+              script, no font CDN, no cookie is set anywhere in `src/`, and the
+              video section holds a local JPEG until the reader presses play —
+              see the comment on the stage in BuiltInPublic.astro. If any of
+              that changes, this sentence changes with it.
+            */}
+            <p>
+              This page sets no cookies and runs no analytics. It loads nothing
+              from anyone else until you press play on a video, which is the
+              moment YouTube is contacted and not before.
+            </p>
+          </div>
+        </div>
 
-      <!-- The documents stand as a column on the right rail rather than a row
-           under the name. Six labels in a row ran the full width of the
-           content column and left the whole right half of the foot empty
-           under it; as a column they fill that half, the fine print keeps its
-           measure on the left, and the two blocks close the page as one
-           spread instead of two ragged lines. -->
-      <nav class="legal-docs" aria-label="Legal and project documents">
-        <ul>
+        <nav class="legal-groups" aria-label="Project, legal and social links">
           {
-            documents.map((doc) => (
-              <li>
-                <a href={doc.href} target="_blank" rel="noopener">
-                  {doc.label}
-                </a>
-              </li>
+            groups.map((group) => (
+              <div class="legal-group">
+                <p class="legal-group__label" id={`legal-${group.label.toLowerCase()}`}>
+                  {group.label}
+                </p>
+                <ul aria-labelledby={`legal-${group.label.toLowerCase()}`}>
+                  {group.links.map((link) => (
+                    <li>
+                      <a href={link.href} target="_blank" rel="noopener">
+                        {link.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))
           }
-        </ul>
-      </nav>
+        </nav>
+      </div>
 
-      <div class="legal-fine">
-        {/*
-          README § License, verbatim in substance: Apache 2.0 with an explicit
-          patent grant, and every release up to 1.6.0 stays MIT permanently.
-        */}
-        <p>
-          Free to use, modify and distribute, commercially included, with a
-          patent grant from every contributor. Releases up to 1.6.0 remain MIT,
-          permanently. Third-party names and logos belong to their owners.
-        </p>
-
-        {/*
-          A claim about THIS page, and true of this build: no analytics script,
-          no font CDN, no cookie is set anywhere in `src/`, and the video
-          section holds a local JPEG until the reader presses play — see the
-          comment on the stage in BuiltInPublic.astro. If any of that changes,
-          this sentence changes with it.
-        */}
-        <p>
-          This page sets no cookies and runs no analytics. It loads nothing from
-          anyone else until you press play on a video, which is the moment
-          YouTube is contacted and not before.
-        </p>
-
-        <p class="legal-copyright">&copy; {year} the Personal Jarvis contributors</p>
+      <!-- The last row: what holds, and under what. The hairline over it is
+           the only line the footer draws. -->
+      <div class="legal-baseline">
+        <p>&copy; {year} the Personal Jarvis contributors</p>
+        <p>Apache 2.0</p>
       </div>
     </div>
   </Container>
-
-  <!-- The page's last inset. It is a real element rather than padding for one
-       reason: it has to PAINT, so the rails stop on the rule above it instead
-       of running out of the bottom of the window. Decorative and empty, so it
-       is hidden from the accessibility tree. -->
-  <div class="section-close" aria-hidden="true"></div>
 </footer>
 
 <style>
-  /* No `padding-block` here any more. It used to be a pair of clamps of this
-     footer's own, which is how the page ended up with six different figures
-     between a rule and the thing under it; the band supplies `--section-pad`
-     like every other section now. */
+  .legal {
+    position: relative;
+    padding-block: var(--section-inset);
+  }
 
-  /* Two columns: everything that reads left to right on the left, the document
-     list held against the right rail. The list spans both rows so it starts on
-     the name's baseline and runs down beside the fine print.
+  /* THE GROUND IS WHAT ENDS THE RAILS, and it reaches up BEHIND the closing
+     CTA to do it.
 
-     NO PADDING OR BORDER ON THE INLINE AXIS. This element is `.section-bounds`,
-     which is laid directly against the rails; inline padding here would pull
-     the two rules off them (docs/layout.md § "The marker has to be re-pointed
-     at the band"). The columns are a grid gap, which costs neither. */
-  .legal-inner {
+     The rails are a fixed layer the full height of the window, so nothing in
+     the flow can shorten them — they ran the length of the footer and out of
+     the bottom of the screen. A ground painted over them ends them, because a
+     painted box wins against `z-index: -1`.
+
+     WHY A PSEUDO-ELEMENT AND NOT `background` ON THE FOOTER. The page's lines
+     have to stop under the white CTA band, and between that band and the top
+     of this footer sits the install section's own closing padding — 48px when
+     the section is unpinned, 24px when it is pinned. A background on the
+     footer starts below that gap and leaves a stub of rail under the band, in
+     one of the two states or the other; a negative margin would have to name
+     whichever figure is live, and that is the "spell the same condition twice"
+     bug docs/layout.md keeps warning about.
+
+     So the ground overshoots by `--space-section` and hides the difference. It
+     is safe to overshoot because of the layer it is on:
+
+       - `z-index: -1` puts it in the same layer as the rails. PageChrome is
+         rendered before the page content, so at equal z-index this box paints
+         LATER and therefore on top — the rails end where it begins.
+       - The CTA band is inside a `position: sticky` viewport, so it is a
+         positioned box in the normal layer and paints above anything at a
+         negative index. The part of the overshoot that lands on the band is
+         behind it and cannot be seen.
+
+     The overshoot is smaller than the band is tall, so it can never reach past
+     it into the section above, where the rails must still be drawn.
+
+     `--canvas` explicitly, never `transparent` or `inherit` — the whole job of
+     this box is that it PAINTS. It is the same black `body` already carries
+     (global.css § "One ground"), so no colour on the page changes; only what
+     stands in front of the chrome layer does. */
+  .legal::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset-inline: 0;
+    inset-block: calc(-1 * var(--space-section)) 0;
+    background: var(--canvas);
+    pointer-events: none;
+  }
+
+  /* Identity on the left, three columns of links across the rest.
+
+     A SHARE EACH, not `auto`. Sized to their content the three columns bunch
+     up against the right edge — 59, 122 and 63 pixels wide with the whole
+     middle of the foot empty behind them, which reads as text pushed aside
+     rather than as a layout. Two fifths to the identity block and a fifth to
+     each column puts them where the reference has them: evenly spaced across
+     the width, each label starting a column the eye can follow down.
+
+     `minmax(0, …)` on every track, because a grid track's default floor is its
+     content and "Licensing history" would otherwise refuse to let the row
+     narrow. */
+  .legal-top {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "identity docs"
-      "fine     docs";
-    column-gap: var(--space-xxl);
-    row-gap: var(--space-xl);
+    grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+    column-gap: var(--space-xl);
+    row-gap: var(--space-section);
     align-items: start;
   }
 
-  .legal-identity {
-    grid-area: identity;
-  }
-
-  /* The one step up in size on the whole foot, and it is what makes the block
-     read as a signature rather than as more fine print. Everything else here
-     stays at `--text-caption`. */
+  /* The wordmark is the one step up in size on the whole foot. Without it the
+     block is a single grey field of small type; with it the identity column
+     has something to hang off. */
   .legal-mark {
     font-size: var(--text-title-sm);
     color: var(--ink);
   }
 
-  .legal-licence {
-    margin-top: var(--space-xxs);
-    font-size: var(--text-caption);
-    color: var(--body);
-  }
-
-  .legal-docs {
-    grid-area: docs;
-    justify-self: end;
-  }
-
-  .legal-docs ul {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: var(--space-sm);
-    font-size: var(--text-caption);
-  }
-
-  .legal-docs a {
-    color: var(--muted);
-    text-decoration: none;
-    transition: color 160ms ease;
-  }
-
-  .legal-docs a:hover,
-  .legal-docs a:focus-visible {
-    color: var(--ink);
-  }
-
-  /* The fine print keeps a prose MEASURE without leaving the content column —
-     a `ch` limit is what "readable line length" actually protects, and it does
-     not put a second left edge on the page the way a prose container would. */
+  /* The fine print keeps a prose MEASURE inside its own column — a `ch` limit
+     is what "readable line length" protects, and it does not put a second left
+     edge on the page the way a prose container would. */
   .legal-fine {
-    grid-area: fine;
-    max-inline-size: 78ch; /* layout-allow: a measure in ch, not a layout width — the block still sits in the content container */
+    margin-top: var(--space-md);
+    max-inline-size: 54ch; /* layout-allow: a measure in ch, not a layout width — the block still sits in the content container */
+    display: grid;
+    gap: var(--space-sm);
     font-size: var(--text-caption);
     /* `--muted`, not `--muted-soft`. On this canvas the soft tone is 3.7:1,
        under AA for text this size — and legal wording is the last thing on a
        page that may be hard to read. The brighter muted tone is 6.7:1. */
     color: var(--muted);
-    display: grid;
-    gap: var(--space-sm);
   }
 
-  /* The last line of the page, and it gets air of its own so it is not read as
-     a third clause of the sentence above it. */
-  .legal-copyright {
+  .legal-groups {
+    display: contents;
+  }
+
+  .legal-group__label {
+    font-size: var(--text-caption-upper);
+    font-weight: 600;
+    letter-spacing: var(--tracking-caption-upper);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .legal-group ul {
     margin-top: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    font-size: var(--text-body-sm);
   }
 
-  /* Below the container's breakpoint the two columns have nowhere to go: the
-     rails are gone, the measure is the screen, and a column of six labels held
-     against a right edge that no longer exists reads as a stray block. They
-     stack, and the list goes back to a wrapping row — which is what it was
-     built as, and what it is good at when it has the full width. */
+  .legal-group a {
+    color: var(--body);
+    text-decoration: none;
+    transition: color 160ms ease;
+  }
+
+  .legal-group a:hover,
+  .legal-group a:focus-visible {
+    color: var(--ink);
+  }
+
+  /* The only line this block draws, and it is `--hairline` on purpose.
+     `--rule` is the page's structural colour — the rails and the section
+     boundaries — and that is exactly what the foot no longer carries. This
+     separates the last row from the block above it, which is an edge inside
+     one thing rather than a boundary between two. */
+  .legal-baseline {
+    margin-top: var(--space-section);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--hairline);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-xs) var(--space-lg);
+    font-size: var(--text-caption);
+    color: var(--muted);
+  }
+
+  /* Below the container's breakpoint the four columns have nowhere to go. The
+     identity block keeps the full width and the three link columns sit beside
+     each other underneath it — still columns, because a label with two or
+     three links under it is what makes them readable at all, and still a row,
+     because stacking them turns the foot into a screen of its own. */
   @media (max-width: 767px) {
-    .legal-inner {
+    .legal-top {
       grid-template-columns: minmax(0, 1fr);
-      grid-template-areas:
-        "identity"
-        "docs"
-        "fine";
-      row-gap: var(--space-lg);
+      row-gap: var(--space-xxl);
     }
 
-    .legal-docs {
-      justify-self: start;
-    }
-
-    .legal-docs ul {
-      flex-direction: row;
+    .legal-groups {
+      display: flex;
       flex-wrap: wrap;
-      align-items: baseline;
-      gap: var(--space-xs) var(--space-lg);
+      gap: var(--space-xxl) var(--space-section);
+    }
+
+    .legal-baseline {
+      margin-top: var(--space-xxl);
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .legal-docs a {
+    .legal-group a {
       transition: none;
     }
   }

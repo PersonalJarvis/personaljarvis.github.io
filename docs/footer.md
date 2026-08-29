@@ -64,88 +64,115 @@ more entries in the document list.
 
 | Element | Value |
 |---|---|
-| Width | step `content` — the same two rails as everything above |
-| Boundary | `.section-bounds` — the page's one band shape, two rules an inset in |
-| Padding | `--section-inset` outside the rules, `--section-pad` inside them |
-| Type | `--text-caption` throughout, except the wordmark at `--text-title-sm` |
-| Colour | `--ink` for the wordmark, `--body` for the licence, `--muted` for the rest |
-| Measure | 78ch on the fine print, inside the content column |
+| Width | step `content` — the same column as everything above |
+| Boundary | **none.** No rails beside it, no band around it, no section rule |
+| Padding | `--section-inset` top and bottom, on the footer itself |
+| Columns | `2fr` identity, then `1fr` each for the three link columns |
+| Type | wordmark `--text-title-sm`, links `--text-body-sm`, the rest caption |
+| Colour | `--ink` wordmark, `--body` links, `--muted` labels and fine print |
+| Measure | 54ch on the fine print, inside its own column |
 
 **One step up in size, and only one.** The wordmark is
-`--text-title-sm`/`--ink`; everything else stays caption-sized. Without it the
-whole foot is one grey block of small type and reads as a disclaimer someone
-forgot to lay out — with it the block has a signature at the top and the rest
-hangs off it. A second size here would start rebuilding the page inside the
-footer, which is what the "deliberately NOT here" list is guarding against.
+`--text-title-sm`/`--ink`; everything else stays caption- or small-body-sized.
+Without it the whole foot is one grey block of small type and reads as a
+disclaimer someone forgot to lay out — with it the block has a signature at the
+top and the rest hangs off it.
+
+**`--muted`, never `--muted-soft`.** On `--canvas` the soft tone is 3.7:1,
+under AA for text this size. Legal wording is the last thing on a page that may
+be hard to read; the brighter muted tone is 6.7:1.
+
+The `54ch` limit is a *measure*, not a layout width — the block still sits in
+the `content` container and keeps the page's one left edge. It carries a
+`layout-allow` for exactly that reason.
 
 ---
 
-## The page closes on its last line
+## The foot carries no page structure
 
-The rails are a **fixed** layer the full height of the window
-(`layout.md` § "Page chrome"). Nothing in the flow can shorten them, so at the
-bottom of the document they used to run straight past the footer's closing rule
-and out of the window with nothing under them: the page did not end, it
-stopped.
+**The page's structural lines stop under the closing CTA band.** No rails
+beside the footer, no band around it, no boundary rule above or below it
+(maintainer, 2026-08-29). The reader has arrived; a frame here is a boundary to
+nothing, and the two rails running past the last line and out of the bottom of
+the window read as a page cut off rather than a page finished.
 
-**Dropping the closing inset is not the fix.** It makes the bottom rule the
-last row of the document, and the rails do end on it — but at the end of the
-scroll that row *is* the bottom edge of the window, so the line the page closes
-on is the one line the reader cannot see. Measured in Chrome on 2026-08-29: the
-rule sat at exactly `innerHeight`, and the result read as a page cut off rather
-than a page finished.
+The one line the foot draws is the hairline over its last row, and that is a
+different kind of line: it separates two parts of the same block, not one
+section from the next. `--hairline`, therefore — never `--rule`, which is the
+colour of exactly the page structure this block no longer carries.
 
-**The fix is to paint the last inset instead of leaving it empty.** The
-Container takes `.section-inset--close` (no bottom padding) and the same height
-comes back as `.section-close`, a block filled with `--canvas` under the band.
-An in-flow background paints *above* a `z-index: -1` layer, so the rails are
-covered for exactly its height: they come down the page, meet the closing rule,
-and stop. Under it is one inset of quiet ground, and the last rule is a line
-with air beneath it.
+### How the rails actually end
 
-The vertical rhythm is unchanged — same inset, same rule, same air. The only
-difference is that the air is opaque.
+They cannot be shortened. The rails are a **fixed** layer the full height of
+the window (`layout.md` § "Page chrome"), so no element in the flow changes how
+far they run — the only thing that ends them is something painted in front of
+them.
+
+That is `.legal::before`: a box filled with `--canvas`, the width of the
+footer, at `z-index: -1`. Three things make it work, and all three are
+load-bearing:
+
+- **It is on the rails' own layer, and later in the document.** `PageChrome` is
+  rendered before the page content, so at equal `z-index` this box paints on
+  top. The rails end where it begins.
+- **It overshoots upwards by `--space-section`.** Between the CTA band and the
+  top of the footer sits the install section's own closing padding — 48px
+  unpinned, 24px pinned. A ground that starts at the footer's top edge leaves a
+  stub of rail under the band in one of those two states, and a negative margin
+  would have to name whichever figure is live: the "spell the same condition
+  twice" bug `layout.md` keeps warning about. Overshooting hides the difference
+  without naming either number.
+- **The overshoot is invisible.** The CTA band sits inside a `position: sticky`
+  viewport, so it is a positioned box and paints above anything at a negative
+  index. The part of the overshoot that lands on the band is behind it. The
+  overshoot is also smaller than the band is tall, so it can never reach past
+  it into the section above, where the rails must still be drawn.
 
 **Only the last block on the page may do this.** Anywhere else an opaque ground
 over the rails takes a bite out of the middle of two lines meant to run
 unbroken — one gap per section, the failure `global.css` warns about. Here
 there is no "after": the bite is the end of the line.
 
-**`--muted`, never `--muted-soft`.** On `--canvas` the soft tone is 3.7:1,
-under AA for text this size. Legal wording is the last thing on a page that may
-be hard to read; the brighter muted tone is 6.7:1.
-
-The `78ch` limit is a *measure*, not a layout width — the block still sits in
-the `content` container and keeps the page's one left edge. It carries a
-`layout-allow` for exactly that reason.
-
 ---
 
 ## Build
 
-Two columns, and the second one is what makes the foot read as laid out rather
-than as leftover:
+Four columns over one row, a hairline, and a closing line — the shape the
+maintainer named on 2026-08-29 by pointing at meuze.ai's own foot.
 
-| Column | Holds | Sits |
+| Column | Share | Holds |
 |---|---|---|
-| left | wordmark, licence, fine print, copyright | on the left rail |
-| right | the document list, one label per line | held against the right rail |
+| identity | `2fr` | wordmark, then the two paragraphs of fine print |
+| Project | `1fr` | Source, Docs, Security |
+| Legal | `1fr` | License, Notice, Trademarks, Licensing history |
+| Follow | `1fr` | YouTube, X, Discord |
 
-- **The list is a column, not a row.** Six labels in a row ran the full width of
-  the content column and left the entire right half of the foot empty under it.
-  As a column they fill that half, the fine print keeps its 78ch measure on the
-  left, and the two blocks close the page as one spread.
-- **The list spans both rows of the grid**, so it starts on the wordmark's
-  baseline and runs down beside the fine print.
-- **The columns are a grid gap, never padding.** The band is `.section-bounds`,
-  which is laid directly against the rails; inline padding on it pulls both
-  rules off them (`layout.md` § "The marker has to be re-pointed at the band").
-- **Below 768px they stack** and the list goes back to a wrapping row. The rails
-  are gone at that width and the measure is the screen, so a column of labels
-  held against a right edge that no longer exists reads as a stray block.
-- Every document link is external: `target="_blank"`, `rel="noopener"`
-- The list is a `<nav>` with an `aria-label`, because "License, Notice,
-  Trademarks…" out of context is a set of unlabelled links
+Under them, a `--hairline` and one last row: the copyright on the left, the
+licence on the right.
+
+- **A share each, never `auto`.** Sized to their content the three columns come
+  out 59, 122 and 63 pixels wide and bunch against the right edge with the
+  whole middle of the foot empty behind them — text pushed aside, not a layout.
+  Two fifths and three fifths spaces them the way the reference does.
+- **`minmax(0, …)` on every track.** A grid track's default floor is its
+  content, and "Licensing history" would otherwise refuse to let the row narrow.
+- **The columns are grid gaps, never padding**, so the identity block and the
+  last column keep the page's two content edges.
+- **Groups are `<nav>` with a label each.** "License, Notice, Trademarks…" out
+  of context is a set of unlabelled links; the visible label is the `<ul>`'s
+  `aria-labelledby`, so the accessible name and the printed one cannot drift.
+- **No handle is written in this file.** `socialCounts.ts` is where the site
+  states which account is which — the X account is a personal one and the
+  project-named profile is defunct, so a handle typed from memory points at a
+  dead page. The footer maps its ids to platform names and nothing more.
+- **GitHub is deliberately not in "Follow".** The repository is already the
+  first entry under "Project", and the same destination twice in one footer
+  reads as an oversight rather than as emphasis.
+- **Below 768px the identity block takes the full width** and the three link
+  columns wrap as a row beneath it. They stay columns with labels — that is
+  what makes ten links readable — but stacking them outright turns the foot
+  into a screen of its own.
+- Every link is external: `target="_blank"`, `rel="noopener"`
 - The copyright year comes from the build, not from a literal
 
 ---
@@ -158,8 +185,12 @@ than as leftover:
 - Analytics, a tag manager, or a CDN webfont — each one falsifies the paragraph
   about this page, and that paragraph is the reason the page needs no cookie
   banner
-- Its own `max-width`. It stands on the same rails as every other block
-- Inline padding on the band, which is what pulls its two rules off the rails
+- Its own `max-width`. It stands in the same `content` container as everything
+  above it
+- **A rail, a band or a boundary rule.** The page's structure ends under the
+  CTA; this block carries none of it
+- `--rule` on the one hairline it does draw. That token is the page structure
+- A social handle written into this file instead of read from `socialCounts.ts`
 - A second type size. One step up on the wordmark, and the rest is caption
-- `.section-close` anywhere but here. It is the end of the rails, and there is
-  exactly one end
+- `.legal::before` copied to any other block. It is the end of the rails, and
+  there is exactly one end
