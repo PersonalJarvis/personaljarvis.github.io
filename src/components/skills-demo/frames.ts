@@ -251,7 +251,7 @@ export const SKILL_COUNT = 31;
 
 export const FRAMES: Frame[] = [
   {
-    duration: 4200,
+    duration: 2600,
     layout: "list",
     query: "",
     filter: "all",
@@ -260,7 +260,7 @@ export const FRAMES: Frame[] = [
       "A list of skills. Each is a file with a switch, and the one you wrote sits in the same list as the ones that shipped.",
   },
   {
-    duration: 4000,
+    duration: 2800,
     layout: "list",
     query: "summary",
     filter: "all",
@@ -270,7 +270,7 @@ export const FRAMES: Frame[] = [
       "Searching for “summary” narrows the list to nine, and every hit says which field matched.",
   },
   {
-    duration: 4200,
+    duration: 3200,
     layout: "detail",
     query: "",
     filter: "all",
@@ -280,7 +280,7 @@ export const FRAMES: Frame[] = [
       "Opening morning-routine shows what it is for, and its status, version and category, read out of the file itself.",
   },
   {
-    duration: 5200,
+    duration: 4000,
     layout: "triggers",
     query: "",
     filter: "all",
@@ -290,7 +290,7 @@ export const FRAMES: Frame[] = [
       "Its triggers: two spoken phrases and one clock entry at seven in the morning. Those three lines are the whole reason the briefing starts.",
   },
   {
-    duration: 3600,
+    duration: 2600,
     layout: "list",
     query: "",
     filter: "mine",

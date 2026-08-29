@@ -47,6 +47,10 @@ export interface PluginCounts {
 
 export interface PluginsViewProps {
   query: string;
+  /** True while `query` is still being typed. The list below is still the one
+   *  from before the search, so the match count and the clear link — both of
+   *  which describe a finished search — stay away until the word is whole. */
+  typing?: boolean;
   filter: FilterId;
   /** Already filtered. The view does no work of its own. */
   plugins: DemoPlugin[];
@@ -385,6 +389,7 @@ function Row({
 
 export function PluginsView({
   query,
+  typing = false,
   filter,
   plugins,
   busyId,
@@ -446,9 +451,12 @@ export function PluginsView({
             {query || "Search plugins…"}
           </span>
           {query && (
+            /* A caret blinks when it is waiting, not while it is being typed
+               past — a cursor that vanishes mid-word is the one detail that
+               gives a typing animation away. */
             <span
               className="plugin-caret"
-              data-animate={animate ? "true" : "false"}
+              data-animate={animate && !typing ? "true" : "false"}
               style={{ width: 3, height: 34, background: "var(--ink)" }}
             />
           )}
@@ -477,7 +485,7 @@ export function PluginsView({
             />
           )}
 
-          {query && (
+          {query && !typing && (
             <span
               style={{
                 marginLeft: "auto",

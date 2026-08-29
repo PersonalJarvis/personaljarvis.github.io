@@ -23,8 +23,10 @@ import {
 import { CANVAS_HEIGHT, CANVAS_WIDTH, PluginsView } from "./PluginsView";
 import {
   DemoStage,
+  SEARCH_TYPE_MS,
   useFrameScript,
   usePrefersReducedMotion,
+  useTypewriter,
 } from "@/components/window-demo/Stage";
 import "./plugins-demo.css";
 
@@ -62,7 +64,7 @@ const DURATIONS = FRAMES.map((f) => f.duration);
 export function PluginsDemo() {
   const reducedMotion = usePrefersReducedMotion();
   const {
-    index: frameIndex,
+    index: scriptIndex,
     tookOver: userTookOver,
     takeOver: stopScript,
   } = useFrameScript(DURATIONS, reducedMotion);
@@ -71,6 +73,26 @@ export function PluginsDemo() {
   const [ownRegister, setOwnRegister] = useState<Register | null>(null);
   const [ownFilter, setOwnFilter] = useState<FilterId>("all");
   const [busyId, setBusyId] = useState<string | undefined>(undefined);
+
+  /* The search box is typed, and the rest of the window waits for the last
+     character.
+
+     A catalog that narrows before the word that narrowed it is on screen reads
+     as a recording rather than as a search — and "3 matches" over a list of
+     twenty-four is simply wrong. So while the word is going in, the window is
+     still showing the frame before it; only the search box has moved on. The
+     frame before it is the previous index, and that is safe here because the
+     one frame that types is never the first: a script that loops back to a
+     frame with an empty query does no typing at all. */
+  const query = userTookOver ? "" : FRAMES[scriptIndex].query;
+  const typed = useTypewriter(
+    query,
+    query.length > 0,
+    reducedMotion,
+    SEARCH_TYPE_MS,
+  );
+  const typing = typed < query.length;
+  const frameIndex = typing ? Math.max(0, scriptIndex - 1) : scriptIndex;
 
   const frame = FRAMES[frameIndex];
 
@@ -182,7 +204,8 @@ export function PluginsDemo() {
       onTakeOver={takeOver}
     >
       <PluginsView
-        query={userTookOver ? "" : frame.query}
+        query={userTookOver ? "" : query.slice(0, typed)}
+        typing={typing}
         filter={userTookOver ? ownFilter : frame.filter}
         plugins={rows}
         busyId={userTookOver ? busyId : frame.busyId}

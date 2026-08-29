@@ -1,48 +1,34 @@
 /**
  * The CLIs demo container.
  *
- * The one thing it owns beyond the shared machinery is the typewriter on the
- * composer frame: the instruction appears a character at a time, because the
- * point of that beat is that a person typed a sentence, not that a form was
- * filled in.
+ * The one thing it owns beyond the shared machinery is the composer beat: the
+ * instruction appears a character at a time, because the point of that beat is
+ * that a person typed a sentence, not that a form was filled in. The typing
+ * itself is `useTypewriter`, shared with the two search boxes.
  */
-
-import { useEffect, useState } from "react";
 
 import {
   DemoStage,
   useFrameScript,
   usePrefersReducedMotion,
+  useTypewriter,
 } from "@/components/window-demo/Stage";
 import { DEMO_DESCRIPTION, FRAMES, RUN } from "./frames";
 import { CANVAS_HEIGHT, CANVAS_WIDTH, ClisView } from "./ClisView";
 import "./clis-demo.css";
 
 const DURATIONS = FRAMES.map((f) => f.duration);
-const TYPE_MS = 34;
 
 export function ClisDemo() {
   const reducedMotion = usePrefersReducedMotion();
   const { index, takeOver } = useFrameScript(DURATIONS, reducedMotion);
   const frame = FRAMES[index];
 
-  const [typed, setTyped] = useState(0);
-
-  useEffect(() => {
-    if (frame.layout !== "compose") return;
-    if (reducedMotion) {
-      setTyped(RUN.instruction.length);
-      return;
-    }
-    setTyped(0);
-    let i = 0;
-    const id = window.setInterval(() => {
-      i += 1;
-      setTyped(i);
-      if (i >= RUN.instruction.length) window.clearInterval(id);
-    }, TYPE_MS);
-    return () => window.clearInterval(id);
-  }, [frame.layout, index, reducedMotion]);
+  const typed = useTypewriter(
+    RUN.instruction,
+    frame.layout === "compose",
+    reducedMotion,
+  );
 
   return (
     <DemoStage

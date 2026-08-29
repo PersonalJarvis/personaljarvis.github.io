@@ -126,7 +126,7 @@ export const CATALOG_SIZE = ALL_DEMO_PLUGINS.length;
  */
 export const FRAMES: Frame[] = [
   {
-    duration: 3600,
+    duration: 2200,
     query: "",
     filter: "all",
     plugins: ALL_DEMO_PLUGINS,
@@ -134,7 +134,7 @@ export const FRAMES: Frame[] = [
       "The whole catalog: twenty-four services, two of them connected here.",
   },
   {
-    duration: 2600,
+    duration: 2000,
     query: "google",
     filter: "all",
     plugins: GOOGLE_HITS,
@@ -142,7 +142,7 @@ export const FRAMES: Frame[] = [
       "Searching for “google” narrows the list to Gmail, Google Drive and Google Calendar.",
   },
   {
-    duration: 1200,
+    duration: 1000,
     query: "google",
     filter: "all",
     plugins: GOOGLE_HITS,
@@ -151,7 +151,7 @@ export const FRAMES: Frame[] = [
     caption: "Connecting Gmail.",
   },
   {
-    duration: 2400,
+    duration: 1800,
     query: "google",
     filter: "all",
     plugins: [
@@ -163,7 +163,7 @@ export const FRAMES: Frame[] = [
     caption: "Gmail is connected and answering.",
   },
   {
-    duration: 4200,
+    duration: 3200,
     query: "",
     filter: "all",
     plugins: ALL_DEMO_PLUGINS.map((p) =>

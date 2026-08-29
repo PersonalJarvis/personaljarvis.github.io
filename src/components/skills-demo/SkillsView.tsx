@@ -266,6 +266,10 @@ function Row({
 
 export interface SkillsViewProps {
   frame: Frame;
+  /** True while `frame.query` is still being typed. The list below is still the
+   *  one from before the search, so the caret holds still rather than blinking
+   *  through the word. */
+  typing?: boolean;
   /** The skill the detail layouts show. */
   openSkill?: DemoSkill;
   /** Rows the visitor has switched since taking over. */
@@ -280,6 +284,7 @@ export interface SkillsViewProps {
 
 export function SkillsView({
   frame,
+  typing = false,
   openSkill,
   overrides,
   onToggle,
@@ -353,9 +358,11 @@ export function SkillsView({
           {frame.query || "Search skills…"}
         </span>
         {frame.query && (
+          /* A caret blinks when it is waiting, not while it is being typed
+             past — a cursor that vanishes mid-word gives the animation away. */
           <span
             className="skill-caret"
-            data-animate={animate ? "true" : "false"}
+            data-animate={animate && !typing ? "true" : "false"}
             style={{ width: 3, height: 34, background: "var(--ink)" }}
           />
         )}

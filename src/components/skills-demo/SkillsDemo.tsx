@@ -15,8 +15,10 @@ import { useCallback, useMemo, useState } from "react";
 
 import {
   DemoStage,
+  SEARCH_TYPE_MS,
   useFrameScript,
   usePrefersReducedMotion,
+  useTypewriter,
 } from "@/components/window-demo/Stage";
 import { DEMO_DESCRIPTION, FRAMES, SHELF_SKILLS, type DemoSkill } from "./frames";
 import { CANVAS_HEIGHT, CANVAS_WIDTH, SkillsView } from "./SkillsView";
@@ -32,7 +34,10 @@ const BY_NAME = new Map<string, DemoSkill>(
 
 export function SkillsDemo() {
   const reducedMotion = usePrefersReducedMotion();
-  const { index, tookOver, takeOver } = useFrameScript(DURATIONS, reducedMotion);
+  const { index: scriptIndex, tookOver, takeOver } = useFrameScript(
+    DURATIONS,
+    reducedMotion,
+  );
 
   /** Rows the visitor has switched since taking over. Empty while the script
    *  drives, so the demo shows the install as it really is: all 31 on. */
@@ -40,12 +45,27 @@ export function SkillsDemo() {
   const [ownFilter, setOwnFilter] = useState<"all" | "mine">("all");
   const [ownOpen, setOwnOpen] = useState<string | null>(null);
 
+  /* The search box is typed, and the list waits for the last character — a list
+     that narrows before the word that narrowed it is on screen reads as a
+     recording rather than as a search, and "9 matches" over the full shelf is
+     simply wrong. While the word goes in, the window is still the frame before
+     it; only the search box has moved on. See PluginsDemo, which does the same. */
+  const query = tookOver ? "" : FRAMES[scriptIndex].query;
+  const typed = useTypewriter(
+    query,
+    query.length > 0,
+    reducedMotion,
+    SEARCH_TYPE_MS,
+  );
+  const typing = typed < query.length;
+  const index = typing ? Math.max(0, scriptIndex - 1) : scriptIndex;
+
   const scripted = FRAMES[index];
 
   /** After take-over the visitor drives: a row opens, the back link returns to
    *  the list, and the pills decide what the list holds. */
   const frame = useMemo(() => {
-    if (!tookOver) return scripted;
+    if (!tookOver) return { ...scripted, query: query.slice(0, typed) };
     if (ownOpen) {
       return { ...FRAMES[2], openName: ownOpen, layout: "triggers" as const };
     }
@@ -59,7 +79,7 @@ export function SkillsDemo() {
       matches: ownFilter === "mine" ? 1 : undefined,
       openName: undefined,
     };
-  }, [tookOver, scripted, ownFilter, ownOpen]);
+  }, [tookOver, scripted, query, typed, ownFilter, ownOpen]);
 
   const openSkill = frame.openName ? BY_NAME.get(frame.openName) : undefined;
 
@@ -97,9 +117,11 @@ export function SkillsDemo() {
     setOwnOpen(null);
   }, [takeOver]);
 
-  const fadeKey = `${frame.layout}|${frame.openName ?? ""}|${frame.query}|${frame.skills
-    .map((s) => s.name)
-    .join(",")}`;
+  // The settled query, never the typed prefix: keying the fade on the text in
+  // the box would re-run the table's fade once per character.
+  const fadeKey = `${frame.layout}|${frame.openName ?? ""}|${
+    tookOver ? "" : scripted.query
+  }|${frame.skills.map((s) => s.name).join(",")}`;
 
   return (
     <DemoStage
@@ -110,6 +132,7 @@ export function SkillsDemo() {
     >
       <SkillsView
         frame={frame}
+        typing={typing}
         openSkill={openSkill}
         overrides={overrides}
         onToggle={toggle}

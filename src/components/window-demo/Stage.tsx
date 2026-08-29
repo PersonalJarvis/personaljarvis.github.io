@@ -114,6 +114,65 @@ export function useFrameScript(
   return { index, tookOver, takeOver };
 }
 
+/** Character interval for a typed sentence — the CLIs composer's instruction. */
+export const TYPE_MS = 34;
+
+/** A search box types a word, not a sentence, and six characters at sentence
+ *  speed are over before the eye finds them. */
+export const SEARCH_TYPE_MS = 58;
+
+/**
+ * Reveal a string one character at a time, and report how many are visible.
+ *
+ * A demo that fills its search box in one paint reads as a recording. Typing
+ * the word is the whole difference between watching a video of an app and
+ * watching someone use one, and it costs a fifth of a second.
+ *
+ * `active` is what the caller ticks on — entering the beat that types. The
+ * count resets every time the run changes, so a looping script types the word
+ * again on each pass, and it holds at full length for as long as the same run
+ * stays active, which is what lets three consecutive frames share one query
+ * without retyping it.
+ *
+ * The run is compared during render, not only inside the effect. An effect runs
+ * after the paint, so a reset that lives only there shows the finished word for
+ * one frame before clearing it — a flash at exactly the moment the eye is
+ * looking at the box.
+ *
+ * Reduced motion gets the finished string: the point of the beat is that a
+ * person typed it, and the finished sentence carries that just as well.
+ */
+export function useTypewriter(
+  text: string,
+  active: boolean,
+  reducedMotion: boolean,
+  speedMs: number = TYPE_MS,
+): number {
+  const run = active ? text : "";
+  const [state, setState] = useState<{ run: string; typed: number }>({
+    run,
+    typed: 0,
+  });
+
+  useEffect(() => {
+    if (!active) return;
+    if (reducedMotion) {
+      setState({ run, typed: text.length });
+      return;
+    }
+    setState({ run, typed: 0 });
+    let i = 0;
+    const id = window.setInterval(() => {
+      i += 1;
+      setState({ run, typed: i });
+      if (i >= text.length) window.clearInterval(id);
+    }, speedMs);
+    return () => window.clearInterval(id);
+  }, [run, text, active, reducedMotion, speedMs]);
+
+  return state.run === run ? state.typed : 0;
+}
+
 export interface DemoStageProps {
   /** The canvas the children are drawn on. Every measurement inside them is in
    *  design pixels against this box, and nothing inside reacts to the
