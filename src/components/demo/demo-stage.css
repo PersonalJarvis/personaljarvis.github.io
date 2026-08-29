@@ -1,0 +1,190 @@
+/*
+ * Motion for the hero demo.
+ *
+ * Only what needs a keyframe or a pseudo-class lives here. Everything static
+ * is an inline design-pixel value in DemoStage.tsx, because those numbers only
+ * make sense against the 1440x900 stage and would be lies in a stylesheet that
+ * looks reusable.
+ *
+ * Every colour is a token. Depth is hairlines — no shadow here, and
+ * scripts/check-style.mjs would reject one.
+ *
+ * Every rule below is wrapped so that `prefers-reduced-motion: reduce` gets a
+ * still frame that still reads correctly: the wave stands as a wave, the live
+ * core stands as a dot, the caret stands as a caret.
+ */
+
+/* --- The Jarvis bar's waveform ------------------------------------------- */
+
+/* Each bar carries its own height inline (the fixed amplitude array) and its
+   own negative delay, so the animation walks along the row instead of pulsing
+   the whole bar at once. */
+.demo-wave-bar {
+  transform-origin: center;
+  transition: height 320ms ease-out;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .demo-wave-bar {
+    animation: demo-wave 1900ms ease-in-out infinite;
+  }
+}
+
+@keyframes demo-wave {
+  0%,
+  100% {
+    transform: scaleY(0.42);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* --- The live core -------------------------------------------------------
+ * The product's one "work is happening now" mark: an accent core inside two
+ * rings that expand and fade. Under reduced motion the rings simply stand
+ * still behind the core, which still reads as in-progress. */
+
+.demo-live-ring {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .demo-live-ring {
+    animation: demo-ring 1800ms cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+}
+
+@keyframes demo-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .demo-core {
+    animation: demo-core 1800ms ease-in-out infinite;
+  }
+}
+
+@keyframes demo-core {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* --- The live label ------------------------------------------------------
+ * "Thinking for 6s" travels while the turn runs, the way the app's own
+ * thinking line does. It is a gradient on the text, not a colour change, so
+ * the word stays fully legible at every point in the sweep. */
+
+.demo-shimmer {
+  background: linear-gradient(
+    100deg,
+    var(--app-fg-muted) 0%,
+    var(--app-fg) 45%,
+    var(--app-fg-muted) 70%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .demo-shimmer {
+    animation: demo-shimmer 2400ms linear infinite;
+  }
+}
+
+@keyframes demo-shimmer {
+  from {
+    background-position: 180% 0;
+  }
+  to {
+    background-position: -60% 0;
+  }
+}
+
+/* --- The caret on a line still arriving ---------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .demo-caret {
+    animation: demo-blink 1100ms steps(2, start) infinite;
+  }
+}
+
+@keyframes demo-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0.15;
+  }
+}
+
+/* --- The spinner on a tool call that is still running --------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .demo-spin {
+    animation: demo-spin 900ms linear infinite;
+  }
+}
+
+@keyframes demo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Rows the pointer can reach ------------------------------------------ */
+
+.demo-row {
+  transition: background-color 140ms ease-out, color 140ms ease-out;
+}
+
+.demo-row:hover {
+  background-color: var(--app-muted);
+  color: var(--app-fg);
+}
+
+.demo-tab {
+  transition: background-color 160ms ease-out, color 160ms ease-out;
+}
+
+.demo-tab:hover {
+  color: var(--app-fg);
+}
+
+/* --- Vendor marks --------------------------------------------------------
+ * The logo components take a className and leave sizing to the caller. Inside
+ * the stage every size is a design pixel on the 1440x900 canvas, so the mark
+ * simply fills the box the caller gives it. */
+
+.demo-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* --- The conversation lane ------------------------------------------------
+ * Both surfaces show the END of a conversation, so the beginning runs off the
+ * top of the column. Fading it out is what the app itself does to a thought
+ * that has outgrown its window, and it is the difference between reading as
+ * "scrolled" and reading as "clipped". */
+
+.demo-lane {
+  mask-image: linear-gradient(to bottom, transparent 0, black 40px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 40px);
+}

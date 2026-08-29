@@ -1,48 +1,107 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  BYLINE,
-  LIVE_TURN,
-  PAST_TURN,
-  SCRIPT,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+
+import jarvisLogo from "@/assets/jarvis-logo.png?url";
+import { AnthropicMark } from "@/components/logos/AnthropicMark";
+import { GeminiMark } from "@/components/logos/GeminiMark";
+import {
+  CHAT_ENGINE,
+  VOICE_ENGINE,
+  WAKE_PHRASE,
   WAVEFORM,
+  scriptFor,
+  turnsFor,
   type Frame,
-  type ToolRow,
+  type Phase,
+  type Step,
+  type Surface,
   type Turn,
 } from "./demoScript";
+import "./demo-stage.css";
 
 /**
- * The hero's demo stage — two windows of the real app, rebuilt in DOM.
+ * The hero's demo stage — the app's front page, rebuilt in DOM.
  *
- * Everything inside the stage is laid out at a fixed 1440x900 and scaled with a
+ * ONE window, because the product is one window. The app's front page is a
+ * single section with a single `Voice | Chat` switch at the top of its
+ * sidebar; the two halves talk to the same assistant and share one history
+ * (the app's `lib/homeSurface.ts` says exactly that). Two floating windows
+ * would have been a nicer picture and a false one.
+ *
+ * The switch in the sidebar is the one live control on the page, and it is
+ * the point: click it and the other rerun plays — the same assistant, the
+ * other way in. Everything else inside the window is real markup that does
+ * nothing, the way a screenshot does nothing.
+ *
+ * Everything is laid out at a fixed 1440x900 and scaled with a
  * ResizeObserver, so the mockup behaves like a screenshot: identical
  * proportions at every viewport instead of reflowing into a different design.
  * That is why there is no responsive styling below this line and every size is
  * in px (docs/hero.md, "Scaling").
  *
- * The chat mirrors the app's own timeline doctrine: one container per turn,
- * the person's line in a quiet bubble on the right, the assistant flush left
- * under a byline, thinking as a readable scratchpad where it happened, tool
- * calls as plain rows, and a visible turn state at all times.
+ * Fidelity, and where it deliberately stops: the layout, the type roles and
+ * the states are the app's. The content is SHORTER and the type LARGER — the
+ * hero is read from three metres away, not at working distance. Six sidebar
+ * rows stand in for twenty; two turns stand in for a day.
  */
 
-const STAGE_W = 1440;
-const STAGE_H = 900;
+const CHROME_H = 40;
+const BODY_H = 596;
 
-const STAGE_COLORS = {
+/**
+ * The stage, in design pixels: the window plus the air around it, and nothing
+ * else. It is sized to its content rather than to a screen shape, because the
+ * frame it is dropped into no longer has a fixed ratio — the hero gives the
+ * stage row whatever height is left over (src/sections/Hero.astro), and a
+ * stage with a baked-in 16:10 would either overflow that or leave a dead band
+ * under the window.
+ *
+ * The stage paints NOTHING. The window is the only opaque thing here, so
+ * whatever the hero puts behind the demo — today a backdrop image — shows
+ * through the air around it.
+ */
+const WINDOW_W = 1152;
+const WINDOW_H = CHROME_H + BODY_H;
+const WINDOW_X = 144;
+const WINDOW_Y = 90;
+const STAGE_W = WINDOW_X * 2 + WINDOW_W;
+const STAGE_H = WINDOW_Y * 2 + WINDOW_H;
+const SIDEBAR_W = 244;
+const HEADER_H = 44;
+/** The app's centred reading column, at this window's scale. */
+const COLUMN_W = 700;
+const COLUMN_PAD = 26;
+
+/**
+ * The app's own dark theme, by token. Never a literal here: the whole point
+ * of the `--app-*` group is that the clone drifts only when the app does.
+ */
+const C = {
   bg: "var(--app-bg)",
+  sidebar: "var(--app-sidebar)",
   card: "var(--app-card)",
   muted: "var(--app-muted)",
   fg: "var(--app-fg)",
   dim: "var(--app-fg-muted)",
   border: "var(--app-border)",
+  primary: "var(--app-primary)",
 } as const;
 
-const STAGE_PILL: Record<ToolRow["stage"], string> = {
-  read: "var(--stage-read)",
-  grep: "var(--stage-grep)",
-  edit: "var(--stage-edit)",
-  done: "var(--stage-done)",
-};
+/** A token at partial strength — the app leans on `/60`-style opacities. */
+function soft(token: string, percent: number): string {
+  return `color-mix(in srgb, ${token} ${percent}%, transparent)`;
+}
+
+// ---------------------------------------------------------------------------
+// Hooks
+// ---------------------------------------------------------------------------
 
 function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false);
@@ -57,13 +116,20 @@ function usePrefersReducedMotion(): boolean {
 }
 
 /**
- * Scale factor so the fixed stage fills whatever width it is given.
+ * Scale factor so the fixed stage fits whatever box it is given.
+ *
+ * CONTAIN, not fill-the-width: the hero hands the stage row whatever height is
+ * left after the headline and the buttons, and that height moves with the
+ * viewport. Scaling on width alone would push the window's lower half out of
+ * a short frame — the composer and the Jarvis bar, which are the two things
+ * worth seeing. Fitting both axes shrinks the whole window instead, which is
+ * what a screenshot does when the wall gets smaller.
  *
  * Measured in a layout effect BEFORE paint, so the stage never shows one frame
  * at the wrong size, and re-measured by a ResizeObserver afterwards. The
  * initial read matters on its own: an observer that only fires on later
- * changes leaves the stage at scale 1, which crops the 1440px design to
- * whatever the container happens to be.
+ * changes leaves the stage at scale 1, which crops the design to whatever the
+ * container happens to be.
  */
 function useStageScale(ref: { current: HTMLDivElement | null }): number {
   const [scale, setScale] = useState(1);
@@ -73,8 +139,12 @@ function useStageScale(ref: { current: HTMLDivElement | null }): number {
     if (!el) return;
 
     const measure = () => {
-      const w = el.getBoundingClientRect().width;
-      if (w > 0) setScale(w / STAGE_W);
+      const { width, height } = el.getBoundingClientRect();
+      if (width <= 0) return;
+      // A box with no height of its own (the wrapper falls back to its aspect
+      // ratio) reports one anyway; the guard is for the frame that has not
+      // been laid out yet.
+      setScale(height > 0 ? Math.min(width / STAGE_W, height / STAGE_H) : width / STAGE_W);
     };
 
     measure();
@@ -105,331 +175,183 @@ function useTypewriter(full: string, active: boolean, reduced: boolean): string 
       i += 1;
       setShown(full.slice(0, i));
       if (i >= full.length) clearInterval(id);
-    }, 24);
+    }, 22);
     return () => clearInterval(id);
   }, [full, active, reduced]);
   return active ? shown : "";
 }
 
-// ---------------------------------------------------------------------------
-// Chat pieces
-// ---------------------------------------------------------------------------
-
-/** The person's line — a quiet bubble on the right. */
-function SaidBubble({ text, spoken }: { text: string; spoken?: boolean }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
-      <div
-        style={{
-          maxWidth: 520,
-          background: STAGE_COLORS.muted,
-          color: STAGE_COLORS.fg,
-          borderRadius: 14,
-          padding: "10px 14px",
-          fontSize: 15,
-          lineHeight: 1.45,
-        }}
-      >
-        {spoken && (
-          <span style={{ color: STAGE_COLORS.dim, fontSize: 12, marginRight: 8 }}>spoken</span>
-        )}
-        {text}
-      </div>
-    </div>
-  );
+/**
+ * "Good morning" — the greeting the app opens with, from the machine's clock.
+ *
+ * Resolved AFTER mount on purpose. This island is server-rendered too, and a
+ * time-dependent first render would disagree with the server's; starting on
+ * the morning string and correcting on mount keeps the two identical.
+ */
+function useGreeting(): string {
+  const [greeting, setGreeting] = useState("Good morning");
+  useEffect(() => {
+    const hour = new Date().getHours();
+    setGreeting(hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening");
+  }, []);
+  return greeting;
 }
 
-/** Who answered: the model and the effort it ran at. */
-function Byline() {
+// ---------------------------------------------------------------------------
+// Glyphs — small enough to draw, so the demo pulls in no icon dependency
+// ---------------------------------------------------------------------------
+
+function Glyph({
+  path,
+  size = 14,
+  color,
+  className,
+  filled = false,
+}: {
+  path: string;
+  size?: number;
+  color?: string;
+  className?: string;
+  filled?: boolean;
+}) {
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        marginBottom: 10,
-        fontSize: 13,
-        color: STAGE_COLORS.dim,
-      }}
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill={filled ? "currentColor" : "none"}
+      stroke={filled ? "none" : "currentColor"}
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      style={{ color, flexShrink: 0 }}
+      aria-hidden="true"
     >
-      <span
-        style={{
-          width: 18,
-          height: 18,
-          borderRadius: 5,
-          background: STAGE_COLORS.fg,
-          color: STAGE_COLORS.bg,
-          fontSize: 11,
-          fontWeight: 600,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        J
-      </span>
-      <span style={{ color: STAGE_COLORS.fg, fontWeight: 500 }}>{BYLINE.model}</span>
-      <span>·</span>
-      <span>{BYLINE.effort} effort</span>
-    </div>
+      <path d={path} />
+    </svg>
   );
 }
+
+const PATH = {
+  chevron: "M9 6l6 6-6 6",
+  check: "M20 6L9 17l-5-5",
+  arrowDown: "M12 5v14M19 12l-7 7-7-7",
+  arrowUp: "M12 19V5M5 12l7-7 7 7",
+  mic: "M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3zM19 10v1a7 7 0 0 1-14 0v-1M12 19v3",
+  message: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
+  sparkles: "M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z",
+  plus: "M12 5v14M5 12h14",
+  book: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z",
+  bookmark: "M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z",
+  eye: "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  clip: "M21 12l-8.5 8.5a5 5 0 0 1-7-7L14 5a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L16 7",
+  users: "M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9",
+  puzzle:
+    "M9 3a2 2 0 0 1 4 0v1h4a1 1 0 0 1 1 1v4h1a2 2 0 0 1 0 4h-1v4a1 1 0 0 1-1 1h-4v-1a2 2 0 0 0-4 0v1H5a1 1 0 0 1-1-1v-4H3a2 2 0 0 1 0-4h1V5a1 1 0 0 1 1-1h4z",
+  store: "M3 9l1.5-5h15L21 9M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1zM3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0",
+  coins: "M12 11c4.4 0 8-1.3 8-3s-3.6-3-8-3-8 1.3-8 3 3.6 3 8 3zM4 8v8c0 1.7 3.6 3 8 3s8-1.3 8-3V8",
+} as const;
 
 /**
- * The thinking, readable — open while it runs, folded to a two-line preview
- * once the turn is done. The app folds it exactly this way, because a finished
- * conversation should read as its answer.
+ * A vendor mark at a stage size. The logo components leave sizing to the
+ * caller (LogoStrip does the same), and inside the stage a size is a design
+ * pixel on the 1440x900 canvas — so the box is set here and the mark fills it.
  */
-function Scratchpad({
-  turn,
-  live,
-  reduced,
-}: {
-  turn: Turn;
-  live: boolean;
-  reduced: boolean;
-}) {
-  const streamed = useTypewriter(turn.thought, live && !reduced, reduced);
-  const body = live ? streamed : turn.thought;
-
+function Mark({ children, size = 14 }: { children: ReactNode; size?: number }) {
   return (
-    <div style={{ marginBottom: 14 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          fontSize: 13,
-          color: STAGE_COLORS.dim,
-          marginBottom: live ? 8 : 6,
-        }}
-      >
-        <span style={{ display: "inline-block", transform: live ? "none" : "rotate(90deg)" }}>
-          ›
-        </span>
-        <span style={live ? { color: STAGE_COLORS.fg } : undefined}>
-          {live ? `Thinking for ${turn.thoughtSeconds}s` : `Thought for ${turn.thoughtSeconds}s`}
-        </span>
-        {live && <span style={{ fontSize: 12 }}>· esc to interrupt</span>}
-      </div>
-      <div
-        style={{
-          borderLeft: `1px solid ${STAGE_COLORS.border}`,
-          paddingLeft: 14,
-          fontSize: 14,
-          lineHeight: 1.55,
-          color: STAGE_COLORS.dim,
-          maxHeight: live ? 96 : 44,
-          overflow: "hidden",
-        }}
-      >
-        {body}
-      </div>
-    </div>
+    <span style={{ display: "inline-grid", width: size, height: size, flexShrink: 0 }}>
+      {children}
+    </span>
   );
 }
 
-/** One tool call: a row, never a box of its own. */
-function ToolLine({ row }: { row: ToolRow }) {
+/** The glyph a product-own tool row wears when there is no vendor mark. */
+const STEP_GLYPH: Record<NonNullable<Step["glyph"]>, string> = {
+  wiki: PATH.book,
+  memory: PATH.bookmark,
+  screen: PATH.eye,
+};
+
+// ---------------------------------------------------------------------------
+// Shared pieces
+// ---------------------------------------------------------------------------
+
+/**
+ * The mark that says work is happening right now — an accent core inside two
+ * rings that expand and fade. It is the ONE live mark the product owns, and
+ * it appears on both surfaces for exactly that reason.
+ */
+function LiveCore() {
+  return (
+    <span
+      style={{ position: "relative", display: "inline-flex", width: 10, height: 10, flexShrink: 0 }}
+      aria-hidden="true"
+    >
+      <span
+        className="demo-live-ring"
+        style={{ position: "absolute", inset: 0, borderRadius: 999, background: soft(C.primary, 45) }}
+      />
+      <span
+        className="demo-live-ring"
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: 999,
+          background: soft(C.primary, 45),
+          animationDelay: "0.9s",
+        }}
+      />
+      <span
+        className="demo-core"
+        style={{
+          position: "relative",
+          width: 10,
+          height: 10,
+          borderRadius: 999,
+          background: soft(C.fg, 70),
+        }}
+      />
+    </span>
+  );
+}
+
+/** The blinking cursor on a line that is still arriving. */
+function Caret() {
+  return (
+    <span
+      className="demo-caret"
+      style={{
+        display: "inline-block",
+        width: 2,
+        height: "1em",
+        marginLeft: 3,
+        transform: "translateY(2px)",
+        background: C.fg,
+      }}
+      aria-hidden="true"
+    />
+  );
+}
+
+/** The app's opening line, shrunk once a conversation is on screen. */
+function Greeting() {
+  const greeting = useGreeting();
   return (
     <div
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 10,
-        padding: "5px 0",
-        fontSize: 13.5,
+        justifyContent: "center",
+        gap: 12,
+        opacity: 0.7,
+        transform: "scale(0.88)",
+        marginBottom: 6,
       }}
     >
-      <span
-        style={{
-          width: 7,
-          height: 7,
-          borderRadius: 999,
-          background: STAGE_PILL[row.stage],
-          flexShrink: 0,
-        }}
-      />
-      <span style={{ color: STAGE_COLORS.fg, fontFamily: "var(--font-mono)", fontSize: 13 }}>
-        {row.name}
-      </span>
-      <span style={{ color: STAGE_COLORS.dim }}>{row.detail}</span>
+      <img src={jarvisLogo} alt="" width={30} height={30} style={{ width: 30, height: 30 }} />
+      <span style={{ fontSize: 30, letterSpacing: "-0.5px", color: C.fg }}>{greeting}</span>
     </div>
-  );
-}
-
-/** The turn always says which state it is in — running, or finished. */
-function TurnState({ frame, turn }: { frame: Frame; turn: Turn }) {
-  const running = frame.phase !== "done";
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        marginTop: 12,
-        fontSize: 12.5,
-        color: STAGE_COLORS.dim,
-        fontVariantNumeric: "tabular-nums",
-      }}
-    >
-      <span
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: 999,
-          background: running ? STAGE_COLORS.fg : "var(--success)",
-        }}
-      />
-      <span>{running ? "Composing" : "Done"}</span>
-      <span>·</span>
-      <span>{turn.elapsed}</span>
-      <span>·</span>
-      <span style={{ fontFamily: "var(--font-mono)" }}>↓ {turn.outTokens} tokens</span>
-    </div>
-  );
-}
-
-function AssistantTurn({
-  turn,
-  frame,
-  reduced,
-}: {
-  turn: Turn;
-  frame: Frame;
-  reduced: boolean;
-}) {
-  const thinking = frame.phase === "thinking";
-  const showThought = frame.phase !== "spoken";
-  const answer = useTypewriter(turn.answer, frame.answer > 0 && !reduced, reduced);
-  const answerText = frame.answer > 0 ? (reduced ? turn.answer : answer) : "";
-
-  return (
-    <div style={{ marginBottom: 24 }}>
-      <Byline />
-      {showThought && <Scratchpad turn={turn} live={thinking} reduced={reduced} />}
-      {turn.tools.slice(0, frame.tools).map((row) => (
-        <ToolLine key={row.name} row={row} />
-      ))}
-      {answerText && (
-        <p
-          style={{
-            marginTop: 12,
-            fontSize: 15,
-            lineHeight: 1.6,
-            color: STAGE_COLORS.fg,
-            maxWidth: 620,
-          }}
-        >
-          {answerText}
-        </p>
-      )}
-      <TurnState frame={frame} turn={turn} />
-    </div>
-  );
-}
-
-const DONE_FRAME: Frame = { phase: "done", tools: 99, answer: 1, duration: 0 };
-
-/** The main window: the chat, mid-conversation. */
-function ChatWindow({ frame, reduced }: { frame: Frame; reduced: boolean }) {
-  return (
-    <>
-      <WindowChrome title="Personal Jarvis — Chat" />
-      <div style={{ display: "flex", height: 604 }}>
-        <aside
-          style={{
-            width: 190,
-            borderRight: `1px solid ${STAGE_COLORS.border}`,
-            padding: "14px 12px",
-            fontSize: 12.5,
-            color: STAGE_COLORS.dim,
-          }}
-        >
-          <div style={{ color: STAGE_COLORS.fg, fontSize: 13, marginBottom: 12 }}>Chats</div>
-          {["This morning", "Invoices, Kessler", "Trip to Lisbon", "Standup notes"].map(
-            (label, i) => (
-              <div
-                key={label}
-                style={{
-                  padding: "6px 8px",
-                  borderRadius: 7,
-                  marginBottom: 2,
-                  background: i === 0 ? STAGE_COLORS.muted : "transparent",
-                  color: i === 0 ? STAGE_COLORS.fg : STAGE_COLORS.dim,
-                }}
-              >
-                {label}
-              </div>
-            ),
-          )}
-        </aside>
-
-        <div style={{ flex: 1, padding: "22px 28px", overflow: "hidden" }}>
-          <SaidBubble text={PAST_TURN.said} spoken />
-          <AssistantTurn turn={PAST_TURN} frame={DONE_FRAME} reduced />
-          <SaidBubble text={LIVE_TURN.said} spoken />
-          <AssistantTurn turn={LIVE_TURN} frame={frame} reduced={reduced} />
-        </div>
-      </div>
-    </>
-  );
-}
-
-/** The second window: what the microphone heard, and what it became. */
-function VoiceWindow({ frame, reduced }: { frame: Frame; reduced: boolean }) {
-  const listening = frame.phase === "spoken";
-  const transcript = useTypewriter(LIVE_TURN.said, listening && !reduced, reduced);
-  const shown = listening ? (reduced ? LIVE_TURN.said : transcript) : LIVE_TURN.said;
-
-  return (
-    <>
-      <WindowChrome title="Voice" />
-      <div style={{ padding: "22px 24px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-          <span
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 999,
-              background: listening ? "var(--stage-thinking)" : STAGE_COLORS.dim,
-            }}
-          />
-          <span style={{ fontSize: 13, color: STAGE_COLORS.dim }}>
-            {listening ? "Listening" : "Heard you"}
-          </span>
-        </div>
-
-        {/* A fixed amplitude array — no microphone is ever opened. */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 3,
-            height: 56,
-            marginBottom: 18,
-          }}
-        >
-          {WAVEFORM.map((amp, i) => (
-            <span
-              key={i}
-              style={{
-                display: "block",
-                width: 3,
-                borderRadius: 999,
-                height: Math.max(4, amp * (listening ? 56 : 22)),
-                background: listening ? STAGE_COLORS.fg : STAGE_COLORS.border,
-                transition: reduced ? "none" : "height 240ms ease",
-              }}
-            />
-          ))}
-        </div>
-
-        <p style={{ fontSize: 15, lineHeight: 1.5, color: STAGE_COLORS.fg, minHeight: 66 }}>
-          {shown}
-        </p>
-      </div>
-    </>
   );
 }
 
@@ -438,20 +360,21 @@ function WindowChrome({ title }: { title: string }) {
   return (
     <div
       style={{
-        height: 38,
-        borderBottom: `1px solid ${STAGE_COLORS.border}`,
+        height: CHROME_H,
+        borderBottom: `1px solid ${C.border}`,
         display: "flex",
         alignItems: "center",
-        padding: "0 12px",
+        padding: "0 14px",
         position: "relative",
         flexShrink: 0,
+        background: C.sidebar,
       }}
     >
       <div style={{ display: "flex", gap: 7 }}>
         {[0, 1, 2].map((i) => (
           <span
             key={i}
-            style={{ width: 8, height: 8, borderRadius: 999, background: STAGE_COLORS.border }}
+            style={{ width: 9, height: 9, borderRadius: 999, background: C.border }}
           />
         ))}
       </div>
@@ -461,8 +384,8 @@ function WindowChrome({ title }: { title: string }) {
           left: 0,
           right: 0,
           textAlign: "center",
-          fontSize: 12.5,
-          color: STAGE_COLORS.dim,
+          fontSize: 13,
+          color: C.dim,
           pointerEvents: "none",
         }}
       >
@@ -472,6 +395,1027 @@ function WindowChrome({ title }: { title: string }) {
   );
 }
 
+/**
+ * The strip across the top of the stage: who is answering on the left, what
+ * they are running on at the right. The app carries the same two facts there,
+ * and here it doubles as the clean edge the conversation scrolls under.
+ */
+function SurfaceHeader({ surface }: { surface: Surface }) {
+  const voice = surface === "voice";
+  return (
+    <div
+      style={{
+        height: HEADER_H,
+        flexShrink: 0,
+        borderBottom: `1px solid ${soft(C.border, 60)}`,
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "0 16px",
+      }}
+    >
+      <img src={jarvisLogo} alt="" width={18} height={18} style={{ width: 18, height: 18 }} />
+      <span style={{ fontSize: 14, fontWeight: 600, color: C.fg }}>Jarvis</span>
+      <span
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: 10,
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          color: C.dim,
+        }}
+      >
+        Ready
+      </span>
+      <span style={{ flex: 1 }} />
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 7,
+          borderRadius: 8,
+          border: `1px solid ${soft(C.border, 70)}`,
+          padding: "5px 9px",
+          fontSize: 12,
+        }}
+      >
+        <Mark size={14}>
+          {voice ? (
+            <GeminiMark className="demo-mark" />
+          ) : (
+            <AnthropicMark className="demo-mark" />
+          )}
+        </Mark>
+        <span style={{ color: C.fg, fontWeight: 500 }}>
+          {voice ? VOICE_ENGINE.provider : CHAT_ENGINE.provider}
+        </span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C.dim }}>
+          {voice ? VOICE_ENGINE.model : CHAT_ENGINE.model}
+        </span>
+      </span>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar
+// ---------------------------------------------------------------------------
+
+/**
+ * `Voice | Chat` — the front page's one switch, at the top of the sidebar,
+ * and the one thing on this page a visitor can actually press.
+ */
+function SurfaceSwitch({
+  surface,
+  onPick,
+}: {
+  surface: Surface;
+  onPick: (next: Surface) => void;
+}) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 2,
+        borderRadius: 12,
+        border: `1px solid ${C.border}`,
+        background: C.muted,
+        padding: 2,
+        marginBottom: 10,
+      }}
+    >
+      <SurfaceTab
+        active={surface === "voice"}
+        label="Voice"
+        icon={PATH.mic}
+        onClick={() => onPick("voice")}
+      />
+      <SurfaceTab
+        active={surface === "chat"}
+        label="Chat"
+        icon={PATH.message}
+        onClick={() => onPick("chat")}
+      />
+    </div>
+  );
+}
+
+function SurfaceTab({
+  active,
+  label,
+  icon,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  icon: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      tabIndex={-1}
+      className="demo-tab"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 7,
+        borderRadius: 10,
+        border: "none",
+        padding: "7px 8px",
+        fontFamily: "inherit",
+        fontSize: 13,
+        fontWeight: 500,
+        cursor: "pointer",
+        background: active ? C.card : "transparent",
+        color: active ? C.fg : C.dim,
+      }}
+    >
+      <Glyph path={icon} size={14} />
+      {label}
+    </button>
+  );
+}
+
+function SidebarRow({
+  label,
+  icon,
+  active = false,
+  meta,
+}: {
+  label: string;
+  icon: string;
+  active?: boolean;
+  meta?: string;
+}) {
+  return (
+    <div
+      className="demo-row"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        borderRadius: 8,
+        padding: "7px 9px",
+        fontSize: 13,
+        color: active ? C.fg : C.dim,
+        background: active ? C.muted : "transparent",
+      }}
+    >
+      <Glyph path={icon} size={14} />
+      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {label}
+      </span>
+      {meta && (
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: soft(C.dim, 70) }}>
+          {meta}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** The recent conversations, per surface — the app mixes both kinds in one list. */
+const RECENT: Record<Surface, string[]> = {
+  voice: ["Morning brief", "Standup moved", "Trip to Lisbon"],
+  chat: ["Shipped — week 35", "Invoice, Kessler", "Wiki cleanup"],
+};
+
+function Sidebar({ surface, onPick }: { surface: Surface; onPick: (next: Surface) => void }) {
+  const voice = surface === "voice";
+  return (
+    <aside
+      style={{
+        width: SIDEBAR_W,
+        flexShrink: 0,
+        borderRight: `1px solid ${C.border}`,
+        background: C.sidebar,
+        padding: "12px 10px",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <SurfaceSwitch surface={surface} onPick={onPick} />
+
+      <SidebarRow label={voice ? "New voice chat" : "New chat"} icon={PATH.plus} />
+
+      <div
+        style={{
+          marginTop: 8,
+          marginBottom: 6,
+          borderRadius: 10,
+          border: `1px solid ${C.border}`,
+          background: C.card,
+          padding: "9px 10px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          fontSize: 13,
+          fontWeight: 500,
+          color: C.fg,
+        }}
+      >
+        <Glyph path={PATH.mic} size={14} />
+        Start Realtime Voice
+      </div>
+      <p style={{ margin: "0 0 14px", padding: "0 4px", fontSize: 11, color: soft(C.dim, 75) }}>
+        Your browser owns the microphone on this device.
+      </p>
+
+      <div style={{ borderTop: `1px solid ${soft(C.border, 70)}`, paddingTop: 10 }}>
+        <SidebarRow label={voice ? "Voice" : "Chat"} icon={voice ? PATH.mic : PATH.message} active />
+        <div style={{ paddingLeft: 14, marginBottom: 4 }}>
+          {RECENT[surface].map((title) => (
+            <div
+              key={title}
+              className="demo-row"
+              style={{
+                borderRadius: 7,
+                padding: "5px 8px",
+                fontSize: 12.5,
+                color: soft(C.dim, 85),
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {title}
+            </div>
+          ))}
+        </div>
+        <SidebarRow label="Agents" icon={PATH.users} />
+        <SidebarRow label="Skills, Plugins & MCPs" icon={PATH.puzzle} />
+        <SidebarRow label="Marketplace" icon={PATH.store} />
+        <SidebarRow label="Spend" icon={PATH.coins} />
+        <SidebarRow label="Wiki" icon={PATH.book} />
+      </div>
+    </aside>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// The reasoning block — the same renderer on both surfaces
+// ---------------------------------------------------------------------------
+
+/** One tool call: a row, never a box of its own. */
+function StepRow({ step, running }: { step: Step; running: boolean }) {
+  return (
+    <div
+      className="demo-row"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 9,
+        borderRadius: 7,
+        padding: "4px 6px",
+        fontSize: 13,
+      }}
+    >
+      <span
+        style={{
+          display: "grid",
+          placeItems: "center",
+          width: 16,
+          height: 16,
+          flexShrink: 0,
+          color: C.dim,
+        }}
+      >
+        {step.logo ? (
+          <img src={step.logo} alt="" width={14} height={14} style={{ width: 14, height: 14 }} />
+        ) : (
+          <Glyph path={STEP_GLYPH[step.glyph ?? "wiki"]} size={14} />
+        )}
+      </span>
+      <span
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontWeight: 500,
+          color: C.fg,
+          flexShrink: 0,
+        }}
+      >
+        {step.label}
+      </span>
+      <span
+        style={{
+          flex: 1,
+          minWidth: 0,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          fontFamily: "var(--font-mono)",
+          fontSize: 12,
+          color: soft(C.dim, 85),
+        }}
+      >
+        {step.summary}
+      </span>
+      {running ? (
+        <span
+          className="demo-spin"
+          style={{
+            width: 12,
+            height: 12,
+            flexShrink: 0,
+            borderRadius: 999,
+            border: `2px solid ${soft(C.primary, 25)}`,
+            borderTopColor: C.primary,
+          }}
+          aria-hidden="true"
+        />
+      ) : (
+        <span
+          style={{
+            flexShrink: 0,
+            fontFamily: "var(--font-mono)",
+            fontSize: 11,
+            color: soft(C.dim, 65),
+          }}
+        >
+          {step.took}
+        </span>
+      )}
+      <Glyph path={PATH.chevron} size={13} color={soft(C.dim, 50)} />
+    </div>
+  );
+}
+
+/**
+ * The turn's reasoning, the way the app shows it: open while it runs, folded
+ * to "Thought for Ns" over its own tool rows once it is done.
+ *
+ * The rows stay visible under the folded header on purpose — what the
+ * assistant reached for is the part worth seeing without a click, and it is
+ * the part that makes a voice answer trustworthy rather than magical.
+ *
+ * `preview` adds the two-line gist of the reasoning under the folded header.
+ * The chat column has the room for it and the app shows it there; the voice
+ * lane is compact and does not.
+ */
+function ReasoningBlock({
+  turn,
+  frame,
+  live,
+  reduced,
+  preview = false,
+}: {
+  turn: Turn;
+  frame: Frame;
+  live: boolean;
+  reduced: boolean;
+  preview?: boolean;
+}) {
+  const thinking = live && frame.phase === "thinking";
+  const streamed = useTypewriter(turn.thought, thinking && !reduced, reduced);
+  const running = live && frame.phase === "steps";
+  const shown = turn.steps.slice(0, live ? frame.steps : turn.steps.length);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      {thinking ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, padding: "2px 0" }}>
+          <LiveCore />
+          <span className="demo-shimmer" style={{ fontWeight: 500 }}>
+            Thinking for {turn.thoughtSeconds}s
+          </span>
+          <span style={{ color: soft(C.dim, 60), fontSize: 12 }}>esc to interrupt</span>
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 13,
+            color: C.dim,
+            padding: "2px 0",
+          }}
+        >
+          <Glyph path={PATH.chevron} size={14} />
+          <span>Thought for {turn.thoughtSeconds}s</span>
+        </div>
+      )}
+
+      {thinking ? (
+        <div
+          style={{
+            marginLeft: 6,
+            borderLeft: `1px solid ${C.border}`,
+            paddingLeft: 13,
+            maxHeight: 92,
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-end",
+            fontSize: 13,
+            lineHeight: 1.55,
+            color: C.dim,
+          }}
+        >
+          <span>
+            {reduced ? turn.thought : streamed}
+            {!reduced && <Caret />}
+          </span>
+        </div>
+      ) : (
+        <>
+          {preview && (
+            <div
+              style={{
+                marginLeft: 20,
+                marginBottom: 2,
+                fontSize: 13,
+                lineHeight: 1.5,
+                color: soft(C.dim, 80),
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+            >
+              {turn.thought}
+            </div>
+          )}
+          {shown.map((step, i) => (
+            <StepRow
+              key={`${step.label}-${i}`}
+              step={step}
+              running={running && i === shown.length - 1}
+            />
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+/** The answer, typed out. Lines that start with "- " render as bullets. */
+function Answer({
+  turn,
+  live,
+  reduced,
+  style,
+}: {
+  turn: Turn;
+  live: boolean;
+  reduced: boolean;
+  style?: CSSProperties;
+}) {
+  const full = turn.answer.join("\n");
+  const streamed = useTypewriter(full, live && !reduced, reduced);
+  const text = live && !reduced ? streamed : full;
+  const lines = text.split("\n");
+
+  return (
+    <div style={style}>
+      {lines.map((line, i) => {
+        const last = i === lines.length - 1;
+        const caret = live && !reduced && last && text.length < full.length;
+        if (line.startsWith("- ")) {
+          return (
+            <div key={i} style={{ display: "flex", gap: 10, marginTop: 4 }}>
+              <span style={{ color: soft(C.dim, 70) }}>•</span>
+              <span style={{ flex: 1 }}>
+                {line.slice(2)}
+                {caret && <Caret />}
+              </span>
+            </div>
+          );
+        }
+        return (
+          <p key={i} style={{ margin: i === 0 ? 0 : "10px 0 0" }}>
+            {line}
+            {caret && <Caret />}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Voice surface
+// ---------------------------------------------------------------------------
+
+/** One line of the voice lane: who said it in the gutter, the words beside it. */
+function LaneLine({
+  who,
+  children,
+  assistant,
+  live = false,
+}: {
+  who: string;
+  children: ReactNode;
+  assistant: boolean;
+  live?: boolean;
+}) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "64px 1fr", gap: 16, alignItems: "baseline" }}>
+      <span
+        style={{
+          textAlign: "right",
+          fontFamily: "var(--font-mono)",
+          fontSize: 10,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          color: C.dim,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {who}
+      </span>
+      <span
+        style={{
+          fontSize: assistant ? 19 : 17,
+          lineHeight: assistant ? 1.4 : 1.45,
+          color: assistant ? (live ? C.dim : C.fg) : soft(C.dim, live ? 70 : 100),
+          fontStyle: live ? "italic" : "normal",
+        }}
+      >
+        {children}
+      </span>
+    </div>
+  );
+}
+
+function VoiceTurnView({
+  turn,
+  frame,
+  live,
+  reduced,
+}: {
+  turn: Turn;
+  frame: Frame;
+  live: boolean;
+  reduced: boolean;
+}) {
+  const spoken = live && frame.phase === "spoken";
+  const heard = useTypewriter(turn.said, spoken && !reduced, reduced);
+  const said = spoken && !reduced ? heard : turn.said;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <LaneLine who="You" assistant={false} live={spoken}>
+        {said}
+        {spoken && !reduced && <Caret />}
+      </LaneLine>
+
+      {(!live || frame.phase !== "spoken") && (
+        <div style={{ paddingLeft: 80 }}>
+          <ReasoningBlock turn={turn} frame={frame} live={live} reduced={reduced} />
+        </div>
+      )}
+
+      {(!live || frame.answer) && (
+        <LaneLine who="Jarvis" assistant>
+          <Answer turn={turn} live={live && frame.phase === "answering"} reduced={reduced} />
+        </LaneLine>
+      )}
+    </div>
+  );
+}
+
+/** Which face the bar wears for a given point in the rerun. */
+function barState(phase: Phase): { word: string; hint: string; amp: number; live: boolean } {
+  switch (phase) {
+    case "spoken":
+      return { word: "Listening", hint: "Listening…", amp: 1, live: true };
+    case "thinking":
+    case "steps":
+      return { word: "Thinking", hint: "Thinking…", amp: 0.42, live: true };
+    case "answering":
+      return { word: "Speaking", hint: "Speaking…", amp: 0.78, live: true };
+    default:
+      return {
+        word: "Ready",
+        hint: `Say “${WAKE_PHRASE}” or tap the bar to start`,
+        amp: 0.14,
+        live: false,
+      };
+  }
+}
+
+/**
+ * The waveform across the top of the Jarvis bar.
+ *
+ * A fixed amplitude array with a per-bar animation delay, so the wave travels
+ * along the row. No microphone is ever opened — see docs/hero.md.
+ */
+function Waveform({ amp }: { amp: number }) {
+  const bars = 62;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        height: 52,
+        width: "100%",
+      }}
+      aria-hidden="true"
+    >
+      {Array.from({ length: bars }, (_, i) => {
+        const a = WAVEFORM[i % WAVEFORM.length];
+        return (
+          <span
+            key={i}
+            className="demo-wave-bar"
+            style={{
+              display: "block",
+              width: 3,
+              borderRadius: 999,
+              height: Math.max(3, Math.round(a * amp * 52)),
+              background: amp > 0.3 ? soft(C.fg, 85) : soft(C.dim, 55),
+              animationDelay: `${(i % WAVEFORM.length) * -34}ms`,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * The Jarvis bar — the front page's one voice control, drawn in the chat
+ * composer's language so the two surfaces read as siblings. The whole card is
+ * the start/stop control: there is no microphone button, because you tap the
+ * bar or you say the wake word.
+ */
+function JarvisBar({ phase }: { phase: Phase }) {
+  const state = barState(phase);
+  return (
+    <div
+      style={{
+        borderRadius: 16,
+        border: `1px solid ${state.live ? soft(C.primary, 35) : C.border}`,
+        background: C.card,
+        padding: "14px 16px 10px",
+      }}
+    >
+      <Waveform amp={state.amp} />
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            fontFamily: "var(--font-mono)",
+            fontSize: 10,
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            color: state.live ? C.fg : C.dim,
+          }}
+        >
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 999,
+              background: state.live ? soft(C.fg, 70) : soft(C.dim, 40),
+            }}
+          />
+          {state.word}
+        </span>
+        <span
+          style={{
+            flex: 1,
+            minWidth: 0,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            fontSize: 12.5,
+            color: C.dim,
+          }}
+        >
+          {state.hint}
+        </span>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            borderRadius: 8,
+            padding: "5px 8px",
+            fontSize: 12,
+            color: C.dim,
+          }}
+        >
+          <Glyph path={PATH.sparkles} size={13} />
+          Prompt
+        </span>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7,
+            borderRadius: 8,
+            padding: "5px 8px",
+            fontSize: 12,
+          }}
+        >
+          <Mark size={13}>
+            <GeminiMark className="demo-mark" />
+          </Mark>
+          <span style={{ color: C.fg, fontWeight: 500 }}>{VOICE_ENGINE.provider}</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function VoiceSurface({ frame, reduced }: { frame: Frame; reduced: boolean }) {
+  const [past, live] = turnsFor("voice");
+  return (
+    <>
+      <SurfaceHeader surface="voice" />
+      <div
+        className="demo-lane"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "flex-end",
+        }}
+      >
+        <div
+          style={{
+            width: COLUMN_W,
+            margin: "0 auto",
+            padding: `18px ${COLUMN_PAD}px 8px`,
+            display: "flex",
+            flexDirection: "column",
+            gap: 18,
+          }}
+        >
+          <Greeting />
+          <VoiceTurnView turn={past} frame={DONE_FRAME} live={false} reduced={reduced} />
+          <VoiceTurnView turn={live} frame={frame} live reduced={reduced} />
+        </div>
+      </div>
+      <div style={{ width: COLUMN_W, margin: "0 auto", padding: `0 ${COLUMN_PAD}px 20px` }}>
+        <JarvisBar phase={frame.phase} />
+      </div>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Chat surface
+// ---------------------------------------------------------------------------
+
+/** The closing line of a finished turn — what it was, how long, what it cost. */
+function TurnOutcome({ turn }: { turn: Turn }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        paddingTop: 2,
+        fontFamily: "var(--font-mono)",
+        fontSize: 11,
+        color: soft(C.dim, 70),
+      }}
+    >
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 5,
+          fontFamily: "var(--font-sans)",
+          fontSize: 12,
+          fontWeight: 500,
+        }}
+      >
+        <Glyph path={PATH.check} size={14} />
+        Done
+      </span>
+      <span>{turn.elapsed}</span>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+        <Glyph path={PATH.arrowDown} size={12} />
+        {turn.outTokens} tokens
+      </span>
+    </div>
+  );
+}
+
+function ChatTurnView({
+  turn,
+  frame,
+  live,
+  reduced,
+}: {
+  turn: Turn;
+  frame: Frame;
+  live: boolean;
+  reduced: boolean;
+}) {
+  const sending = live && frame.phase === "spoken";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <div
+          style={{
+            maxWidth: "78%",
+            borderRadius: 16,
+            borderBottomRightRadius: 6,
+            border: `1px solid ${C.border}`,
+            background: C.muted,
+            padding: "10px 15px",
+            fontSize: 16,
+            lineHeight: 1.5,
+            color: C.fg,
+          }}
+        >
+          {turn.said}
+        </div>
+      </div>
+
+      {!sending && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: C.fg,
+            }}
+          >
+            <span style={{ width: 4, height: 4, borderRadius: 999, background: soft(C.fg, 70) }} />
+            <span>Jarvis</span>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                textTransform: "none",
+                letterSpacing: "normal",
+                fontFamily: "var(--font-sans)",
+                fontSize: 12,
+                color: C.dim,
+              }}
+            >
+              <Mark size={13}>
+                <AnthropicMark className="demo-mark" />
+              </Mark>
+              {CHAT_ENGINE.provider}
+              <span style={{ color: soft(C.dim, 70) }}>· {CHAT_ENGINE.model}</span>
+              <span style={{ color: soft(C.dim, 70) }}>· {CHAT_ENGINE.effort}</span>
+            </span>
+          </div>
+
+          <ReasoningBlock turn={turn} frame={frame} live={live} reduced={reduced} preview />
+
+          {(!live || frame.answer) && (
+            <Answer
+              turn={turn}
+              live={live && frame.phase === "answering"}
+              reduced={reduced}
+              style={{ fontSize: 16, lineHeight: 1.6, color: C.fg }}
+            />
+          )}
+
+          {(!live || frame.phase === "done") && <TurnOutcome turn={turn} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** The composer — the chat's half of the pair the Jarvis bar belongs to. */
+function Composer() {
+  const pill = (label: string, mark?: ReactNode): ReactNode => (
+    <span
+      key={label}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        borderRadius: 8,
+        padding: "5px 8px",
+        fontSize: 12,
+        color: C.fg,
+        fontWeight: 500,
+      }}
+    >
+      {mark}
+      {label}
+      <Glyph path={PATH.chevron} size={12} color={soft(C.dim, 70)} />
+    </span>
+  );
+
+  return (
+    <div
+      style={{
+        borderRadius: 16,
+        border: `1px solid ${C.border}`,
+        background: C.card,
+        padding: "14px 14px 10px",
+      }}
+    >
+      <div style={{ fontSize: 15, color: soft(C.dim, 80), padding: "2px 4px 14px" }}>
+        Ask anything…
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "5px 8px",
+            fontSize: 12,
+            fontWeight: 500,
+            color: C.fg,
+          }}
+        >
+          <img src={jarvisLogo} alt="" width={14} height={14} style={{ width: 14, height: 14 }} />
+          Jarvis
+        </span>
+        {pill(
+          CHAT_ENGINE.provider,
+          <Mark size={13}>
+            <AnthropicMark className="demo-mark" />
+          </Mark>,
+        )}
+        {pill(CHAT_ENGINE.model)}
+        {pill("High")}
+        {pill("Ask before acting")}
+        <span style={{ flex: 1 }} />
+        <Glyph path={PATH.clip} size={15} color={C.dim} />
+        <span style={{ width: 8 }} />
+        <Glyph path={PATH.mic} size={15} color={C.dim} />
+        <span
+          style={{
+            marginLeft: 10,
+            display: "grid",
+            placeItems: "center",
+            width: 26,
+            height: 26,
+            borderRadius: 999,
+            background: C.muted,
+            color: soft(C.dim, 80),
+          }}
+        >
+          <Glyph path={PATH.arrowUp} size={14} />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ChatSurface({ frame, reduced }: { frame: Frame; reduced: boolean }) {
+  const [past, live] = turnsFor("chat");
+  return (
+    <>
+      <SurfaceHeader surface="chat" />
+      <div
+        className="demo-lane"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "flex-end",
+        }}
+      >
+        <div
+          style={{
+            width: COLUMN_W,
+            margin: "0 auto",
+            padding: `18px ${COLUMN_PAD}px 8px`,
+            display: "flex",
+            flexDirection: "column",
+            gap: 22,
+          }}
+        >
+          <ChatTurnView turn={past} frame={DONE_FRAME} live={false} reduced={reduced} />
+          <ChatTurnView turn={live} frame={frame} live reduced={reduced} />
+        </div>
+      </div>
+      <div style={{ width: COLUMN_W, margin: "0 auto", padding: `0 ${COLUMN_PAD}px 18px` }}>
+        <Composer />
+      </div>
+    </>
+  );
+}
+
+/** Everything a turn that already happened is: finished, whole, quiet. */
+const DONE_FRAME: Frame = { phase: "done", steps: 99, answer: true, duration: 0 };
+
 // ---------------------------------------------------------------------------
 
 export default function DemoStage({ className = "" }: { className?: string }) {
@@ -479,107 +1423,131 @@ export default function DemoStage({ className = "" }: { className?: string }) {
   const scale = useStageScale(wrap);
   const reduced = usePrefersReducedMotion();
 
+  const [surface, setSurface] = useState<Surface>("voice");
   const [step, setStep] = useState(0);
   const [tookOver, setTookOver] = useState(false);
-  const [front, setFront] = useState<"chat" | "voice">("voice");
 
-  // Autoplay, and it stops for good on the first click — otherwise the demo
-  // moves out from under the visitor's hand.
+  const script = scriptFor(surface);
+
+  /**
+   * Autoplay, and what the first click changes.
+   *
+   * Left alone, the stage plays the voice rerun, hands over to the chat one,
+   * and comes back — the visitor sees both without touching anything.
+   *
+   * The first press of the switch stops the hand-over FOR GOOD: from then on
+   * the chosen surface loops on its own and the stage never changes surface
+   * again by itself. That is the rule from docs/hero.md — the demo must not
+   * move out from under the visitor's hand — applied where it actually bites.
+   * Freezing the rerun as well would be the wrong reading of it: pressing
+   * "Chat" is a request to WATCH the chat rerun, and answering it with a still
+   * frame would look broken.
+   */
   useEffect(() => {
-    if (tookOver || reduced) return;
-    const t = setTimeout(() => setStep((s) => (s + 1) % SCRIPT.length), SCRIPT[step].duration);
-    return () => clearTimeout(t);
-  }, [step, tookOver, reduced]);
+    if (reduced) return;
+    const id = setTimeout(() => {
+      const next = step + 1;
+      if (next < script.length) {
+        setStep(next);
+        return;
+      }
+      setStep(0);
+      if (!tookOver) setSurface((s) => (s === "voice" ? "chat" : "voice"));
+    }, script[step].duration);
+    return () => clearTimeout(id);
+  }, [step, script, tookOver, reduced]);
 
   const frame = useMemo<Frame>(
-    () => (reduced ? SCRIPT[SCRIPT.length - 1] : SCRIPT[step]),
-    [reduced, step],
+    () => (reduced ? script[script.length - 1] : script[step]),
+    [reduced, script, step],
   );
 
-  const takeOver = (which: "chat" | "voice") => {
+  const pick = (next: Surface) => {
     setTookOver(true);
-    setFront(which);
+    if (next !== surface) {
+      setSurface(next);
+      setStep(0);
+    }
   };
-
-  const shell = (which: "chat" | "voice"): React.CSSProperties => ({
-    position: "absolute",
-    background: STAGE_COLORS.card,
-    border: `1px solid ${STAGE_COLORS.border}`,
-    borderRadius: 16,
-    overflow: "hidden",
-    color: STAGE_COLORS.fg,
-    fontFamily: "var(--font-sans)",
-    zIndex: front === which ? 20 : 10,
-    opacity: front === which ? 1 : 0.85,
-    transition: reduced ? "none" : "opacity 200ms ease",
-  });
 
   return (
     <div className={className}>
+      {/*
+        `height: 100%` when the frame has a height of its own — the hero gives
+        the stage row exactly what is left over — and the aspect ratio as the
+        fallback for a frame that does not, so the demo can never collapse to
+        nothing.
+      */}
       <div
         ref={wrap}
-        // overflow hidden here, not only on an ancestor: until the first
-        // measurement lands the inner board is 1440px wide at scale 1, which
-        // otherwise pushes the page into horizontal overflow on a narrow screen.
-        style={{ position: "relative", width: "100%", aspectRatio: "16 / 10", overflow: "hidden" }}
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          aspectRatio: `${STAGE_W} / ${STAGE_H}`,
+          overflow: "hidden",
+        }}
         aria-hidden="true"
       >
         <div
           style={{
             position: "absolute",
-            left: 0,
-            top: 0,
+            left: "50%",
+            top: "50%",
             width: STAGE_W,
             height: STAGE_H,
-            transformOrigin: "top left",
-            transform: `scale(${scale})`,
-            background: STAGE_COLORS.bg,
-            borderRadius: 16,
-            overflow: "hidden",
+            transform: `translate(-50%, -50%) scale(${scale})`,
           }}
         >
-          {/* Main window: centred, 78% of the stage. */}
           <div
             style={{
-              ...shell("chat"),
-              left: "6%",
-              top: "5%",
-              width: "78%",
-              cursor: "default",
+              position: "absolute",
+              left: WINDOW_X,
+              top: WINDOW_Y,
+              width: WINDOW_W,
+              borderRadius: 16,
+              border: `1px solid ${C.border}`,
+              background: C.bg,
+              overflow: "hidden",
+              color: C.fg,
+              fontFamily: "var(--font-sans)",
             }}
-            onClick={() => takeOver("chat")}
-            tabIndex={-1}
           >
-            <ChatWindow frame={frame} reduced={reduced} />
-          </div>
-
-          {/* Voice window: offset lower right, overlapping the main one. */}
-          <div
-            style={{
-              ...shell("voice"),
-              // Overlaps the main window by about a quarter of its width — the
-              // overlap is what makes the pair read as depth rather than as
-              // two tiles side by side.
-              left: "64%",
-              top: "48%",
-              width: "34%",
-              cursor: "default",
-            }}
-            onClick={() => takeOver("voice")}
-            tabIndex={-1}
-          >
-            <VoiceWindow frame={frame} reduced={reduced} />
+            <WindowChrome title="Personal Jarvis" />
+            <div style={{ display: "flex", height: BODY_H }}>
+              <Sidebar surface={surface} onPick={pick} />
+              <main
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  background: C.bg,
+                }}
+              >
+                {surface === "voice" ? (
+                  <VoiceSurface frame={frame} reduced={reduced} />
+                ) : (
+                  <ChatSurface frame={frame} reduced={reduced} />
+                )}
+              </main>
+            </div>
           </div>
         </div>
       </div>
 
       <p className="sr-only">
-        Interactive demo with two windows. In the chat, the person asks what they
-        missed in their mail; the assistant reads two threads and answers. Then
-        they say “move the standup to three and tell the team why”, and the
-        assistant checks the calendar, finds everyone free at 15:00, moves the
-        meeting and drafts a note. The second window shows the voice panel that
-        heard the request.
+        Interactive demo of the app's front page. A switch in the sidebar moves
+        between its two halves, and each one replays a conversation. In Voice,
+        the person asks what their morning looks like; the assistant reads the
+        inbox and the calendar, and says the design review has landed on top of
+        the standup. They then say “move the standup to three and tell the team
+        why” — the assistant checks that all four are free at three, moves the
+        meeting and posts the reason. In Chat, they type “summarise what the
+        team shipped last week and put it in the wiki”, and the assistant reads
+        the issue tracker and the release channel, writes the page, and then
+        posts the four user-facing items to the team channel. Both show the
+        assistant's reasoning and every tool it used.
       </p>
     </div>
   );

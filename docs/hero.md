@@ -110,64 +110,98 @@ scaling like a real screenshot does.
 
 ## Window composition
 
-Two windows. Never one, never more than three.
+**One window.** Never two.
 
-| Window | Position | z-index |
-|---|---|---|
-| Main | centred, about 78% of stage width | 10 |
-| Voice | offset lower right, overlaps ~25% | 20 |
+This was two overlapping windows — a chat with a voice panel tucked under its
+lower right — until 2026-08-29. It made a better picture than the product. The
+app's front page is a SINGLE section with a single `Voice | Chat` switch at the
+top of its sidebar, and the app's own source says why in as many words
+(`lib/homeSurface.ts`): "not two sections: both talk to the same assistant and
+share one history". Two floating windows told a visitor there were two things.
 
-The overlap creates the depth. Positions are percentages of the stage, not px.
+So the window IS the front page, and the switch inside it is what moves between
+the halves. The depth the overlap used to carry now comes from the backdrop
+behind the window.
 
-Both windows: `--radius-lg`, 1px hairline, title bar with three 8px circles left
-and a centred title, `overflow: hidden`.
+| Piece | Size |
+|---|---|
+| Window | 80% of stage width, centred, equal air above and below |
+| Sidebar | 244 design px, the switch at its top |
+| Reading column | 700 design px, centred in the stage area |
+
+The window: `--radius-lg`, 1px hairline, a title bar with three circles left and
+a centred title, `overflow: hidden`.
+
+Both surfaces show the END of a conversation, so its beginning runs off the top
+of the column. That edge is **faded, not cut** — the app fades a thought that
+has outgrown its window the same way, and it is the difference between reading
+as "scrolled" and reading as "broken".
 
 ---
 
 ## Interaction
 
-- Click a window: it comes forward, the other drops to `opacity: .85`
-- Real hover states on list rows and buttons
-- Autoplay steps through the script and stops **permanently** on the first user
-  click (`userTookOver`). Otherwise the demo moves out from under the visitor's
-  hand
+**The `Voice | Chat` switch is the one live control.** Everything else inside
+the window is real markup that does nothing, the way a screenshot does nothing.
+
+- Left alone, the stage plays the voice rerun, hands over to the chat one, and
+  comes back. A visitor sees both without touching anything
+- The first press of the switch stops the **hand-over** for good. From then on
+  the chosen surface loops, and the stage never changes surface by itself again
+- Real hover states on rows and tabs
 - Optional: stage tilt on `mousemove`, at most 6 degrees, spring-damped. More
   reads as cheap
 
-```tsx
-const [step, setStep] = useState(0);
-const advance = () => setStep((s) => Math.min(s + 1, script.length - 1));
+The rule this obeys is still "the demo must not move out from under the
+visitor's hand" — applied where it actually bites. **Freezing the rerun on the
+first click would be the wrong reading of it:** pressing "Chat" is a request to
+watch the chat rerun, and answering it with a still frame looks broken.
 
+```tsx
 useEffect(() => {
-  if (userTookOver) return;
-  const t = setTimeout(advance, script[step].duration);
-  return () => clearTimeout(t);
-}, [step, userTookOver]);
+  if (reduced) return;
+  const id = setTimeout(() => {
+    const next = step + 1;
+    if (next < script.length) return setStep(next);
+    setStep(0);
+    if (!tookOver) setSurface((s) => (s === "voice" ? "chat" : "voice"));
+  }, script[step].duration);
+  return () => clearTimeout(id);
+}, [step, script, tookOver, reduced]);
 ```
 
 ---
 
-## Voice demo in the second window
+## The two reruns
 
-- Data comes from `script: Frame[]`, each frame with a `duration`
+Each surface replays a conversation that already happened, continuing into one
+live turn. Both are written down in `demoScript.ts` and nowhere else.
+
+- One `Frame[]` per surface, each frame with a `duration`. A frame describes
+  only the LIVE turn — its phase, how many tool rows are on screen, whether the
+  answer is being written. The turns before it are always finished
+- **Both show the reasoning.** The thinking streams in a scratchpad while it
+  runs and folds to "Thought for Ns" over its own tool rows once it is done,
+  which is what the app does and what makes an answer trustworthy rather than
+  magical. A rerun without it is a demo of a chat box
 - Waveform from a fixed amplitude array. **No `getUserMedia`**, no audio input,
   no permission prompt. A microphone prompt in the hero is a conversion killer
   and is usually blocked without a user gesture anyway
-- Transcript as a typewriter, 24ms per character
+- Words arrive as a typewriter, ~22ms per character
 - Content is **shorter** than the real app's: fewer rows, fewer options, larger
   type. The demo is read from three metres away, not at working distance
 
-```tsx
-const [shown, setShown] = useState("");
-useEffect(() => {
-  let i = 0;
-  const id = setInterval(() => {
-    setShown(full.slice(0, ++i));
-    if (i >= full.length) clearInterval(id);
-  }, 24);
-  return () => clearInterval(id);
-}, [full]);
-```
+**The two are deliberately different jobs.** Voice is the thing you say while
+your hands are busy — move the meeting, tell the team. Chat is the thing you
+type because it ends in something written down — a summary, a page, a post. A
+visitor who watches both should come away knowing they are one assistant with
+two ways in, not two products. Giving both halves the same errand wastes the
+second rerun.
+
+The bar's state words and hints are the app's own locale strings, verbatim
+(`voice_state.*`, `home.hint_*`). Colour comes from the `--app-*` tokens, which
+are the running app's dark-theme variables. Never a literal in the component:
+the clone is supposed to drift only when the app drifts.
 
 ### Where the view comes from — an open debt
 
@@ -188,8 +222,8 @@ whenever it matters enough:
 2. Keep the rebuild, and treat drift as intended — the demo is already meant to
    be shorter and larger than the real UI.
 
-Until one is chosen, whoever changes the real voice panel should glance at this
-demo. That is a weak guarantee, and it is written down here so it is at least a
+Until one is chosen, whoever changes the app front page should glance at this
+demo — both halves of it now. That is a weak guarantee, and it is written down here so it is at least a
 known one.
 
 ---
@@ -197,8 +231,8 @@ known one.
 ## Accessibility
 
 - The stage gets `aria-hidden="true"`
-- Beside it, a `<p class="sr-only">` describing what is shown ("Interactive demo
-  with two windows: …")
+- Beside it, a `<p class="sr-only">` describing what is shown — both reruns,
+  since the switch that reveals the second one is unreachable by keyboard
 - Every interactive element inside the stage: `tabIndex={-1}`
 - `prefers-reduced-motion`: no autoplay, no typewriter, no tilt — render the
   final frame directly
@@ -211,7 +245,8 @@ known one.
 - A fixed height on the stage. Aspect ratio plus crop, nothing else
 - Screenshots, video, canvas, or image sequences for the mockup
 - Text in the mockup that is not real text in the DOM
-- Responsive styling inside the 1440×900 stage
+- Responsive styling inside the stage
+- A second floating window, or any window that is not the app's front page
 - Network requests from the demo
 - `getUserMedia` or any permission prompt in the hero
 - A bespoke `max-width` on the section instead of a step from `layout.md`
