@@ -10,9 +10,9 @@ command-line tools it drives, and the plugins it connects. It is one section,
 `src/components/logos/`, and one generated list in
 `src/components/logos/marks.ts`.
 
-There are fifty marks and eight cells, so each cell is a split-flap board — a
-card cut across the middle, whose top half falls forward to uncover the next
-one underneath.
+There are fifty marks and eight cells, so each cell cycles a stack of them: a
+mark retreats into the depth of its card and dissolves, and the next arrives
+out of that same depth.
 
 ---
 
@@ -143,62 +143,71 @@ in `LogoStrip.astro` — not the fifty values in `marks.ts`.
 
 ---
 
-## The split flap
+## The change
 
-Each cell holds seven marks and shows one at a time. The card is **cut across
-the middle**, the way a station board or a desk flip calendar is, and changing
-it takes four layers:
+Each cell holds seven marks and shows one at a time. A mark leaves by
+**retreating into the depth of its card** and dissolving; the next arrives out
+of that same depth and settles onto the face. Both travel the same way, so the
+pair reads as one movement through the card rather than as two events on its
+surface.
 
-1. The old top half **falls forward and down** about the seam.
-2. Behind it, the new top half has been lying flat all along, and is uncovered
-   as the flap drops.
-3. The new bottom half, standing on edge towards the viewer, then **drops onto
-   the seam**.
-4. It lands over the old bottom half, which simply stops being drawn.
+The **whole card** travels, border and ground included, not just the mark
+inside it. Moving only the contents reads as a slideshow behind a fixed frame;
+moving the card is what gives the strip its depth.
 
-Only two of the four move, and they move one after the other, never together.
+The arriving card is scaled **above** 1 and comes back down to it, so it enters
+from in front of the page and settles, rather than growing into place from
+behind. It carries `z-index: 2` while it does, which is what puts it over the
+card it replaces and over its neighbours.
 
-Both rotations carry the moving edge **towards the viewer**. That is the
-direction the whole effect turns on and it is a single sign: about the seam, a
-negative `rotateX` on the upper half brings its top edge forward, and a
-positive one on the lower half brings its bottom edge forward. Reverse either
-and the flap folds away into the depth behind the page, which reads as a card
-sliding rather than falling.
+That last part only works because **the cell establishes no stacking context** —
+no `perspective`, no `z-index`, no `transform` on `.cell`. An arriving card is
+briefly wider than its cell and overlaps its neighbours, and a context there
+would trap it inside the cell so it passed behind them instead. This is the one
+place where the split-flap's requirements were the exact opposite: it needed
+`perspective` on the cell, and therefore needed the cell lifted by its own
+animation while its flaps moved.
 
-A flap swinging towards the viewer has to pass in front of the neighbouring
-cards. `z-index` on the flap cannot do that, because the cell's `perspective`
-makes it a stacking context nothing inside can paint outside of; the cell is
-lifted instead, for the moment its flaps are moving.
+One mark's turn is six seconds: 1.3s of change, then 4.7s holding. Seven marks
+make a 42-second cycle. The outgoing mark starts leaving 0.5s before the
+incoming one appears, so the two overlap through the middle of the change and
+the card is never empty.
 
-One mark's turn is seven seconds: 2.4s of change, then 4.6s holding. Seven
-marks make a 49-second cycle.
+### Why this replaced a split-flap
 
-**The change is slow on purpose.** A station board snaps, and the first cut of
-this one did too — 0.75s a half, ending at 5.5 times the average speed and
-stopping dead. That reads as a flicker, not as a card turning over: the eye
-catches that something changed without ever seeing it change. Twice the
-duration, and a gentler pair of curves, buys the movement back. The two halves
-are separate elements but one continuous fall, so their easing is **matched at
-the seam** — the first ends at 2.6x the average speed and the second begins
-there. Retune one curve and the other has to follow, or the hand-off becomes
-two events again.
+The cell used to be a station board: the card was cut across the middle and the
+top half fell forward about the seam, uncovering the next one underneath. It
+was asked for, it was built, and it was wrong. Worth recording, because the
+reasoning that made it look right on paper is the same reasoning that hid the
+fault.
 
-- **Both halves are the same full card, clipped.** Each half draws the whole
-  mark and hides the other half with `clip-path`. Laying out a separate top and
-  bottom would drift by a pixel and the seam would stop lining up.
-- **There is no seam line.** A real board has a visible gap between its flaps,
-  and drawing one did read as a split card — but it also struck a line through
-  every mark on a strip that stands still 4.6 seconds out of every 7, which is
-  what a visitor actually looks at. The movement makes the split plain enough.
-  The two halves overlap by three tenths of a percent rather than meeting at
-  50%, because an exact cut leaves a sub-pixel gap on fractional card heights
-  and the page shows through it as that same line.
+A real split-flap board can cut its card in half because its **seam, frame and
+shadow explain the cut**. The seam was deliberately left out here, for a sound
+reason: it struck a line through every mark on a strip that stands still most
+of the time, and that stillness is what a visitor actually looks at. But with
+the seam gone there was nothing left to explain the cut, and every moving frame
+showed a mark **sliced in half and offset** — which reads as a rendering fault,
+not as a card turning over.
+
+Two things kept that hidden. The change was fast enough that the broken frames
+were hard to catch, so slowing it down to make it calmer is what finally made
+them visible. And the fault only ever appears mid-movement, while the strip is
+normally checked from a screenshot of it at rest, which is always clean.
+
+**The rule to take from it:** a mechanical effect borrowed at half its
+mechanism does not degrade gracefully, it reads as broken. Either bring the
+parts that explain it, or choose an effect that needs no explaining.
+
+- **One element per mark, and one animation.** The split-flap needed two
+  clipped halves per mark plus a second animation lifting the cell — a hundred
+  and twelve animated elements across the row. This needs fifty-six, each
+  running the same keyframes at its own offset.
 - **CSS only.** No JavaScript reaches the browser. The stagger is an
-  `animation-delay` per flap, and the delays are **negative**, so every
+  `animation-delay` per card, and the delays are **negative**, so every
   animation starts already in progress: at the first paint each cell holds a
   finished card instead of standing empty until the first change comes round.
 - **Cells are offset against each other** by a fraction of a slot. Without that
-  all eight flap on the same beat, which reads as a machine rather than a
+  all eight change on the same beat, which reads as a machine rather than a
   board.
 - **The order is strided, not alphabetical.** `marks.ts` is sorted by name and
   the cells run nearly in phase, so a straight fill put Slack, Spotify, Stripe
@@ -212,7 +221,7 @@ two events again.
   three rows back separates each pair by 21s, three times the window either is
   on screen for.
 - **`prefers-reduced-motion` gets a still frame**, not a special case: the
-  animation is switched off and the first mark's two halves stay visible.
+  animation is switched off and the first mark of each cell stays visible.
 
 ---
 
@@ -229,7 +238,7 @@ outlined and are not.
 | Cell surface | a 2% darker plate, 4px radius, **no border** | card surface, 1px hairline, `--radius-lg` |
 | Mark colour | `currentColor` at full body ink | `currentColor` at `--ink` |
 | Mark size | one shared 40px height | per mark, about 36% of cell height |
-| Contents | eight fixed customer logos | fifty marks on a split-flap board |
+| Contents | eight fixed customer logos | fifty marks, one cell at a time |
 
 ### Deliberate deviations
 
@@ -240,7 +249,7 @@ outlined and are not.
 - **Per-mark sizing.** The reference sets one height for every mark, which
   works there because its logos are wordmarks of similar weight. Ours are
   square icons, where a shared height reads as an accident.
-- **The split flap.** The reference is static. This was asked for.
+- **The marks change at all.** The reference is static. This was asked for.
 
 ---
 
