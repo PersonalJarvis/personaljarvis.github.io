@@ -140,7 +140,7 @@ function segments(body: string) {
             <ol class="relative lg:col-span-6" data-steps>
               {
                 steps.map((step, i) => (
-                  <li class="step relative pl-10 [&:not(:last-child)]:mb-8" data-step>
+                  <li class="step relative [&:not(:last-child)]:mb-8" data-step>
                     {/*
                       The connecting hairline, drawn as one segment PER GAP rather
                       than as a single line down the list. A single line is spanned
@@ -151,15 +151,17 @@ function segments(body: string) {
                       edge and reaches exactly one step gap down (`-bottom-8`
                       against `mb-8`), to the top of the next badge. The last step has no gap under it and therefore
                       draws nothing.
+
+                      Its own left offset is not written here. Everything that
+                      has to line up with the badge column — this segment, the
+                      badge, the text indent — is derived from the same three
+                      numbers in the style block below.
                     */}
                     {i < steps.length - 1 && (
-                      <span
-                        aria-hidden="true"
-                        class="absolute -bottom-8 left-3 top-6 w-px bg-hairline"
-                      />
+                      <span aria-hidden="true" class="step-line absolute -bottom-8 w-px bg-hairline" />
                     )}
 
-                    <span class="badge absolute left-0 top-0 grid h-6 w-6 place-items-center rounded-[var(--radius-xs)] border border-hairline bg-canvas font-mono text-muted">
+                    <span class="badge absolute top-0 grid place-items-center rounded-[var(--radius-xs)] border border-hairline bg-canvas font-mono text-muted">
                       {i + 1}
                     </span>
 
@@ -323,6 +325,46 @@ function segments(body: string) {
     line-height: 1.2;
   }
 
+  /*
+    THE BADGE COLUMN, and the three numbers the whole of it is built from.
+    They live together because they are one measurement split three ways: move
+    the inset alone and the text closes up on the numbers; change the badge
+    size alone and the connecting line stops running down its middle.
+
+    `--badge-inset` is the one to touch. It holds the numbers clear of the
+    frame's own rule, which the section marker draws at exactly the content's
+    left edge — so at zero the badges did not sit NEAR that line, they sat ON
+    it, and a bordered box touching a border reads as stuck to it (maintainer,
+    2026-08-29). Small on purpose: the column should look set in from the rule,
+    not indented from it.
+
+    The heading and the eyebrow stay on the rule. Only the badges step in, and
+    the body text steps in with them by exactly the same amount, so the gap
+    between a number and its title is the one thing that does not change.
+
+    IN REM, NOT IN THE `--space-*` TOKENS, and that is not a slip. The root
+    font size on this site grows with the viewport, so the utilities these
+    three replace (`w-6`, `pl-10`) grew with it too — a wide screen got a
+    bigger page rather than the same page with more air around it. The tokens
+    are fixed pixels: stated in those, the badge came out 24px on a 2560px
+    screen where it had been 28px, so the numbers would have shrunk on exactly
+    the screens the page is scaled up for.
+  */
+  [data-steps] {
+    --badge-size: 1.5rem;
+    --badge-inset: 0.75rem;
+    --badge-gap: 1rem;
+  }
+
+  .step {
+    padding-left: calc(var(--badge-inset) + var(--badge-size) + var(--badge-gap));
+  }
+
+  .step-line {
+    left: calc(var(--badge-inset) + var(--badge-size) / 2);
+    top: var(--badge-size);
+  }
+
   .step-title {
     font-size: var(--text-title-md);
   }
@@ -332,6 +374,9 @@ function segments(body: string) {
   }
 
   .badge {
+    left: var(--badge-inset);
+    width: var(--badge-size);
+    height: var(--badge-size);
     font-size: var(--text-caption-upper);
   }
 

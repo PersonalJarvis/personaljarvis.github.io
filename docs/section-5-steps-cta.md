@@ -59,9 +59,9 @@ naming what proves it.
 | Width | step `content` |
 | Columns | **6/12 steps left, 6/12 artwork right** |
 | Step spacing | 32px between blocks |
-| Number badge | 24×24px, radius 4px, `--font-mono` |
+| Number badge | `1.5rem` square, radius 4px, `--font-mono`, held `0.75rem` clear of the left rule |
 | Install box | step `content`'s left column, ~105px tall — header 33px, two command lines |
-| Connecting line | 1px, `--hairline`, one segment per gap |
+| Connecting line | 1px, `--hairline`, one segment per gap, down the badge's centre |
 | Boundary | the pinned frame's own two rules, plus `.section-rule` opening the section and one under the track for the band to hang from |
 
 Widths come from `<Container>` alone. The step names a `max-width` of its own
@@ -94,8 +94,8 @@ proportioned first and lands near a screen second.
 ### The connecting line stops at the last badge
 
 One segment per **gap**, on each step but the last: from that step's badge
-bottom edge (`top: 24px`) down through the 48px gap to the next badge's top
-(`bottom: -48px`).
+bottom edge down through the step gap to the next badge's top (`bottom: -8`
+against the list's `mb-8`).
 
 Not one line spanned against the `<ol>`. The list's box ends at the bottom of
 the last step's *body*, several lines below the last badge, so a single line
@@ -103,6 +103,27 @@ overshot the final number and ran on into empty space — visible in the
 maintainer's screenshot of 2026-08-29. A line that has to stop at an element it
 is not anchored to cannot be given the right length in CSS; a segment that
 knows both of its own ends can.
+
+### The badge column is three numbers, kept together
+
+`--badge-size`, `--badge-inset` and `--badge-gap` on `[data-steps]`. Every
+position that has to agree with the numbers is computed from them: the badge's
+own box, the text indent (`inset + size + gap`), and where the connecting line
+runs (`inset + size / 2`, starting at `size`). Written separately as utilities
+they drifted the moment one of them moved — a line beside the badge instead of
+down it, or a title closing up on the number.
+
+**`--badge-inset` is the one to touch**, and it exists because the badges sat
+*on* the frame's left rule rather than near it (maintainer, 2026-08-29): the
+section marker draws that rule at exactly the content's left edge, and a
+bordered box touching a border reads as stuck to it. The heading and the
+eyebrow stay on the rule; only the badges step in, and the text steps in with
+them so the gap between a number and its title never changes.
+
+**In `rem`, not in the `--space-*` tokens.** The root font size grows with the
+viewport, so the utilities these replaced grew too; stated in the fixed-pixel
+tokens the badge came out 24px on a 2560px screen where it had been 28px —
+shrinking on exactly the screens the page is scaled up for.
 
 ---
 
