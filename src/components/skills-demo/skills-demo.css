@@ -90,3 +90,36 @@
     animation: none;
   }
 }
+
+/* --- The scrolling list -------------------------------------------------
+ * A hairline thumb rather than the platform scrollbar: this is a picture of an
+ * application, and an OS scrollbar inside it is the one piece of furniture that
+ * gives a mockup away.
+ */
+
+.skill-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--hairline-strong) transparent;
+}
+
+.skill-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.skill-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.skill-scroll::-webkit-scrollbar-thumb {
+  background: var(--hairline-strong);
+  border-radius: 999px;
+}
+
+/* The back link is a real control once the visitor has taken over. */
+.skill-back {
+  transition: color 140ms ease-out;
+}
+
+.skill-back:hover {
+  color: var(--ink);
+}

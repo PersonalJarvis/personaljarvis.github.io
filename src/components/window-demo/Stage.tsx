@@ -157,7 +157,19 @@ export function DemoStage({
       <div
         ref={stageRef}
         aria-hidden="true"
-        onMouseDownCapture={onTakeOver}
+        /*
+         * Take over on the CLICK, not on the press.
+         *
+         * This is a capture-phase handler on the whole stage, and it sets
+         * state. On `mousedown` — a discrete event React flushes
+         * synchronously — that re-render lands between the press and the
+         * child's own bubble-phase handler, and the child's handler is lost.
+         * A row that opens on press then did nothing at all, while a button
+         * two lines above it worked, which is a maddening thing to debug.
+         *
+         * Every interactive element inside already calls takeOver itself, so
+         * this only has to catch a press on dead space.
+         */
         className="relative grid aspect-[7/6] w-full place-items-center overflow-hidden rounded-[var(--radius-lg)] border border-hairline bg-canvas p-6 lg:aspect-auto lg:h-full"
       >
         {/*

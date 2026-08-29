@@ -135,3 +135,28 @@
     animation: none;
   }
 }
+
+/* --- The scrolling list -------------------------------------------------
+ * The catalog is longer than the window, exactly as it is in the app. A thin
+ * hairline thumb rather than the platform scrollbar: this is a picture of an
+ * application, and a Windows scrollbar inside it would be the one piece of
+ * furniture that gives the mockup away.
+ */
+
+.plugin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--hairline-strong) transparent;
+}
+
+.plugin-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.plugin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.plugin-scroll::-webkit-scrollbar-thumb {
+  background: var(--hairline-strong);
+  border-radius: 999px;
+}

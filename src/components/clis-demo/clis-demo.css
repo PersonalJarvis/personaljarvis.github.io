@@ -47,3 +47,25 @@
     animation: none;
   }
 }
+
+/* The catalog is longer than the window, as it is in the app. A hairline thumb
+   rather than the platform scrollbar — this is a picture of an application, and
+   an OS scrollbar inside it is the one thing that gives a mockup away. */
+
+.cli-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--hairline-strong) transparent;
+}
+
+.cli-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.cli-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cli-scroll::-webkit-scrollbar-thumb {
+  background: var(--hairline-strong);
+  border-radius: 999px;
+}

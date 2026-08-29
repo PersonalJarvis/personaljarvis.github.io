@@ -1,10 +1,10 @@
 /**
  * The skills demo script.
  *
- * Every name, date, author, count, reason string and trigger pattern below was
- * read out of the running app and then checked a second time by an adversarial
- * pass against the source. What that pass threw out is worth recording, because
- * all four were plausible and all four were wrong:
+ * Every name, date, author, count, reason string, frontmatter field and trigger
+ * pattern below was read out of the running app and then checked a second time
+ * by an adversarial pass against the source. What that pass threw out is worth
+ * recording, because all four were plausible and all four were wrong:
  *
  *  - A row with its switch OFF. Nothing in this install is off: 30 skills load
  *    `validated` and memory-save loads `active`, so all 31 switches are on.
@@ -17,13 +17,26 @@
  *  - A hand-picked row order. GET /api/skills sorts by name when no user order
  *    is saved, and none is saved here.
  *
- * See docs/feature-section.md § "Shortening" for why the demo is smaller than
- * the app, and never smaller than the truth.
+ * Each row carries its own card, so a visitor who takes the demo over can open
+ * any of them — including the one written here rather than shipped.
  */
 
 /** A trigger's kind, which decides its glyph. The app draws one glyph per
  *  trigger in frontmatter order — two voice triggers means two microphones. */
 export type TriggerKind = "voice" | "hotkey" | "cron";
+
+export interface SkillCard {
+  /** "Built-in", or "by You" for one written here. */
+  byline: string;
+  description: string;
+  /** The lifecycle state the registry reports for it. */
+  status: string;
+  version?: string;
+  category: string;
+  license?: string;
+  tags: string[];
+  triggers: Array<{ kind: TriggerKind; pattern: string; locales?: string }>;
+}
 
 export interface DemoSkill {
   name: string;
@@ -36,6 +49,8 @@ export interface DemoSkill {
   on: boolean;
   /** The search's own explanation of why this row matched. */
   reason?: string;
+  /** Read out of this skill's own SKILL.md frontmatter. */
+  card: SkillCard;
 }
 
 /** The five rows the shelf shows, in the app's order — it sorts by name. */
@@ -46,6 +61,25 @@ const SHELF: DemoSkill[] = [
     updated: "8/27/26",
     author: "Personal Jarvis",
     on: true,
+    card: {
+      byline: "Built-in",
+      description:
+        "Activates a distraction-free focus sprint: quiet notifications where possible, focus music if Spotify is connected, and a clear spoken start signal with the sprint duration.",
+      status: "Validated",
+      version: "2.1.0",
+      category: "productivity",
+      license: "Apache-2.0",
+      tags: ["focus", "dnd", "timer", "slack"],
+      triggers: [
+        { kind: "hotkey", pattern: "ctrl+alt+d", locales: "de, en" },
+        {
+          kind: "voice",
+          pattern:
+            "^(deep[-\\s]?work([-\\s]?mode| modus)?|fokus[-\\s]?modus|konzentrations[-\\s]?modus)$",
+          locales: "de, en",
+        },
+      ],
+    },
   },
   {
     name: "memory-save",
@@ -53,6 +87,20 @@ const SHELF: DemoSkill[] = [
     updated: "8/27/26",
     author: "Personal Jarvis",
     on: true,
+    card: {
+      byline: "Built-in",
+      description:
+        "DEPRECATED since B5 (2026-05-13). Long-term-memory writes go through the wiki pipeline instead.",
+      // Its frontmatter says `state: disabled`; the prefs sidecar overrides it
+      // back to active, which is why the switch on the row is on. This is the
+      // state the registry actually reports.
+      status: "Active",
+      version: "2.0.0",
+      category: "memory",
+      license: "Apache-2.0",
+      tags: ["memory", "notes", "recall", "deprecated"],
+      triggers: [],
+    },
   },
   {
     name: "morning-routine",
@@ -60,6 +108,32 @@ const SHELF: DemoSkill[] = [
     updated: "8/27/26",
     author: "Personal Jarvis",
     on: true,
+    card: {
+      byline: "Built-in",
+      description:
+        "Delivers the user's spoken morning briefing: today's calendar, unread email summary, weather, and anything urgent.",
+      status: "Validated",
+      version: "2.0.0",
+      category: "productivity",
+      license: "Apache-2.0",
+      tags: ["daily", "routine", "mail", "calendar", "weather"],
+      triggers: [
+        {
+          kind: "voice",
+          // The full pattern. The column truncates it with an ellipsis exactly
+          // as the app does — a hand-shortened regex is a different regex.
+          pattern:
+            "(morgenroutine|morgen[-\\s]?briefing|morning routine|morning briefing|start day|tagesüberblick)",
+          locales: "de, en",
+        },
+        {
+          kind: "voice",
+          pattern: "^(guten morgen|good morning)[.!\\s]*$",
+          locales: "de, en",
+        },
+        { kind: "cron", pattern: "0 7 * * *", locales: "de, en" },
+      ],
+    },
   },
   {
     name: "plugin-spotify",
@@ -69,6 +143,21 @@ const SHELF: DemoSkill[] = [
     updated: "8/22/26",
     author: "Personal Jarvis",
     on: true,
+    card: {
+      byline: "Built-in",
+      description: "Play and control the user's music on Spotify.",
+      status: "Validated",
+      category: "media",
+      tags: [],
+      triggers: [
+        { kind: "voice", pattern: "(spotify|musik|music|música)" },
+        {
+          kind: "voice",
+          pattern:
+            "(spiel\\w*|play|abspielen|pon|reproduce).{0,48}(lied|song|titel|track|playlist|album)",
+        },
+      ],
+    },
   },
   {
     name: "three-bullet-brief",
@@ -76,8 +165,21 @@ const SHELF: DemoSkill[] = [
     updated: "8/14/26",
     author: "You",
     on: true,
+    card: {
+      byline: "by You",
+      description:
+        "Turns any topic, text, or document into exactly three crisp bullets plus a one-line takeaway. Use when the user asks for a brief, a TLDR, a quick summary, or “give me the short version”.",
+      status: "Validated",
+      version: "1.0.0",
+      category: "productivity",
+      license: "MIT",
+      tags: ["summary", "brief", "writing"],
+      triggers: [],
+    },
   },
 ];
+
+export const SHELF_SKILLS = SHELF;
 
 /** Query "summary" really returns nine hits. These are the top five, with the
  *  app's own reason strings — the field and the word that matched. */
@@ -91,6 +193,19 @@ const HITS: DemoSkill[] = [
     author: "Personal Jarvis",
     on: true,
     reason: "trigram: summary",
+    card: {
+      byline: "Built-in",
+      description: "Read and write the user's Supabase tables.",
+      status: "Validated",
+      category: "developer",
+      tags: [],
+      triggers: [
+        {
+          kind: "voice",
+          pattern: "(supabase|supabase-datenbank|supabase-tabelle|in supabase)",
+        },
+      ],
+    },
   },
   { ...SHELF[1], reason: "trigram: summary" },
   {
@@ -100,38 +215,19 @@ const HITS: DemoSkill[] = [
     author: "Personal Jarvis",
     on: true,
     reason: "trigram: summary",
+    card: {
+      byline: "Built-in",
+      description: "Read and write the user's Airtable bases.",
+      status: "Validated",
+      category: "developer",
+      tags: [],
+      triggers: [{ kind: "voice", pattern: "(airtable|air table)" }],
+    },
   },
 ];
 
-/** The one skill the demo opens. Read straight out of its frontmatter. */
-export const DETAIL = {
-  name: "morning-routine",
-  byline: "Built-in",
-  description:
-    "Delivers the user's spoken morning briefing: today's calendar, unread email summary, weather, and anything urgent.",
-  facts: [
-    { label: "Status", value: "Validated" },
-    { label: "Version", value: "2.0.0" },
-    { label: "Category", value: "productivity" },
-  ],
-  tags: ["daily", "routine", "mail", "calendar", "weather"],
-  triggers: [
-    {
-      kind: "voice" as TriggerKind,
-      // The full pattern. The column truncates it with an ellipsis exactly as
-      // the app does — a hand-shortened regex would be a different regex.
-      pattern:
-        "(morgenroutine|morgen[-\\s]?briefing|morning routine|morning briefing|start day|tagesüberblick)",
-      locales: "de, en",
-    },
-    {
-      kind: "voice" as TriggerKind,
-      pattern: "^(guten morgen|good morning)[.!\\s]*$",
-      locales: "de, en",
-    },
-    { kind: "cron" as TriggerKind, pattern: "0 7 * * *", locales: "de, en" },
-  ],
-};
+/** The skill the script opens. After take-over any row can be opened. */
+export const SCRIPTED_DETAIL = "morning-routine";
 
 export type Layout = "list" | "detail" | "triggers";
 
@@ -144,7 +240,8 @@ export interface Frame {
   skills: DemoSkill[];
   /** The app's "{n} matches" line, shown while a filter is narrowing. */
   matches?: number;
-  hoverName?: string;
+  /** Which skill the detail layouts show, and which row the list lifts. */
+  openName?: string;
   caption: string;
 }
 
@@ -178,7 +275,7 @@ export const FRAMES: Frame[] = [
     query: "",
     filter: "all",
     skills: SHELF,
-    hoverName: DETAIL.name,
+    openName: SCRIPTED_DETAIL,
     caption:
       "Opening morning-routine shows what it is for, and its status, version and category, read out of the file itself.",
   },
@@ -188,7 +285,7 @@ export const FRAMES: Frame[] = [
     query: "",
     filter: "all",
     skills: SHELF,
-    hoverName: DETAIL.name,
+    openName: SCRIPTED_DETAIL,
     caption:
       "Its triggers: two spoken phrases and one clock entry at seven in the morning. Those three lines are the whole reason the briefing starts.",
   },
@@ -200,7 +297,7 @@ export const FRAMES: Frame[] = [
     skills: [SHELF[4]],
     matches: 1,
     caption:
-      "Filtering to “Mine” leaves the one skill written here, three-bullet-brief.",
+      "Filtering to “Mine” leaves the one skill written here, three-bullet-brief. Click it to read its card.",
   },
 ];
 

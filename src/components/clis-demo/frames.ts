@@ -20,6 +20,8 @@
  * The connection statuses are this machine's runtime state, not catalog facts.
  */
 
+import { cliMark } from "@/components/window-demo/marks";
+
 export type CliStatus = "connected" | "disconnected" | "not installed";
 
 export interface DemoCli {
@@ -27,17 +29,98 @@ export interface DemoCli {
   name: string;
   category: string;
   status: CliStatus;
+  /** Bundled vendor mark, when one exists for this CLI's company. */
+  logo?: string;
+  /** Drawn as a mask over the text ink rather than as a picture. */
+  mono?: boolean;
 }
 
-/** Five of the twenty-two, in the order the app sorts them: by category, then
- *  display name. */
-export const CATALOG: DemoCli[] = [
-  { id: "wrangler", name: "Cloudflare Wrangler", category: "cloud", status: "not installed" },
-  { id: "gcloud", name: "Google Cloud CLI", category: "cloud", status: "connected" },
-  { id: "docker", name: "Docker CLI", category: "container", status: "connected" },
-  { id: "gh", name: "GitHub CLI", category: "git", status: "connected" },
-  { id: "glab", name: "GitLab CLI", category: "git", status: "disconnected" },
+/**
+ * Catalog CLI id -> vendor mark file, ported from the app's own CliLogo.
+ *
+ * The mapping goes id -> VENDOR -> file, because a user recognises the company,
+ * not the binary: nobody scans a list for "wrangler", they look for the
+ * Cloudflare cloud. Exact ids, never substrings — `gh` and `glab` share no
+ * letters with their companies.
+ *
+ * The second value is the app's own `mono` flag: those files are single-colour
+ * glyphs, so they are painted with the page's ink and survive a theme change.
+ */
+const VENDOR: Record<string, [file: string, mono: boolean]> = {
+  aws: ["aws.svg", true],
+  az: ["azure.svg", false],
+  docker: ["docker.svg", false],
+  firebase: ["firebase.svg", false],
+  flyctl: ["fly.svg", false],
+  gcloud: ["google-cloud.svg", false],
+  gh: ["github.svg", true],
+  glab: ["gitlab.svg", false],
+  gws: ["google.svg", false],
+  heroku: ["heroku.svg", false],
+  kubectl: ["kubernetes.svg", false],
+  neonctl: ["neon.svg", false],
+  netlify: ["netlify.svg", false],
+  pscale: ["planetscale.svg", true],
+  railway: ["railway.svg", true],
+  render: ["render.svg", true],
+  stripe: ["stripe.svg", true],
+  supabase: ["supabase.svg", false],
+  twilio: ["twilio.svg", false],
+  vercel: ["vercel.svg", true],
+  wrangler: ["cloudflare.svg", true],
+};
+
+/**
+ * The whole catalog, in the order the API sorts it: by category, then display
+ * name. Twenty-two entries, verbatim from jarvis/clis/catalog/seed_catalog.json.
+ *
+ * jarvisctl is the one with no vendor — it is this project's own control CLI,
+ * and the app draws a category glyph for it rather than inventing a mark.
+ */
+const CATALOG_ROWS: Array<[id: string, name: string, category: string]> = [
+  ["firebase", "Firebase CLI", "baas"],
+  ["neonctl", "Neon CLI", "baas"],
+  ["pscale", "PlanetScale CLI", "baas"],
+  ["supabase", "Supabase CLI", "baas"],
+  ["aws", "AWS CLI v2", "cloud"],
+  ["az", "Azure CLI", "cloud"],
+  ["wrangler", "Cloudflare Wrangler", "cloud"],
+  ["gcloud", "Google Cloud CLI", "cloud"],
+  ["docker", "Docker CLI", "container"],
+  ["kubectl", "Kubernetes CLI", "container"],
+  ["gh", "GitHub CLI", "git"],
+  ["glab", "GitLab CLI", "git"],
+  ["flyctl", "Fly.io CLI", "paas"],
+  ["heroku", "Heroku CLI", "paas"],
+  ["netlify", "Netlify CLI", "paas"],
+  ["railway", "Railway CLI", "paas"],
+  ["render", "Render CLI", "paas"],
+  ["vercel", "Vercel CLI", "paas"],
+  ["stripe", "Stripe CLI", "payments"],
+  ["twilio", "Twilio CLI", "payments"],
+  ["jarvisctl", "Jarvis Control CLI", "self"],
+  ["gws", "Google Workspace CLI", "workspace"],
 ];
+
+/** This machine's runtime state, not a catalog fact. */
+const CONNECTED = new Set(["gcloud", "docker", "gh"]);
+const INSTALLED = new Set(["glab"]);
+
+export const CATALOG: DemoCli[] = CATALOG_ROWS.map(([id, name, category]) => {
+  const vendor = VENDOR[id];
+  return {
+    id,
+    name,
+    category,
+    status: CONNECTED.has(id)
+      ? ("connected" as const)
+      : INSTALLED.has(id)
+        ? ("disconnected" as const)
+        : ("not installed" as const),
+    logo: vendor ? cliMark(vendor[0]) : undefined,
+    mono: vendor ? vendor[1] : undefined,
+  };
+});
 
 /** The one entry the demo opens, verbatim from the seed catalog. */
 export const DETAIL = {
@@ -86,16 +169,18 @@ export interface Frame {
   caption: string;
 }
 
-export const CATALOG_TOTAL = 22;
-export const CONNECTED_TOTAL = 3;
-export const INSTALLED_TOTAL = 4;
+export const CATALOG_TOTAL = CATALOG.length;
+export const CONNECTED_TOTAL = CONNECTED.size;
+/** Connected counts as installed: you cannot sign in to a binary you do not
+ *  have. */
+export const INSTALLED_TOTAL = CONNECTED.size + INSTALLED.size;
 
 export const FRAMES: Frame[] = [
   {
     duration: 4200,
     layout: "catalog",
     caption:
-      "A list of command-line tools Jarvis can drive: twenty-two in the catalog, three connected here.",
+      "The whole catalog of command-line tools Jarvis can drive: twenty-two of them, three connected here.",
   },
   {
     duration: 4200,

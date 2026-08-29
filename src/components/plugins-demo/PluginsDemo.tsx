@@ -142,13 +142,11 @@ export function PluginsDemo() {
       return frame.plugins.map((plugin) => register[plugin.id] ?? plugin);
     }
     // Taking over clears the search — the pills drive the list from here, and a
-    // frozen query the visitor cannot edit would be a dead control.
-    const all = ALL_DEMO_PLUGINS.map((plugin) => register[plugin.id]).filter(
+    // frozen query the visitor cannot edit would be a dead control. "All" is
+    // the whole catalog, so the visitor who clicks it gets every row.
+    const shelf = ALL_DEMO_PLUGINS.map((plugin) => register[plugin.id]).filter(
       (plugin): plugin is DemoPlugin => Boolean(plugin),
     );
-    // Google Drive and Calendar only ever appear under a search; without one
-    // they are not part of the five-row shelf.
-    const shelf = all.filter((plugin) => !plugin.id.startsWith("google_"));
     if (ownFilter === "installed") {
       return shelf.filter((p) => p.status !== "not_connected");
     }

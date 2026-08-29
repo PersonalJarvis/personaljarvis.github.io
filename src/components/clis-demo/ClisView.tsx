@@ -20,6 +20,7 @@ import {
   WindowChrome,
   WindowHeader,
 } from "@/components/window-demo/chrome";
+import { MarkTile } from "@/components/window-demo/marks";
 import {
   CATALOG,
   CATALOG_TOTAL,
@@ -182,21 +183,7 @@ function Row({ cli, hovered }: { cli: DemoCli; hovered: boolean }) {
       }}
     >
       <span style={{ display: "flex", alignItems: "center", gap: 26 }}>
-        <span
-          style={{
-            width: 72,
-            height: 72,
-            borderRadius: 16,
-            border: `${HAIRLINE}px solid var(--hairline)`,
-            background: "var(--surface-card)",
-            display: "grid",
-            placeItems: "center",
-            color: "var(--muted)",
-            flexShrink: 0,
-          }}
-        >
-          <TerminalIcon />
-        </span>
+        <MarkTile url={cli.logo} mono={cli.mono} />
         <span
           style={{
             fontSize: 38,
@@ -258,7 +245,13 @@ export function ClisView({ frame, animate = true, fadeKey = "" }: ClisViewProps)
       <div
         key={animate ? fadeKey : undefined}
         className={animate ? "cli-body cli-body--fade" : "cli-body"}
-        style={{ padding: "44px 56px 32px", flex: 1, minHeight: 0 }}
+        style={{
+          padding: "44px 56px 32px",
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+        }}
       >
         {body}
       </div>
@@ -275,7 +268,15 @@ function Catalog({ hoverId }: { hoverId?: string }) {
         action="Add custom"
       />
 
-      <div style={{ marginTop: 40 }}>
+      <div
+        style={{
+          marginTop: 40,
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <div
           style={{
             display: "grid",
@@ -294,9 +295,12 @@ function Catalog({ hoverId }: { hoverId?: string }) {
           <span>Status</span>
         </div>
 
-        {CATALOG.map((cli) => (
-          <Row key={cli.id} cli={cli} hovered={hoverId === cli.id} />
-        ))}
+        <div className="cli-scroll"
+          style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden" }}>
+          {CATALOG.map((cli) => (
+            <Row key={cli.id} cli={cli} hovered={hoverId === cli.id} />
+          ))}
+        </div>
       </div>
     </>
   );

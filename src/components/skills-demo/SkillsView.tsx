@@ -1,7 +1,7 @@
 /**
  * The skills window — pure. Props in, markup out.
  *
- * Three layouts on one canvas: the list, the opened skill, and its triggers.
+ * Three layouts on one canvas: the list, an opened skill, and its triggers.
  * The section's argument needs all three — a list alone says "there are files",
  * and it is the trigger block that says why one of them fires at seven in the
  * morning.
@@ -21,7 +21,6 @@ import {
   WindowHeader,
 } from "@/components/window-demo/chrome";
 import {
-  DETAIL,
   SKILL_COUNT,
   type DemoSkill,
   type Frame,
@@ -29,8 +28,8 @@ import {
 } from "./frames";
 
 export { CANVAS_WIDTH };
-/** Same height as the plugins window, so the two cards sit on the page as two
- *  views of one application rather than two different shapes. */
+/** Same height as the other feature windows, so the cards sit on the page as
+ *  views of one application rather than as different shapes. */
 export const CANVAS_HEIGHT = 1340;
 
 // --- Icons ----------------------------------------------------------------
@@ -165,21 +164,40 @@ function FilterPill({
   );
 }
 
+function FieldLabel({ children }: { children: ReactNode }) {
+  return (
+    <span
+      style={{
+        display: "block",
+        fontSize: 24,
+        letterSpacing: "2px",
+        textTransform: "uppercase",
+        color: "var(--muted-soft)",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
 const COLUMNS = "1fr 240px 260px 78px";
 
 function Row({
   skill,
   hovered,
   onToggle,
+  onOpen,
 }: {
   skill: DemoSkill;
   hovered: boolean;
   onToggle?: (name: string) => void;
+  onOpen?: (name: string) => void;
 }) {
   return (
     <div
       className="skill-row"
       data-hovered={hovered ? "true" : "false"}
+      onMouseDown={onOpen ? () => onOpen(skill.name) : undefined}
       style={{
         display: "grid",
         gridTemplateColumns: COLUMNS,
@@ -190,6 +208,7 @@ function Row({
         marginInline: -20,
         borderRadius: RADIUS,
         borderBottom: `${HAIRLINE}px solid var(--hairline-soft)`,
+        cursor: onOpen ? "pointer" : "default",
       }}
     >
       <span style={{ minWidth: 0 }}>
@@ -207,9 +226,7 @@ function Row({
           </span>
           {/* One glyph per trigger, in frontmatter order — two voice triggers
               really do draw two microphones. */}
-          <span
-            style={{ display: "inline-flex", gap: 8, color: "var(--muted)" }}
-          >
+          <span style={{ display: "inline-flex", gap: 8, color: "var(--muted)" }}>
             {skill.triggers.map((kind, i) => {
               const Icon = TRIGGER_ICON[kind];
               return <Icon key={`${kind}-${i}`} />;
@@ -234,10 +251,13 @@ function Row({
       <span style={{ fontSize: 30, color: "var(--body)" }}>{skill.updated}</span>
       <span style={{ fontSize: 30, color: "var(--body)" }}>{skill.author}</span>
 
-      <Toggle
-        on={skill.on}
-        onClick={onToggle ? () => onToggle(skill.name) : undefined}
-      />
+      {/* The switch swallows the press: turning a skill off is not opening it. */}
+      <span onMouseDown={(e) => e.stopPropagation()}>
+        <Toggle
+          on={skill.on}
+          onClick={onToggle ? () => onToggle(skill.name) : undefined}
+        />
+      </span>
     </div>
   );
 }
@@ -246,19 +266,26 @@ function Row({
 
 export interface SkillsViewProps {
   frame: Frame;
-  /** Overrides for rows the visitor has switched since taking over. */
+  /** The skill the detail layouts show. */
+  openSkill?: DemoSkill;
+  /** Rows the visitor has switched since taking over. */
   overrides: Record<string, boolean>;
   onToggle?: (name: string) => void;
   onFilter?: (filter: "all" | "mine") => void;
+  onOpen?: (name: string) => void;
+  onBack?: () => void;
   animate?: boolean;
   fadeKey?: string;
 }
 
 export function SkillsView({
   frame,
+  openSkill,
   overrides,
   onToggle,
   onFilter,
+  onOpen,
+  onBack,
   animate = true,
   fadeKey = "",
 }: SkillsViewProps) {
@@ -274,23 +301,35 @@ export function SkillsView({
       }}
     >
       <WindowChrome />
-      <div style={{ padding: "44px 56px 32px", flex: 1, minHeight: 0 }}>
+      <div
+        style={{
+          padding: "44px 56px 32px",
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         {children}
       </div>
     </div>
   );
 
-  if (frame.layout !== "list") {
-    return shell(<Detail showTriggers={frame.layout === "triggers"} />);
+  if (frame.layout !== "list" && openSkill) {
+    return shell(
+      <Detail
+        skill={openSkill}
+        showTriggers={frame.layout === "triggers"}
+        on={overrides[openSkill.name] ?? openSkill.on}
+        onToggle={onToggle}
+        onBack={onBack}
+      />,
+    );
   }
 
   return shell(
     <>
-      <WindowHeader
-        title="Skills"
-        subtitle={`${SKILL_COUNT} skills`}
-        action="Add"
-      />
+      <WindowHeader title="Skills" subtitle={`${SKILL_COUNT} skills`} action="Add" />
 
       {/* A mockup, not an input: the stage is aria-hidden, and an unreachable
           text field inside it would be a trap rather than a feature. */}
@@ -298,6 +337,7 @@ export function SkillsView({
         style={{
           marginTop: 36,
           height: 72,
+          flexShrink: 0,
           borderRadius: RADIUS,
           border: `${HAIRLINE}px solid var(--hairline-strong)`,
           background: "var(--canvas-soft)",
@@ -321,7 +361,15 @@ export function SkillsView({
         )}
       </div>
 
-      <div style={{ marginTop: 24, display: "flex", alignItems: "center", gap: 14 }}>
+      <div
+        style={{
+          marginTop: 24,
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+        }}
+      >
         <FilterPill
           label="All"
           active={frame.filter === "all"}
@@ -333,13 +381,7 @@ export function SkillsView({
           onClick={onFilter ? () => onFilter("mine") : undefined}
         />
         {frame.matches !== undefined && (
-          <span
-            style={{
-              marginLeft: "auto",
-              fontSize: 26,
-              color: "var(--muted)",
-            }}
-          >
+          <span style={{ marginLeft: "auto", fontSize: 26, color: "var(--muted)" }}>
             {frame.matches} matches
           </span>
         )}
@@ -348,7 +390,13 @@ export function SkillsView({
       <div
         key={animate ? fadeKey : undefined}
         className={animate ? "skill-table skill-table--fade" : "skill-table"}
-        style={{ marginTop: 34 }}
+        style={{
+          marginTop: 34,
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+        }}
       >
         <div
           style={{
@@ -356,6 +404,7 @@ export function SkillsView({
             gridTemplateColumns: COLUMNS,
             gap: 24,
             paddingBottom: 16,
+            flexShrink: 0,
             borderBottom: `${HAIRLINE}px solid var(--hairline)`,
             fontSize: 24,
             letterSpacing: "2px",
@@ -369,45 +418,76 @@ export function SkillsView({
           <span>Enabled</span>
         </div>
 
-        {frame.skills.map((skill) => (
-          <Row
-            key={skill.name}
-            skill={{ ...skill, on: overrides[skill.name] ?? skill.on }}
-            hovered={frame.hoverName === skill.name}
-            onToggle={onToggle}
-          />
-        ))}
+        <div className="skill-scroll"
+          style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden" }}>
+          {frame.skills.map((skill) => (
+            <Row
+              key={skill.name}
+              skill={{ ...skill, on: overrides[skill.name] ?? skill.on }}
+              hovered={frame.openName === skill.name}
+              onToggle={onToggle}
+              onOpen={onOpen}
+            />
+          ))}
+        </div>
       </div>
     </>,
   );
 }
 
-/** The opened skill. The triggers block is the beat the section is really
- *  about, so it gets its own frame rather than sharing one. */
-function Detail({ showTriggers }: { showTriggers: boolean }) {
+/**
+ * An opened skill: its card, straight out of that file's own frontmatter.
+ *
+ * The triggers block is the beat the section is really about, so it gets its
+ * own frame rather than sharing one. A skill with no triggers says so — an
+ * empty list is a fact about the file, not a gap in the demo.
+ */
+function Detail({
+  skill,
+  showTriggers,
+  on,
+  onToggle,
+  onBack,
+}: {
+  skill: DemoSkill;
+  showTriggers: boolean;
+  on: boolean;
+  onToggle?: (name: string) => void;
+  onBack?: () => void;
+}) {
+  const card = skill.card;
+  const facts = [
+    { label: "Status", value: card.status },
+    ...(card.version ? [{ label: "Version", value: card.version }] : []),
+    { label: "Category", value: card.category },
+    ...(card.license ? [{ label: "License", value: card.license }] : []),
+  ];
+
   return (
     <>
-      <span
+      <button
+        type="button"
+        tabIndex={-1}
+        onClick={onBack}
+        className="skill-back"
         style={{
+          alignSelf: "flex-start",
           display: "inline-flex",
           alignItems: "center",
           gap: 10,
           fontSize: 28,
           color: "var(--muted)",
+          background: "transparent",
+          border: 0,
+          padding: 0,
+          cursor: onBack ? "pointer" : "default",
         }}
       >
         <BackIcon />
         Skills
-      </span>
+      </button>
 
-      <div
-        style={{
-          marginTop: 28,
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 24,
-        }}
-      >
+      <div style={{ marginTop: 28, display: "flex", alignItems: "flex-start", gap: 24 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <span
             style={{
@@ -418,7 +498,7 @@ function Detail({ showTriggers }: { showTriggers: boolean }) {
               fontFamily: "var(--font-mono)",
             }}
           >
-            {DETAIL.name}
+            {skill.name}
           </span>
           <span
             style={{
@@ -428,10 +508,10 @@ function Detail({ showTriggers }: { showTriggers: boolean }) {
               marginTop: 8,
             }}
           >
-            {DETAIL.byline}
+            {card.byline}
           </span>
         </div>
-        <Toggle on />
+        <Toggle on={on} onClick={onToggle ? () => onToggle(skill.name) : undefined} />
       </div>
 
       <p
@@ -440,10 +520,10 @@ function Detail({ showTriggers }: { showTriggers: boolean }) {
           fontSize: 30,
           lineHeight: 1.5,
           color: "var(--body)",
-          maxWidth: 1100,
+          maxWidth: 1150,
         }}
       >
-        {DETAIL.description}
+        {card.description}
       </p>
 
       <div
@@ -455,19 +535,9 @@ function Detail({ showTriggers }: { showTriggers: boolean }) {
           borderTop: `${HAIRLINE}px solid var(--hairline)`,
         }}
       >
-        {DETAIL.facts.map((f) => (
+        {facts.map((f) => (
           <span key={f.label}>
-            <span
-              style={{
-                display: "block",
-                fontSize: 24,
-                letterSpacing: "2px",
-                textTransform: "uppercase",
-                color: "var(--muted-soft)",
-              }}
-            >
-              {f.label}
-            </span>
+            <FieldLabel>{f.label}</FieldLabel>
             <span
               style={{
                 display: "block",
@@ -482,7 +552,7 @@ function Detail({ showTriggers }: { showTriggers: boolean }) {
         ))}
       </div>
 
-      {showTriggers ? (
+      {showTriggers && card.triggers.length > 0 ? (
         <div className="skill-triggers" style={{ marginTop: 40 }}>
           <span
             style={{
@@ -497,14 +567,14 @@ function Detail({ showTriggers }: { showTriggers: boolean }) {
           >
             Triggers
           </span>
-          {DETAIL.triggers.map((t, i) => {
+          {card.triggers.map((t, i) => {
             const Icon = TRIGGER_ICON[t.kind];
             return (
               <div
                 key={i}
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "44px 1fr 160px",
+                  gridTemplateColumns: "48px 1fr 160px",
                   alignItems: "center",
                   gap: 24,
                   height: 104,
@@ -529,43 +599,48 @@ function Detail({ showTriggers }: { showTriggers: boolean }) {
                 >
                   {t.pattern}
                 </span>
-                <span style={{ fontSize: 26, color: "var(--muted)" }}>{t.locales}</span>
+                <span style={{ fontSize: 26, color: "var(--muted)" }}>
+                  {t.locales ?? ""}
+                </span>
               </div>
             );
           })}
         </div>
       ) : (
         <div style={{ marginTop: 40 }}>
-          <span
-            style={{
-              display: "block",
-              fontSize: 24,
-              letterSpacing: "2px",
-              textTransform: "uppercase",
-              color: "var(--muted-soft)",
-            }}
-          >
-            Tags
-          </span>
-          <span style={{ display: "flex", gap: 14, marginTop: 18, flexWrap: "wrap" }}>
-            {DETAIL.tags.map((tag) => (
-              <span
-                key={tag}
-                style={{
-                  height: 58,
-                  padding: "0 24px",
-                  borderRadius: RADIUS,
-                  border: `${HAIRLINE}px solid var(--hairline-strong)`,
-                  color: "var(--body)",
-                  fontSize: 27,
-                  display: "inline-flex",
-                  alignItems: "center",
-                }}
-              >
-                {tag}
-              </span>
-            ))}
-          </span>
+          <FieldLabel>{card.tags.length > 0 ? "Tags" : "Triggers"}</FieldLabel>
+          {card.tags.length > 0 ? (
+            <span style={{ display: "flex", gap: 14, marginTop: 18, flexWrap: "wrap" }}>
+              {card.tags.map((tag) => (
+                <span
+                  key={tag}
+                  style={{
+                    height: 58,
+                    padding: "0 24px",
+                    borderRadius: RADIUS,
+                    border: `${HAIRLINE}px solid var(--hairline-strong)`,
+                    color: "var(--body)",
+                    fontSize: 27,
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                >
+                  {tag}
+                </span>
+              ))}
+            </span>
+          ) : (
+            <span
+              style={{
+                display: "block",
+                marginTop: 14,
+                fontSize: 28,
+                color: "var(--muted)",
+              }}
+            >
+              None — this one runs when you ask for it.
+            </span>
+          )}
         </div>
       )}
     </>

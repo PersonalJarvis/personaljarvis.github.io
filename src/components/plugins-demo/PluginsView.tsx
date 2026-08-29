@@ -28,6 +28,7 @@ import {
   WindowChrome,
   WindowHeader,
 } from "@/components/window-demo/chrome";
+import { MarkTile } from "@/components/window-demo/marks";
 
 export { CANVAS_WIDTH };
 
@@ -336,22 +337,7 @@ function Row({
       }}
     >
       <span style={{ display: "flex", alignItems: "center", gap: 26, minWidth: 0 }}>
-        <span
-          style={{
-            width: 72,
-            height: 72,
-            borderRadius: 16,
-            border: `${HAIRLINE}px solid var(--hairline)`,
-            background: "var(--surface-card)",
-            display: "grid",
-            placeItems: "center",
-            flexShrink: 0,
-          }}
-        >
-          {/* The mark identifies the service, nothing more — see the ledger in
-              src/assets/brands/LOGOS.md. */}
-          <img src={plugin.logo} alt="" width={40} height={40} />
-        </span>
+        <MarkTile url={plugin.logo} mono={plugin.mono} tint={plugin.tint} />
         <span style={{ minWidth: 0 }}>
           <span
             style={{
@@ -424,7 +410,15 @@ export function PluginsView({
     >
       <WindowChrome />
 
-      <div style={{ padding: "44px 56px 32px", flex: 1, minHeight: 0 }}>
+      <div
+        style={{
+          padding: "44px 56px 32px",
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <WindowHeader
           title="Plugins"
           subtitle={`${counts.total} available · ${counts.connected} connected`}
@@ -518,10 +512,19 @@ export function PluginsView({
         {banner && <Banner title={banner.title} detail={banner.detail} />}
 
         {/* Table */}
+        {/* The rows scroll. The catalog is twenty-four long and the window
+            holds about seven, which is what the app does too — a header reading
+            "24 available" over five rows reads as a broken list. */}
         <div
           key={animate ? fadeKey : undefined}
           className={animate ? "plugin-table plugin-table--fade" : "plugin-table"}
-          style={{ marginTop: 34 }}
+          style={{
+            marginTop: 34,
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
         >
           <div
             style={{
@@ -542,6 +545,8 @@ export function PluginsView({
             <span />
           </div>
 
+          <div className="plugin-scroll"
+          style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden" }}>
           {plugins.map((plugin) => (
             <Row
               key={plugin.id}
@@ -551,6 +556,7 @@ export function PluginsView({
               onToggle={onToggle}
             />
           ))}
+          </div>
         </div>
       </div>
     </div>
