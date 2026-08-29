@@ -331,13 +331,40 @@ things, and the last one is the point:
    with, drawn at run time so it is still typeset, still arrives one word at a
    time, and still follows the crop.
 
-**The dot is the photograph's; the SIZE is not.** A dot is one source pixel as
-the cover-crop has just scaled it — around two CSS pixels on a wide stage —
-floored at `DOT_MIN` so a stage narrower than the 720px source cannot print the
-sentence at a size nobody can read. The box itself stays in CSS pixels, floor
-plus share (`max(208px, 27%)`, moved out of the stylesheet with the bubble),
-*because* it carries words: a box that scaled with the frame would take the
-sentence down with it on a short window.
+**The dot is the photograph's, and the SIZE follows the dot.** A dot is one
+source pixel as the cover-crop has just scaled it — around 1.7 CSS pixels on a
+wide stage, and where that is finer than a pixel, a whole multiple of it so the
+bubble stays on the picture's own lattice.
+
+The sentence is then set at no fewer than `TYPE_DOTS` = 14 dots per em, and
+everything else about the box — its width, its padding, its corner — is a
+multiple of the size that comes out. **This is what makes the line readable**,
+and its absence is what made it unreadable: the type was set at a flat 14px from
+the stylesheet until 2026-08-29, which on a wide stage is about eight dots per
+em. An `e` is four dots tall there and its counter is one, so the threshold
+closes it; the maintainer's report that day was simply that the sentence could
+not be read. No tuning of `TYPE_FLOOR` could have rescued it — eight dots per em
+is below the floor any face has, and the resolution was the fault.
+
+The stylesheet keeps the family, the weight and a floor under the size; the
+photograph decides how coarsely they are printed. Raising `TYPE_DOTS` prints a
+bigger sentence, never a sharper one.
+
+**`DOT_MIN` is 1, and only 1.** It stood at 1.6 while the type was a flat 14px,
+where it was a type size wearing a dot's clothes: coarser dots were the only way
+a phone-width crop kept the line big enough to read. With the size following the
+dot, the two together were worse than either — a floor above the picture's own
+dot printed a sentence wider than the photograph carrying it. A dot smaller than
+a pixel is not a dot, and that is all the floor has left to say.
+
+**`BUBBLE_MAX_SHARE` (0.62) is a ceiling, not a size.** It bites only where the
+picture is so small that a line of 14 dots would need a box wider than the
+photograph under it. The size gives way there rather than the box: a small
+picture and a legible sentence cannot both be had, and a bubble hanging over the
+edge of its own frame is the worse of the two failures. The box is otherwise the
+widest of three floors — `max(208px, 27% of the stage, 15em of the printed
+face)` — and the em floor is what keeps the sentence at the same size relative
+to the *photograph* at every window width.
 
 **Two clocks, and neither is an opacity.** The box's coverage runs 0..1 while
 the dissolve crosses its own corner, and the sentence is said across the back
@@ -356,9 +383,16 @@ a transition would be a second, slower clock fighting the first.
 grey that *is* its coverage, so the glyph's own edge (alpha) and how much of the
 word has been said (the grey) stay in two separate channels. The combine
 thresholds the glyph at `TYPE_FLOOR` and dithers the coverage: the letters keep
-their shape at around nine dots tall, which is the one thing this bubble is not
-allowed to lose. Dithering the glyph as well would open holes in its stems and
-the sentence would stop being readable.
+their shape, which is the one thing this bubble is not allowed to lose.
+Dithering the glyph as well would open holes in its stems and the sentence would
+stop being readable.
+
+`TYPE_FLOOR` is 128 — half coverage, which is simply the glyph's own outline. At
+fourteen dots per em a stem covers more than half the dots under it and a
+counter covers less, so the true shape survives the pass. It was 96 while the
+type was set at nine dots, where a middling threshold dropped whole stems; that
+bought the stems back at the price of a halo that closed up every counter, and
+the reason for the trade went with the size.
 
 **The edge is a dither, not a line** — the same rule the wipe runs on. The last
 dots of the bubble are stroked at half coverage *outside* the fill, so the
