@@ -228,16 +228,19 @@ function segments(body: string) {
     padding-block: clamp(1.5rem, 2.6svh, 3rem);
   }
 
-  /* Above the band: the gap that separates it from the rule closing the steps.
-     Below it: the tail that keeps it off the bottom edge of the screen.
+  /* NOTHING above the band: it hangs off the rule that closes the steps, the
+     way every other block on this site hangs off its own rule. A gap was tried
+     — the reference has one — and the maintainer struck it out on sight
+     (2026-08-29), because our band is a filled block rather than a floating
+     card: the space read as a hole between the steps and the end of the page,
+     not as air around a card.
 
-     These are deliberately smaller than the steps' own padding. Measured on
-     the maintainer's viewport (2560×1249) the section came out 1265px — 16px
-     over one screen — and the three numbers here are what buy it back with
-     room to spare. Anything the section then has left over goes to the steps,
-     not to these gaps: `flex-1` grows only Block A. */
+     Below it, the tail keeps the band off the bottom edge of the screen and
+     opens the distance to the legal foot underneath. Whatever the removed gap
+     freed goes to the steps, not back into these numbers: `flex-1` grows only
+     Block A. */
   .install-close {
-    padding-block: clamp(1.5rem, 3svh, 2.5rem) clamp(1.25rem, 2.75svh, 2rem);
+    padding-block: 0 clamp(1.25rem, 2.75svh, 2rem);
   }
 
   .eyebrow {

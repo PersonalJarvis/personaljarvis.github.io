@@ -24,7 +24,7 @@ to squint at it again:
 | What | The reference | Here |
 |---|---|---|
 | Block A's boundary | a rule above **and** below, between the two rails | the same |
-| Space between the blocks | one gap, not a join | one gap |
+| Space between the blocks | one gap, not a join | **none** — the band hangs off the rule (maintainer, 2026-08-29) |
 | Seconds per revolution | 15 (its own bundle: `-(2π)/(1000 · secondsPerRevolution)`, default 15, never overridden) | 14 |
 
 ---
@@ -182,8 +182,8 @@ Three things about the mark are decisions, not defaults:
 | Corners | **sharp**, `border-radius: 0` |
 | Ground | the accent, full bleed |
 | Padding | 40px, 32px under 768px |
-| Space above | `clamp(1.5rem, 3svh, 2.5rem)`, measured from the rule that closes Block A |
-| Space below | `clamp(1.25rem, 2.75svh, 2rem)` — the tail that keeps it off the screen edge |
+| Space above | **0** — the band hangs off the rule that closes Block A |
+| Space below | `clamp(1.25rem, 2.75svh, 2rem)` — the tail off the screen edge, and the distance to the legal foot |
 
 ## Build
 
@@ -195,6 +195,16 @@ Three things about the mark are decisions, not defaults:
 **The contrast is deliberate.** The band breaks with everything above it
 because it marks the end of the page. No rounding, no transparency, no
 gradient.
+
+**And it touches the rule above it.** The reference leaves a gap there; ours
+was given one and the maintainer struck it out on sight (2026-08-29). The
+difference is what the two bands ARE: theirs is a coloured card floating on the
+page, which needs air around it, and ours is a filled block that closes the
+section. Air above a closing block reads as a hole between the last step and
+the end of the page, not as breathing room.
+
+The band is not the last element on the page — the legal foot follows it, below
+the fold. See [`footer.md`](footer.md).
 
 ### The accent on this palette
 
@@ -229,6 +239,7 @@ the button is therefore dark on the pale band.
   It is framed against the section it sits in, and nothing else
 - A shadow map in the turning scene. See [`dither-relief.md`](dither-relief.md)
   § "Two rules a moving relief adds"
+- A gap between the rule that closes Block A and the band
 - Rounding, gradients or transparency on the CTA band
 - Block B outside the section, or any other arrangement that lets Block A's
   leftover height fall as dead space between the last step and the band

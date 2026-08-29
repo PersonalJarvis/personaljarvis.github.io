@@ -1,0 +1,161 @@
+---
+/**
+ * The legal foot of the page — everything under the closing band.
+ *
+ * It is a `<footer>` of its own rather than part of the install section,
+ * because the section is one screen and this deliberately is not: the band is
+ * the last thing a reader is meant to SEE, and this is the material they go
+ * looking for. It sits just under the fold, on the same two rails as
+ * everything above it.
+ *
+ * NOTHING HERE IS DRAFTED. Every line is a fact the repository can prove, and
+ * each carries the file that proves it. A footer is the one place on a site
+ * where an invented sentence is not a copy problem but a legal one, so the
+ * rule is stricter than the rest of the page: no claim without a source, and
+ * no link to a document that does not exist yet.
+ *
+ * See docs/footer.md.
+ */
+import Container from "@/components/Container.astro";
+import { REPO } from "@/lib/install";
+
+/**
+ * The documents, in the order someone looks for them. Each is a real file at
+ * the top of the repository — a link here that 404s is worse than no link.
+ */
+const documents = [
+  // README § License: "Apache 2.0. Free to use, modify, and distribute…"
+  { label: "License", href: `${REPO}/blob/main/LICENSE` },
+  // README § License names NOTICE alongside LICENSE.
+  { label: "Notice", href: `${REPO}/blob/main/NOTICE` },
+  // README § License: "Third-party names and logos belong to their owners."
+  { label: "Trademarks", href: `${REPO}/blob/main/TRADEMARK.md` },
+  { label: "Security", href: `${REPO}/blob/main/SECURITY.md` },
+  // README § License: docs/licensing.md says why the licence changed.
+  { label: "Licensing history", href: `${REPO}/blob/main/docs/licensing.md` },
+  { label: "Source", href: REPO },
+];
+
+/** The copyright year is the year the page is built, not a literal. */
+const year = new Date().getFullYear();
+---
+
+<footer class="legal">
+  <Container width="content">
+    <div class="section-rule legal-inner">
+      <div class="legal-top">
+        <p class="legal-mark">
+          Personal Jarvis
+          <span class="legal-sep" aria-hidden="true">·</span>
+          Apache 2.0
+        </p>
+
+        <nav aria-label="Legal and project documents">
+          <ul class="legal-links">
+            {
+              documents.map((doc) => (
+                <li>
+                  <a href={doc.href} target="_blank" rel="noopener">
+                    {doc.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+      </div>
+
+      <div class="legal-fine">
+        {/*
+          README § License, verbatim in substance: Apache 2.0 with an explicit
+          patent grant, and every release up to 1.6.0 stays MIT permanently.
+        */}
+        <p>
+          Free to use, modify and distribute, commercially included, with a
+          patent grant from every contributor. Releases up to 1.6.0 remain MIT,
+          permanently. Third-party names and logos belong to their owners.
+        </p>
+
+        {/*
+          A claim about THIS page, and true of this build: no analytics script,
+          no font CDN, no cookie is set anywhere in `src/`, and the video
+          section holds a local JPEG until the reader presses play — see the
+          comment on the stage in BuiltInPublic.astro. If any of that changes,
+          this sentence changes with it.
+        */}
+        <p>
+          This page sets no cookies and runs no analytics. It loads nothing from
+          anyone else until you press play on a video, which is the moment
+          YouTube is contacted and not before.
+        </p>
+
+        <p>&copy; {year} the Personal Jarvis contributors</p>
+      </div>
+    </div>
+  </Container>
+</footer>
+
+<style>
+  .legal-inner {
+    padding-block: clamp(2rem, 4svh, 3rem) clamp(2.5rem, 5svh, 4rem);
+  }
+
+  /* The name and the documents on one line, and under each other as soon as
+     the row would have to squeeze. */
+  .legal-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-base) var(--space-xl);
+  }
+
+  .legal-mark {
+    font-size: var(--text-caption);
+    color: var(--body);
+  }
+
+  .legal-sep {
+    color: var(--muted-soft);
+    padding-inline: var(--space-xxs);
+  }
+
+  .legal-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs) var(--space-lg);
+    font-size: var(--text-caption);
+  }
+
+  .legal-links a {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 160ms ease;
+  }
+
+  .legal-links a:hover,
+  .legal-links a:focus-visible {
+    color: var(--ink);
+  }
+
+  /* The fine print keeps a prose MEASURE without leaving the content column —
+     a `ch` limit is what "readable line length" actually protects, and it does
+     not put a second left edge on the page the way a prose container would. */
+  .legal-fine {
+    margin-top: var(--space-xl);
+    max-inline-size: 78ch; /* layout-allow: a measure in ch, not a layout width — the block still sits in the content container */
+    font-size: var(--text-caption);
+    /* `--muted`, not `--muted-soft`. On this canvas the soft tone is 3.7:1,
+       under AA for text this size — and legal wording is the last thing on a
+       page that may be hard to read. The brighter muted tone is 6.7:1. */
+    color: var(--muted);
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .legal-links a {
+      transition: none;
+    }
+  }
+</style>
