@@ -63,11 +63,22 @@ import { PluginsDemo } from "@/components/plugins-demo/PluginsDemo";
     <!--
       No frame, no surface: the copy and the demo stand on the page itself,
       between the two rails. The inline padding stays, as the inset that keeps
-      them off the rails; the vertical air is `.section-inset`'s job now, so
-      the padding is `px` and not `p`.
+      them off the rails; below `lg` the vertical air is `.section-inset`'s job,
+      so the padding is `px` and not `p`.
+
+      `lg:p-14` AND NOT `lg:px-14`, AND THAT IS NOT A LEFTOVER OF THE CARD.
+      `aspect-ratio` sizes the BORDER box, so this block is 16/9 of the content
+      column either way and the section's height does not depend on the figure.
+      What the vertical padding decides is how much of that height the demo
+      column gets, because the well beside the copy is `lg:h-full`. Dropping it
+      with the card handed the well the whole of it, and the painting in the
+      well grew with it - reported by the maintainer on 2026-08-29 against the
+      build that removed the frame. The inline and block figures match on
+      purpose: with no frame drawn, an uneven inset reads as the demo sitting
+      off-centre in its own air.
     -->
     <div
-      class="grid items-center gap-12 px-8 lg:aspect-[16/9] lg:min-h-[560px] lg:grid-cols-12 lg:px-14"
+      class="grid items-center gap-12 px-8 lg:aspect-[16/9] lg:min-h-[560px] lg:grid-cols-12 lg:p-14"
     >
       <div class="lg:col-span-5">
         <!--
