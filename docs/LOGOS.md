@@ -10,10 +10,9 @@ command-line tools it drives, and the plugins it connects. It is one section,
 `src/components/logos/`, and one generated list in
 `src/components/logos/marks.ts`.
 
-There are fifty marks and eight cells, so each cell is a flip board. The card
-is what moves, not the mark inside it: a card hangs from its top edge, swings
-down carrying its mark, holds, then keeps falling forward and out while the
-next one drops in behind it.
+There are fifty marks and eight cells, so each cell is a split-flap board — a
+card cut across the middle, whose top half falls forward to uncover the next
+one underneath.
 
 ---
 
@@ -144,37 +143,48 @@ in `LogoStrip.astro` — not the fifty values in `marks.ts`.
 
 ---
 
-## The fall
+## The split flap
 
-Each cell holds seven cards and shows one at a time. **The card is the moving
-part**, hinged along its top edge — not the mark rotating inside a card that
-stays put. A card swings down into place, holds, then keeps falling forward and
-out of frame while the next drops in behind it.
+Each cell holds seven marks and shows one at a time. The card is **cut across
+the middle**, the way a station board or a desk flip calendar is, and changing
+it takes four layers:
 
-It comes over the **front**, not up out of the depth behind the page. That is
-one sign: with the hinge at the top, a positive `rotateX` carries the bottom
-edge towards the viewer and a negative one pushes it away. So a card arrives at
-+90 degrees and settles to 0, then leaves towards -90 — arriving it grows by a
-third as it leans out of the page, leaving it only shrinks.
+1. The old top half **falls forward and down** about the seam.
+2. Behind it, the new top half has been lying flat all along, and is uncovered
+   as the flap drops.
+3. The new bottom half, standing on edge towards the viewer, then **drops onto
+   the seam**.
+4. It lands over the old bottom half, which simply stops being drawn.
 
-Leaning out means passing in front of the neighbouring cards. `z-index` on the
-card cannot do that, because the cell's `perspective` makes it a stacking
-context a card can never paint outside of; the cell is lifted instead, on a
-short animation of its own timed to the moment its cards are mid-swing.
+Only two of the four move, and they move one after the other, never together.
 
-One card's turn is five seconds: 0.75s over, 3.5s holding, 0.75s tipping away.
-The next card's arrival begins exactly where the previous one's exit ends, so
-two cards are never mid-swing together. Seven cards make a 35-second cycle.
+Both rotations carry the moving edge **towards the viewer**. That is the
+direction the whole effect turns on and it is a single sign: about the seam, a
+negative `rotateX` on the upper half brings its top edge forward, and a
+positive one on the lower half brings its bottom edge forward. Reverse either
+and the flap folds away into the depth behind the page, which reads as a card
+sliding rather than falling.
 
+A flap swinging towards the viewer has to pass in front of the neighbouring
+cards. `z-index` on the flap cannot do that, because the cell's `perspective`
+makes it a stacking context nothing inside can paint outside of; the cell is
+lifted instead, for the moment its flaps are moving.
+
+One mark's turn is five seconds: 1.5s of change, then 3.5s holding. Seven marks
+make a 35-second cycle.
+
+- **Both halves are the same full card, clipped.** Each half draws the whole
+  mark and hides the other half with `clip-path`. Laying out a separate top and
+  bottom would drift by a pixel and the seam would stop lining up.
+- **The seam is drawn on the cell**, not on the halves — a one-pixel line in
+  the page colour, so it reads as the gap between two flaps even while nothing
+  is moving.
 - **CSS only.** No JavaScript reaches the browser. The stagger is an
-  `animation-delay` per card, and the delays are **negative**, so every
-  animation starts already in progress: at the first paint one card per cell
-  rests mid-hold instead of the strip standing empty until the first one falls.
-- **The easing changes per phase.** The card drops and settles, then tips
-  slowly before accelerating away. One linear rotation throughout reads as a
-  mechanism rather than something falling.
+  `animation-delay` per flap, and the delays are **negative**, so every
+  animation starts already in progress: at the first paint each cell holds a
+  finished card instead of standing empty until the first change comes round.
 - **Cells are offset against each other** by a fraction of a slot. Without that
-  all eight fall on the same beat, which reads as a machine rather than a
+  all eight flap on the same beat, which reads as a machine rather than a
   board.
 - **The order is strided, not alphabetical.** `marks.ts` is sorted by name and
   the cells run nearly in phase, so a straight fill put Slack, Spotify, Stripe
@@ -183,12 +193,12 @@ two cards are never mid-swing together. Seven cards make a 35-second cycle.
   every mark exactly once, and it is fixed rather than random.
 - **Spare slots are padded from half a cycle back.** Fifty marks do not fill
   fifty-six slots, so six marks appear twice per cycle. Padding from the start
-  of the pool put a copy about one slot from its original, and a card is on
+  of the pool put a copy about one slot from its original, and a mark is on
   screen for a whole slot — two GitLabs, side by side. Taking the filler from
   three rows back separates each pair by 15s, three times the window either is
   on screen for.
 - **`prefers-reduced-motion` gets a still frame**, not a special case: the
-  animation is switched off and the first card in each cell stays visible.
+  animation is switched off and the first mark's two halves stay visible.
 
 ---
 
@@ -205,7 +215,7 @@ outlined and are not.
 | Cell surface | a 2% darker plate, 4px radius, **no border** | card surface, 1px hairline, `--radius-lg` |
 | Mark colour | `currentColor` at full body ink | `currentColor` at `--ink` |
 | Mark size | one shared 40px height | per mark, about 36% of cell height |
-| Contents | eight fixed customer logos | fifty marks on a falling flip board |
+| Contents | eight fixed customer logos | fifty marks on a split-flap board |
 
 ### Deliberate deviations
 
@@ -216,7 +226,7 @@ outlined and are not.
 - **Per-mark sizing.** The reference sets one height for every mark, which
   works there because its logos are wordmarks of similar weight. Ours are
   square icons, where a shared height reads as an accident.
-- **The fall.** The reference is static. This was asked for.
+- **The split flap.** The reference is static. This was asked for.
 
 ---
 

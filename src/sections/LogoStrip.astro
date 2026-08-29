@@ -6,12 +6,14 @@
  * than eyeballed: equal cells in a single row, 10px apart, no ornament beyond
  * a hairline. See docs/LOGOS.md.
  *
- * There are far more marks than cells, so each cell is a flip board. The card
- * is what moves, not the mark inside it: hinged along its top edge, a card
- * comes over the front carrying its mark, settles, holds, then tips away
- * backwards as the next one comes over. The whole thing is CSS — no JavaScript
- * reaches the browser, and `prefers-reduced-motion` gets a still frame instead
- * of a special case.
+ * There are far more marks than cells, so each cell is a split-flap board, the
+ * kind a station or a desk calendar uses. A card is cut across the middle. To
+ * change it, the old top half falls forward and down about the seam, uncovering
+ * the new top half that was lying flat underneath; then the new bottom half
+ * drops from the seam onto the old one. Four layers, two of them moving.
+ *
+ * The whole thing is CSS — no JavaScript reaches the browser, and
+ * `prefers-reduced-motion` gets a still frame instead of a special case.
  *
  * Sizes are rem throughout. The root font size scales with the viewport
  * (src/styles/layout.css), so a px height would freeze while everything around
@@ -98,13 +100,22 @@ const visibility = [
             style={`--cell-delay:${(-(cellOffset(c) + SLOT_S / 2)).toFixed(2)}s`}
           >
             {stack.map(({ name, Mark, rem }, r) => (
-              <span
-                class="card"
-                style={`--delay:${startAt(c, r).toFixed(2)}s; --mark:${rem}rem`}
-              >
-                <Mark className="mark" />
-                <span class="sr-only">{name}</span>
-              </span>
+              <>
+                <span
+                  class="flap flap-top"
+                  style={`--delay:${startAt(c, r).toFixed(2)}s; --mark:${rem}rem`}
+                >
+                  <Mark className="mark" />
+                  <span class="sr-only">{name}</span>
+                </span>
+                <span
+                  class="flap flap-bottom"
+                  style={`--delay:${startAt(c, r).toFixed(2)}s; --mark:${rem}rem`}
+                  aria-hidden="true"
+                >
+                  <Mark className="mark" />
+                </span>
+              </>
             ))}
           </li>
         ))
@@ -124,19 +135,18 @@ const visibility = [
   }
 
   /*
-   * The cell is only a slot in the row: it holds the space and supplies the
-   * depth. Everything visible belongs to the card inside it, because the card
-   * is what moves.
+   * The cell holds the space and supplies the depth; everything visible is a
+   * flap inside it.
    */
   .cell {
     position: relative;
     height: 6.5rem;
+
     /*
-     * Depth is what makes the fold read as a card coming over the front rather
-     * than a card being squashed. At 45rem against a 6.5rem card the near edge
-     * barely grows and the movement is ambiguous; at 16rem it grows by 60% and
-     * shoulders its way out of the row. This is the middle: the lean is plain,
-     * the overhang is about a fifth rather than two thirds.
+     * Depth is what makes the flap read as falling towards the viewer rather
+     * than being squashed. Too shallow (45rem) and the movement is ambiguous;
+     * too strong (16rem) and the near edge grows by 60% and shoulders its way
+     * out of the row.
      *
      * The perspective sits on the cell, not the row, so each card is viewed
      * square from its own centre. On the row it would fan the outer cards away
@@ -145,11 +155,10 @@ const visibility = [
     perspective: 24rem;
 
     /*
-     * A card leaning out of the page has to pass in front of its neighbours
-     * rather than vanish behind them, and z-index on the card cannot do it:
-     * `perspective` makes the cell a stacking context, so a card never paints
-     * outside its own cell. The cell is lifted instead, on a short animation
-     * of its own that raises it exactly while its cards are mid-swing.
+     * A flap swinging towards the viewer has to pass in front of its
+     * neighbours, and z-index on the flap cannot do it: `perspective` makes the
+     * cell a stacking context nothing inside can paint outside of. The cell is
+     * lifted instead, for the moment its flaps are moving.
      */
     z-index: 1;
     animation: cell-front var(--slot) linear infinite;
@@ -157,37 +166,38 @@ const visibility = [
   }
 
   /*
-   * One slot, not one cycle: every card in a cell swings at the same phase, so
-   * the lift repeats every five seconds. The window straddles the slot
-   * boundary, where the outgoing card's fall and the incoming card's arrival
-   * meet — 0.75s of a 5s slot is 15% at each end.
+   * The seam. On a real board it is the gap between the two halves, and it is
+   * what tells the eye the card is split before anything moves.
    */
+  .cell::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    height: 1px;
+    background: var(--canvas);
+    z-index: 4;
+    pointer-events: none;
+  }
+
   @keyframes cell-front {
     0%,
-    15% {
+    30% {
       z-index: 3;
     }
-    15.01%,
-    84.99% {
-      z-index: 1;
-    }
-    85%,
+    30.01%,
     100% {
-      z-index: 3;
+      z-index: 1;
     }
   }
 
   /*
-   * A card is hinged along its top edge and comes over the front. It starts
-   * standing out towards the viewer, tips over and down into place, holds,
-   * then carries on backwards and away while the next one comes over the top.
-   *
-   * The direction is the whole point, and it is one sign: with the hinge at the
-   * top, a positive rotateX brings the bottom edge towards the viewer, a
-   * negative one pushes it away. Reversed, the cards arrive out of the depth
-   * behind the page instead of flipping over the front.
+   * Both halves of a mark are the same full card, clipped. Drawing the whole
+   * mark in each and cutting it in half is what keeps the two halves in
+   * register: any attempt to lay out a top half and a bottom half separately
+   * drifts by a pixel and the seam stops lining up.
    */
-  .card {
+  .flap {
     position: absolute;
     inset: 0;
     display: flex;
@@ -198,13 +208,14 @@ const visibility = [
     border-radius: var(--radius-lg);
     background: var(--surface-card);
     color: var(--ink);
-    transform-origin: top center;
     backface-visibility: hidden;
-    animation: card-fall var(--cycle) linear infinite;
+    animation-duration: var(--cycle);
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
     animation-delay: var(--delay);
   }
 
-  .card :global(.mark) {
+  .flap :global(.mark) {
     /*
      * One knob for the whole strip. Each mark carries its own optical height
      * (docs/LOGOS.md); this scales all of them together, so "the marks are too
@@ -214,57 +225,105 @@ const visibility = [
     width: auto;
   }
 
+  .flap-top {
+    clip-path: inset(0 0 50% 0);
+    transform-origin: center bottom;
+    animation-name: flap-top;
+  }
+
+  .flap-bottom {
+    clip-path: inset(50% 0 0 0);
+    transform-origin: center top;
+    animation-name: flap-bottom;
+  }
+
   /*
-   * One slot is 100/7 = 14.286% of the cycle, and the three phases fill it
-   * exactly: the fold in takes 0.75s (2.143%), the hold 3.5s (10%), the fall
-   * out another 0.75s. The next card's fold begins where this card's fall
-   * ends, so no two cards are ever mid-swing together. The remaining 85.7% is
-   * spent folded away and invisible while the other six take their turn.
+   * The change takes 1.5s of a 5s slot, in two halves that must not overlap.
    *
-   * The easing is per phase: the card comes over and settles, then tips away
-   * slowly before accelerating out. A single linear rotation reads as a
-   * mechanism rather than something falling.
+   * First half: the OLD top falls forward and down about the seam, uncovering
+   * the NEW top, which has been lying flat underneath it the whole time.
+   * Second half: the NEW bottom, standing on edge towards the viewer, drops
+   * onto the seam and covers the OLD bottom.
+   *
+   * Both rotations carry the moving edge towards the viewer — that is the
+   * direction the whole thing turns on. Against the 35s cycle a slot is
+   * 14.286% and each half of the change is 2.143%.
    */
-  @keyframes card-fall {
+  @keyframes flap-top {
+    0% {
+      transform: rotateX(0deg);
+      opacity: 1;
+      z-index: 1;
+    }
+    14.28% {
+      transform: rotateX(0deg);
+      opacity: 1;
+      z-index: 3;
+      animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.45);
+    }
+    16.42% {
+      transform: rotateX(-90deg);
+      opacity: 1;
+      z-index: 3;
+    }
+    16.43% {
+      opacity: 0;
+      z-index: 0;
+    }
+    100% {
+      opacity: 0;
+      z-index: 0;
+    }
+  }
+
+  @keyframes flap-bottom {
     0% {
       transform: rotateX(90deg);
       opacity: 1;
-      animation-timing-function: cubic-bezier(0.22, 0.8, 0.3, 1);
+      z-index: 3;
     }
-    2.143% {
+    2.14% {
+      transform: rotateX(90deg);
+      opacity: 1;
+      z-index: 3;
+      animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+    }
+    4.28% {
       transform: rotateX(0deg);
       opacity: 1;
-      animation-timing-function: linear;
+      z-index: 3;
     }
-    12.143% {
+    4.29% {
+      z-index: 1;
+    }
+    18.56% {
       transform: rotateX(0deg);
       opacity: 1;
-      animation-timing-function: cubic-bezier(0.7, 0, 0.85, 0.6);
+      z-index: 1;
     }
-    14.286% {
-      transform: rotateX(-90deg);
+    18.57% {
       opacity: 0;
     }
     100% {
-      transform: rotateX(-90deg);
       opacity: 0;
     }
   }
 
   /*
-   * No motion: the strip becomes a plain row of cards. The first card in each
-   * cell stays put and the rest never appear.
+   * No motion: the board holds the first mark. Its two halves are the first
+   * two flaps in the cell, so the seam still reads as a split card.
    */
   @media (prefers-reduced-motion: reduce) {
     .cell {
       animation: none;
     }
-    .card {
+    .flap {
       animation: none;
       transform: none;
       opacity: 0;
     }
-    .card:first-child {
+    .flap:nth-child(1),
+    .flap:nth-child(2) {
       opacity: 1;
     }
   }
