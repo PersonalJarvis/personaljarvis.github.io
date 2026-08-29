@@ -1,0 +1,55 @@
+# Keep the globe's markers roughly current.
+#
+# The star COUNT on the page is live already — the browser asks GitHub for it
+# on every visit. This workflow is only about the MARKERS, which need a token
+# to work out and so are settled at build time. See
+# scripts/fetch-stargazers.mjs for the full reasoning.
+#
+# Every six hours, and on demand. It commits only when the file actually
+# changed, so a quiet day leaves no commit behind and no rebuild is triggered.
+name: stargazers
+
+on:
+  schedule:
+    # Six-hourly. A marker that is four hours stale is not a defect; a workflow
+    # that runs every ten minutes to move nothing is.
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+# Least privilege: this job writes one JSON file back to its own branch and
+# needs nothing else.
+permissions:
+  contents: write
+
+concurrency:
+  group: stargazers
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Fetch stargazer locations
+        # The repository being read is public, so the workflow's own token is
+        # enough — no secret to create, rotate, or leak.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/fetch-stargazers.mjs
+
+      - name: Commit if it changed
+        run: |
+          if git diff --quiet -- src/data/stargazers.json; then
+            echo "no change"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --only -- src/data/stargazers.json \
+            -m "chore(stargazers): refresh the globe's markers"
+          git push

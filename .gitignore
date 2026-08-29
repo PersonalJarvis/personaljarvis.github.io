@@ -16,3 +16,9 @@ coverage/
 # OS / editor noise
 .DS_Store
 Thumbs.db
+
+# Natural Earth source data — downloaded on demand by scripts/build-gazetteer.mjs
+# and by hand for the land mask. 5.8 MB that only a data refresh ever reads;
+# the generated gazetteer.json and land-mask.ts are what get committed.
+scripts/ne_10m_populated_places_simple.geojson
+scripts/ne_110m_admin_0_countries.geojson

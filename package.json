@@ -8,7 +8,11 @@
     "preview": "astro preview",
     "check": "astro check",
     "check:style": "node scripts/check-style.mjs",
-    "verify": "npm run check:style && astro check && astro build"
+    "check:geocode": "node scripts/test-geocode.mjs",
+    "data:stargazers": "node scripts/fetch-stargazers.mjs",
+    "data:gazetteer": "node scripts/build-gazetteer.mjs",
+    "data:land-mask": "node scripts/build-land-mask.mjs",
+    "verify": "npm run check:style && npm run check:geocode && astro check && astro build"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.4",
