@@ -1,8 +1,24 @@
-# Feature section — copy left, demo right
+# Feature sections — copy left, demo right
 
 > Builds on [`layout.md`](layout.md) (step `content`, 1280px) and
 > [`design.md`](design.md). Sits **below** the hero and the logo strip.
-> The demo shows the app's **Plugins** section.
+
+**Three cards, one shape.** Plugins, Skills and CLIs — three parts of the app,
+drawn in three windows that are deliberately the same window. Two cards that
+are nearly alike read as a mistake; three that are exactly alike read as one
+product.
+
+| Section | Demo | Shows |
+|---|---|---|
+| `Plugins.astro` | `plugins-demo/` | connecting a service, and a connection noticing it died |
+| `Skills.astro` | `skills-demo/` | a skill is a file with a switch, and what sets it off |
+| `Clis.astro` | `clis-demo/` | asking in plain language, and the evidence of what ran |
+
+Everything structural is shared, and that is enforced by code rather than by
+care: `src/components/window-demo/` owns the stage, the fit-to-both-axes
+scaler, the reduced-motion query, the looping frame script, the window frame,
+the title bar and the window header. A card supplies only what is inside the
+window. If a measurement has to change, it changes in one file for all three.
 
 ---
 
@@ -101,6 +117,32 @@ single, larger window puts the eye on the one feature the section is about.
 
 ## Content: the Plugins section
 
+### Truth, and how it is checked
+
+Every name, count, date, status word, command, pattern and label in all three
+demos was read out of the running app or its catalogs, and then checked a
+second time by an adversarial pass whose only job was to refute the first. That
+pass was not ceremony. It caught, among others:
+
+- **Skills:** a row with its switch off (nothing in this install is off — the
+  prefs sidecar overrides the one skill whose frontmatter says `disabled` back
+  to active); "3 matches" for a query that really returns 9; match scores above
+  1.0, which the scorer caps at 1.0; and a row order the API cannot produce.
+- **CLIs:** the risk badge `monitor` beside `gh pr list --state open`. `monitor`
+  is that tool's *default* tier; the gate resolves per command, and the
+  whitelist entry `gh pr list*` downgrades this one to `safe`. The demo would
+  have misstated the product's own safety gate — and the truth is the better
+  claim.
+
+The rule that follows: **a demo may be smaller than the app, never different
+from it.** Fewer rows, fewer columns, larger type — but no string, count or
+state that the app cannot produce. Where a value is runtime state rather than a
+catalog fact (which CLIs are connected on a given machine), the frame stages it
+and says so here.
+
+The single deliberate exception is the CLI result frame's spoken answer, which
+is per-run by nature. It is written to assert no number.
+
 ### Where the view comes from — the same open debt as the hero
 
 The original spec said: split the app's section into a pure `PluginsView` and a
@@ -126,7 +168,8 @@ That is the same seam the app-side refactor would have produced, so if a shared
 package is ever published, this file is replaced by an import and nothing else
 moves.
 
-**Never** import the app's `PluginsView` or any app-side container here.
+**Never** import the app's views or any app-side container here. The same
+applies to all three demos.
 
 ### Shortening
 
