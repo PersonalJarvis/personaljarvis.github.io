@@ -213,6 +213,9 @@ The gutters are made visible. Two vertical hairlines stand on the edges of the
   **transparent by default** so they do not cover them
 - Hidden below 768px — there are no gutters left to draw in
 
+This layer holds the **rails only**. The marker has one of its own, in front of
+the content — see below.
+
 Blocks with a surface of their own — cards, the CTA band — paint over the rails
 and interrupt them. That is intended, not a defect. A block that is filled in
 the *page* colour is the case to watch: it hides a rail without reading as a
@@ -249,14 +252,33 @@ A small square on the **left** rail showing how far down the page the reader is.
 - `top` is the scroll fraction of `100% - 8px`, not of `100%`: at a flat 100%
   the square's top edge is the bottom edge of the screen and the marker
   disappears exactly where the reader is meant to see it arrive
+- The fraction is written to `--scroll-progress` on `<html>`, not on a chrome
+  element — it describes the document, and inheritance carries it to whichever
+  layer draws the marker
 - The fraction is measured inside a `requestAnimationFrame`, never in the
   scroll handler — `scrollHeight` and `innerHeight` both force layout, and
   doing that per scroll event ties the page's frame rate to the wheel
 - `aria-hidden="true"` — decorative, with no navigation function
 - `prefers-reduced-motion`: stays visible, loses the position transition
 
-At the very top of the page the marker sits behind the nav band, which is
-opaque by necessity. It clears it after about fifty pixels of scroll.
+**It rides its own layer, at `z-index: 20`, in front of the content.** The
+rails are meant to be interrupted by a card; the marker is not. It is the
+reader's position on the page, and a position indicator that disappears for the
+length of a section indicates nothing.
+
+That takes a **second** `.page-chrome` element rather than a z-index on the
+marker itself: `position: fixed` plus a negative z-index opens a stacking
+context, and a child never paints outside its ancestor's. Both layers are drawn
+by the same `Container`, so they cannot drift apart. The front copy carries the
+same rail border at the same width, only **transparent** — the marker is placed
+against that border's padding box, and dropping it would move the square a
+pixel off the line.
+
+20 and not higher: the nav band is sticky at 30 and opaque by necessity, and a
+marker passing *through* it would read as a bug rather than as chrome. At the
+very top of the page the marker therefore still sits behind the nav; it clears
+it after about fifty pixels of scroll. That is the one place it is expected to
+be hidden.
 
 `PageChrome` is rendered **once**, in the root layout. A rail assembled from one
 segment per section is a rail with seams, and the seams are the first thing the
@@ -301,6 +323,8 @@ nothing — test with a real one.)
 - Horizontal padding on a section on top of the container — padding lives in the container alone
 - `100vh` for section-filling heights. Always `100svh`, or iOS pushes the address bar into the layout
 - Rails per section instead of once in the root layout
+- The scroll marker in the rails' own `z-index: -1` layer, where every card
+  with a surface paints over it
 - Rail positions from recomputed pixel values instead of the `Container`
 - An opaque background on a section, which paints over the rails. The page
   colour belongs on `<body>`

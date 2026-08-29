@@ -174,6 +174,33 @@
   border-inline: 1px solid var(--hairline);
 }
 
+/* The marker's own layer — the same box, in FRONT of the content.
+ *
+ * The rails are meant to be interrupted by a card; the marker is not. It is
+ * the reader's position on the page, and a position indicator that disappears
+ * for the length of a section indicates nothing. So it rides a second copy of
+ * the chrome that sits above ordinary content instead of behind it.
+ *
+ * It cannot simply be lifted out of the layer above with a z-index of its own:
+ * `position: fixed` plus a negative z-index opens a stacking context, and a
+ * child never paints outside its ancestor's. Hence two elements.
+ *
+ * 20, not higher: the nav band is sticky at 30 and opaque by necessity, and
+ * the marker passing THROUGH it would read as a bug rather than as chrome. It
+ * still disappears behind the nav for the first fifty pixels of scroll, which
+ * is the one place it is expected to.
+ *
+ * Its rails carry the same border at the same width, only transparent: the
+ * marker is placed against their padding box, so dropping the border here
+ * would move that box a pixel outward and the square off the line it rides. */
+.page-chrome--marker {
+  z-index: 20;
+}
+
+.page-chrome--marker .page-chrome__rails {
+  border-color: transparent;
+}
+
 /* Below the container's own breakpoint there are no gutters left to draw in. */
 @media (max-width: 767px) {
   .page-chrome {
@@ -182,8 +209,9 @@
 }
 
 /* The scroll marker — an 8px square riding the left rail, centred on the 1px
- * line. `--scroll-progress` is a plain number between 0 and 1, written by the
- * component's script from inside a requestAnimationFrame.
+ * line. `--scroll-progress` is a plain number between 0 and 1, written onto
+ * <html> by the component's script from inside a requestAnimationFrame and
+ * inherited from there.
  *
  * -4.5px, not -3.5px: an absolutely positioned child is placed against its
  * ancestor's PADDING box, which starts on the inner edge of the rail, so the
