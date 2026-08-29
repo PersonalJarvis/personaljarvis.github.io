@@ -475,11 +475,21 @@ const figures = [
   /* --- The figures -------------------------------------------------------
    * Hairlines are the 1px gaps of a grid on a hairline-coloured ground, the
    * same technique the logo strip uses. No borders are drawn.
+   *
+   * `padding-inline: 1px` IS THE RAILS, NOT A NUDGE. The cells are filled in
+   * the page colour and the bar spans the whole column, so without it the bar
+   * paints over both rails for its own height and the two lines that frame the
+   * section stop dead for 100px and start again below. One pixel of the grid's
+   * hairline ground shows at each outer edge instead, in the same colour and on
+   * the same line, and the rails read as continuous. The picture above solves
+   * the identical problem with its own 1px border; docs/layout.md § "Page
+   * chrome" names this bar as the case to watch.
    */
   [data-figures] {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1px;
+    padding-inline: 1px;
     background: var(--hairline);
     margin: var(--space-lg) 0 0;
   }
@@ -497,6 +507,25 @@ const figures = [
     gap: var(--space-xxs);
     background: var(--canvas);
     padding: var(--space-md) var(--space-base);
+  }
+
+  /* The last cell is turned round, and it is the only one that is.
+   *
+   * Four short facts do not fill a column this wide: every cell carries 110 to
+   * 165px of slack, measured. In the first three that slack sits against a
+   * divider, where it reads as the gutter it is. In the last one it sat against
+   * the RAIL with nothing after it, and read as the bar failing to reach the
+   * edge of the section — which is what the maintainer saw on 2026-08-29, and
+   * why the complaint was about the fourth card and not about the third, which
+   * actually has the most empty space of the four.
+   *
+   * NOT the whole row. The numbers share the section's left edge with the
+   * eyebrow and the headline; centring them, or turning all four round, would
+   * give the section a second left margin. One flush left, one flush right, and
+   * the bar spans exactly what the rails do. */
+  [data-figures] > div:last-child {
+    align-items: flex-end;
+    text-align: end;
   }
 
   [data-figures] dd {

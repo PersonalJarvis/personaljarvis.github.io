@@ -241,9 +241,17 @@ first, at about 3% of the dots on the daylight frame and 5% on the night one.
 ### The speech bubble
 
 The night frame carries one empty speech bubble with three dots in it, drawn
-into the dot grid after the halftone, tail pointing at the microphone. The
-maintainer asked for it by name on 2026-08-29 so that "he is speaking" reads
-without having to interpret the posture.
+into the dot grid after the halftone. The maintainer asked for it by name on
+2026-08-29.
+
+**Its tail points at the SCREEN, not at the person.** The bubble is the machine
+answering, which is the claim the whole section is making; a bubble growing out
+of the man's mouth says he is talking to himself, and the section already has
+his posture and the microphone to say that he is speaking. The first version
+pointed at the microphone and the maintainer caught it the same day. The two
+base points sit on the bubble's left edge and the tip reaches back across the
+bezel onto the glass, on the empty right half of the calm panel where it covers
+no code.
 
 **It is drawn by the script, never asked of the image model.** A model puts
 letters in a speech bubble whatever the prompt says; its outline would be
@@ -411,6 +419,26 @@ Every value is countable in the app's own source. None may be invented.
 | 3 | Platforms | README: "One command on Windows, macOS, or Linux." |
 | < 1 s | Spoken reply | README: the realtime model "answers in under a second"; "sub-second Ack-Brain" |
 | 4 | Channels | README: "The desktop window, the browser, Telegram, and Discord all reach the same brain and share the same memory." |
+
+**The bar carries the rails through it.** Its cells are filled in the page
+colour and it spans the whole column, so without `padding-inline: 1px` it paints
+over both rails for its own height and the two lines framing the section stop
+dead for 100px and start again below — which is exactly what happened, and what
+the maintainer saw on 2026-08-29. One pixel of the grid's own hairline ground
+shows at each outer edge instead, in the same colour and on the same line. The
+picture above solves the identical problem with its own 1px border.
+
+**The last cell is turned round.** Four short facts do not fill a column this
+wide: every cell carries 110 to 165px of slack, measured. In the first three
+that slack sits against a divider and reads as the gutter it is; in the last it
+sat against the *rail* with nothing after it, and read as the bar failing to
+reach the edge of the section. Setting that one cell flush right puts its slack
+against a divider too, and the bar meets both rails.
+
+Not the whole row — the numbers share the section's left edge with the eyebrow
+and the headline, and centring them or turning all four round would give the
+section a second left margin. It is also why the complaint was about the fourth
+card and not the third, which actually has the most empty space of the four.
 
 ### Why the figures do not change with the state
 

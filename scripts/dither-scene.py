@@ -135,6 +135,13 @@ TINT = 0.80
 #: The speech bubble on the night frame, in fractions of the frame: box, then
 #: the tail's three points. Empty, with three dots inside — no text, ever.
 #:
+#: THE TAIL POINTS AT THE SCREEN, NOT AT THE PERSON. The bubble is the machine
+#: answering, which is the whole claim of the section — a bubble growing out of
+#: the man's mouth says he is talking to himself. The maintainer caught it
+#: pointing at his mouth on 2026-08-29. Its two base points sit on the bubble's
+#: LEFT edge and the tip reaches back across the bezel onto the glass, on the
+#: empty right half of the calm panel where it covers no code.
+#:
 #: It is DRAWN HERE rather than asked of the image model, for three reasons: a
 #: model puts letters in a speech bubble whatever the prompt says, its outline
 #: would be dithered into a fuzzy smudge along with everything else, and the
@@ -156,7 +163,7 @@ TINT = 0.80
 #: runs on, and a bubble at 0.15 loses its top edge — which is exactly what the
 #: first version did. Keep the box inside 0.19..0.73.
 BUBBLE = (0.790, 0.200, 0.952, 0.360)
-BUBBLE_TAIL = ((0.815, 0.355), (0.862, 0.355), (0.778, 0.470))
+BUBBLE_TAIL = ((0.792, 0.232), (0.792, 0.318), (0.648, 0.368))
 BUBBLE_STROKE = 2  # dots
 
 
