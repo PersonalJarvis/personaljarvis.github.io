@@ -136,11 +136,28 @@ import { DOCS_URL, INSTALL_ID, NAV_LINKS, TOP_ID } from "@/lib/nav";
   const hero = document.getElementById(TOP_ID);
   const nav = document.querySelector<HTMLElement>("[data-site-nav]");
 
+  /*
+   * A LINK WHOSE SECTION IS NOT ON THE PAGE IS TAKEN OFF THE NAV.
+   *
+   * Not defensive coding — this page is edited by several hands and sections
+   * are added, renamed and retired constantly. `#docs` sat in five places on
+   * this site pointing at an id no element had ever carried, and every one of
+   * them was a control that did nothing when pressed. Nothing catches that: the
+   * markup is valid, the link renders, the build passes, and the only symptom
+   * is a reader clicking something and the page not moving.
+   *
+   * `hidden` and not a removal, so the element is still there to be found when
+   * the section comes back on a route that has it. With no JavaScript the link
+   * stays visible and inert, which is the same bargain the rest of this file
+   * makes: no script, no behaviour, nothing broken.
+   */
   const links = new Map<HTMLElement, HTMLElement>();
   for (const { id } of NAV_LINKS) {
-    const section = document.getElementById(id);
     const link = document.querySelector<HTMLElement>(`[data-nav-link="${id}"]`);
-    if (section && link) links.set(section, link);
+    if (!link) continue;
+    const section = document.getElementById(id);
+    if (section) links.set(section, link);
+    else link.hidden = true;
   }
 
   /* The fraction of a screen the hero's floor travels up before the chrome is

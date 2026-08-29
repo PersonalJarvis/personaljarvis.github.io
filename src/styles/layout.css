@@ -681,6 +681,15 @@ body > section::before {
   color: var(--ink);
 }
 
+/* A link whose section is not on this page takes itself off the nav — see
+ * SiteNav.astro. It needs saying explicitly: the browser's own
+ * `[hidden] { display: none }` loses to the `display: inline-flex` above, which
+ * is later in the cascade at the same specificity, so the attribute would be
+ * set and the link would stay on screen. */
+.site-nav__link[hidden] {
+  display: none;
+}
+
 /*
  * The current-section mark.
  *
