@@ -38,39 +38,60 @@ words off this section.
 
 | Element | Value |
 |---|---|
-| Card width | step `content` (1280px) |
-| Card height | `aspect-ratio: 16 / 9`, at least 560px |
-| Card padding | 56px, 32px below `lg` |
-| Outer radius | 16px (`--radius-xl`) |
+| Block width | step `content` (1280px) |
+| Block height | `aspect-ratio: 16 / 9`, at least 560px |
+| Inline inset | 56px, 32px below `lg` — `px` only, see below |
 | Columns | 5/12 copy, 7/12 demo, 48px gap |
-| Space above | 96px |
+| Space above and below | `--section-inset`, from `.section-inset` |
 
 **The section deliberately does not fill a viewport.** No `100svh`, no
 `min-h-screen`. It is about half a screen tall. That is what separates it from
 the hero and keeps the scroll moving.
 
+**The inset is `px-8 lg:px-14`, never `p-8 lg:p-14`.** It used to be padding
+inside a card, so all four sides were its job. With the card gone its only job
+is horizontal — keeping the copy and the demo off the two rails. The vertical
+air belongs to `.section-inset` on the Container, which is the page's one
+pacing number; paying it twice puts these three blocks on a rhythm no other
+section is on.
+
 ---
 
-## Two nested levels
+## No frame, and two nested levels inside the demo
 
-Depth comes from two radii inside one another, never from a shadow — the site
-has no shadow tokens and the style gate rejects one.
+**These three sections draw no box of their own.** There is no card, no
+surface, no border and no radius around the copy and the demo — and no framed
+band and no ground either. Between the logo strip's closing rule and the voice
+section's opening one the page shows nothing but its two rails, and the three
+blocks breathe at the standard inset. The maintainer asked for this on
+2026-08-29: framed cards inside framed bands were reading as boxes stacked in a
+column.
+
+`Plugins.astro` carries the reasoning and names the three things that are
+load-bearing about it — no `.section-bounds`, no `.section-tone`, and
+`<SectionTrack open />` on the section. See also `layout.md` § "A run of
+sections may opt out — together": the condition is that all three opt out at
+once, so the run still has exactly one boundary at each end.
+
+Depth survives, one level down, inside the demo — two radii inside one another,
+never a shadow, because the site has no shadow tokens and the style gate
+rejects one.
 
 ```
-┌─ Card (radius 16, hairline) ────────────────────────┐
-│                                                     │
-│  Copy            ┌─ Well (painting, radius 12) ───┐ │
-│  vertically      │ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ │ │
-│  centred         │   ┌─ Window (radius 8) ──────┐ │ │
-│                  │   │                          │ │ │
-│  Link →          │   └──────────────────────────┘ │ │
-│                  │ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ │ │
-│                  └────────────────────────────────┘ │
-└─────────────────────────────────────────────────────┘
+   Copy              ┌─ Well (painting, radius 12) ───┐
+   vertically        │ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ │
+   centred           │   ┌─ Window (radius 8) ──────┐ │
+                     │   │                          │ │
+   Link →            │   └──────────────────────────┘ │
+                     │ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ │
+                     └────────────────────────────────┘
+   ╷                                                  ╷
+   └── the two rails are the only frame ──────────────┘
 ```
 
-Card, recessed well, window floating in it. The well carries 24px of its own
-padding so the window never touches its edge.
+Recessed well, window floating in it. The well carries 24px of its own padding
+so the window never touches its edge. It is now the only edge in the section
+apart from the rails, which is what makes it read as the object it is.
 
 ### The well is a painting, not a colour
 
@@ -242,17 +263,34 @@ filters, three statuses and no dialogs at all.
 - Network requests from the demo — including a CDN icon URL. Brand marks are
   bundled in `src/assets/brands/`, see the ledger there
 - A bespoke `max-width` instead of step `content`
+- **A card, a border, a radius or a surface around the block.** The frame was
+  removed on 2026-08-29 and putting one back is the change the maintainer asked
+  to undo
+- **`.section-bounds` or `.section-tone` on any of the three.** Either one draws
+  a boundary inside the run: the band draws two rules, and a tone is a gradient
+  that restarts at every section's top edge, so even one shared tone meets
+  dark-on-light at the joint
+- **Giving one of the three a frame back while the other two go without.** They
+  opt out of the shell together or not at all — `layout.md` § "A run of sections
+  may opt out — together"
+- **`<SectionTrack nested />` here, or dropping `open`.** `nested` breaks the
+  square's run into three with a gap at each joint; without `open` it turns
+  right along a rule that is not drawn
 
 ---
 
 ## Skeleton
 
 ```astro
-<section class="py-24">
-  <Container width="content">
-    <div class="grid items-center gap-12 rounded-[var(--radius-xl)]
-                border border-hairline bg-card p-8 lg:aspect-[16/9]
-                lg:grid-cols-12 lg:p-14">
+<!-- No .section-tone and no .section-bounds: this is the run that opts out. -->
+<section class="relative flex flex-col">
+  <!-- On the section, not `nested`, so the square runs unbroken across all
+       three; `open`, so it stays on the left rail instead of crossing a rule
+       that is not drawn. -->
+  <SectionTrack open />
+  <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
+    <div class="grid items-center gap-12 px-8 lg:aspect-[16/9]
+                lg:min-h-[560px] lg:grid-cols-12 lg:px-14">
 
       <div class="lg:col-span-5">
         <p class="text-[26px] leading-snug">
