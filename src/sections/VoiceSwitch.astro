@@ -72,7 +72,7 @@ const figures = [
   data-mode="manual"
 >
   <div class="layout">
-    <p class="text-center text-sm uppercase tracking-[.1em] text-muted">
+    <p class="text-center uppercase text-muted" data-voice-eyebrow>
       Typing vs speaking
     </p>
 
@@ -166,6 +166,15 @@ const figures = [
   selector is anchored on [data-voice-switch], so the section still owns them.
 -->
 <style is:global>
+  /* The brief's 14px, taken from the token rather than Tailwind's `text-sm`.
+   * That utility is rem-based, and the root size now grows with the viewport,
+   * so it would climb to 19px on a 4K screen while the headline stayed at its
+   * 36px token — the eyebrow would end up competing with the line it labels. */
+  [data-voice-switch] [data-voice-eyebrow] {
+    font-size: var(--text-body-sm);
+    letter-spacing: 0.1em;
+  }
+
   [data-voice-switch] [data-voice-headline] {
     font-size: var(--text-display-lg);
     letter-spacing: var(--tracking-display-lg);

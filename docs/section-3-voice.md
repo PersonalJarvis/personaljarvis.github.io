@@ -40,9 +40,9 @@ details change, and the figures below change with them.
 | Element | Value |
 |---|---|
 | Section height | `min-height: 100svh` |
-| Width | `content` step (1280px) |
+| Width | `content` step — 1280px, and the viewport share above that |
 | Picture | `aspect-ratio: 16 / 9`, `--radius-xl` (16px) |
-| Eyebrow | above the headline, `text-sm`, uppercase, `letter-spacing: .1em` |
+| Eyebrow | above the headline, 14px, uppercase, `letter-spacing: .1em` |
 | Headline | `prose` step, wraps to two lines |
 | Figures | below the picture, four columns, hairlines from `gap: 1px` |
 
@@ -66,6 +66,13 @@ column. No width is named in the section at all.
 Vertical padding is 80px (`py-20`), the section rhythm from `design.md`, rather
 than the 96px the brief's skeleton showed. The section is a viewport tall, so
 the padding only decides how close the block sits to the fold.
+
+**Type comes from the px tokens, not from Tailwind's rem utilities.** The root
+font size now grows with the viewport, so `text-sm` climbs to 19px on a 4K
+screen while a token-sized headline stays at its 36px. `design.md`'s type table
+is in px and governs; the eyebrow therefore takes `--text-body-sm` rather than
+`text-sm`. Spacing utilities are left rem-based on purpose — a wider screen
+getting a roomier page is what that change was for.
 
 ---
 
