@@ -41,6 +41,7 @@
  */
 import Container from "@/components/Container.astro";
 import SectionTrack from "@/components/SectionTrack.astro";
+import { DOCS_URL } from "@/lib/nav";
 import { PluginsDemo } from "@/components/plugins-demo/PluginsDemo";
 ---
 
@@ -109,7 +110,7 @@ import { PluginsDemo } from "@/components/plugins-demo/PluginsDemo";
           Ink, not an accent: docs/design.md retired the borrowed hue.
         -->
         <a
-          href="#docs"
+          href={DOCS_URL}
           class="mt-6 inline-flex items-center gap-2 text-[16px] font-medium text-ink underline-offset-4 hover:underline"
         >
           See every plugin

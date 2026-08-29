@@ -1,0 +1,268 @@
+---
+/**
+ * The site nav — WORDS THAT COME DOWN THE PAGE, NOT A BAR OVER IT.
+ *
+ * It used to live inside `Hero.astro` as a `sticky` band: opaque `--canvas`
+ * ground, a `.section-rule` along its bottom edge, and — because a sticky child
+ * only sticks for as long as its own parent is on screen — it slid out of sight
+ * at the hero's bottom edge and the rest of the page had no nav at all. The
+ * maintainer asked on 2026-08-29 for the nav to travel the whole page, and for
+ * only the LETTERING to travel: no band, no ground, no line.
+ *
+ * WHY IT IS `fixed` AND NOT `sticky`. Sticky is positioned inside its own
+ * containing block, so pinning it for the whole document would mean making its
+ * parent the whole document — and the parent here is the root layout, whose
+ * children are the sections themselves. Fixed takes it out of flow entirely,
+ * which is what "stays where it is while the page moves" actually means, and
+ * costs the page nothing: the hero pays back the 4rem the band used to occupy
+ * as padding (see Hero.astro), so nothing underneath moved.
+ *
+ * WHY THERE IS A VEIL AND WHY IT IS NOT A BAR. Text with nothing behind it is
+ * unreadable the moment content scrolls under it — and on this page what
+ * scrolls under it is a bright painting, a globe and a wall of logos. The
+ * answer cannot be a shadow (`docs/design.md`: hairlines only, and
+ * `check-style.mjs` § no-shadow fails the build over one), and it cannot be an
+ * opaque band, which is the exact thing being removed. It is a gradient from
+ * the page's own ground to nothing, twice the height of the nav: it has no
+ * bottom edge anywhere, so there is no line for the eye to read as the underside
+ * of a bar. What the reader sees is the page quietly darkening towards the top,
+ * with the wordmark sitting in it.
+ *
+ * IT IS ALSO NOT THERE UNTIL IT IS NEEDED. In the hero the ground behind the
+ * nav is already `--canvas` and nothing is passing under it, so the veil is at
+ * zero and the nav is genuinely just lettering on the page. It arrives with the
+ * rest of the page chrome, on the same 0..1 the rails use — see the script.
+ *
+ * POINTER EVENTS. A transparent 4rem strip across the whole window would still
+ * swallow every click that lands in it, including the ones meant for the demo
+ * stage in the hero, which reaches within a hair of it on a short screen. The
+ * strip is therefore `pointer-events: none` and only the controls inside it
+ * take them back.
+ *
+ * Its CSS is in `src/styles/layout.css`, not in a scoped block here, for the
+ * same reason `SectionTrack`'s is: the row's two edges come from a `Container`,
+ * and Container does not spread the rest of its props onto its root element, so
+ * Astro's scope attribute never reaches it.
+ */
+import Container from "@/components/Container.astro";
+import { DOCS_URL, INSTALL_ID, NAV_LINKS, TOP_ID } from "@/lib/nav";
+---
+
+{
+  /*
+   * BEFORE THE FIRST PAINT, and that is the whole reason it is inline.
+   *
+   * `--chrome-reveal` defaults to 1 so that a reader with no JavaScript gets
+   * the page exactly as it was: rails drawn, marker visible, veil on. The
+   * moment this attribute lands, the CSS switches to the driven value of 0 and
+   * the script below takes over.
+   *
+   * An Astro `<script>` is a module, so it is deferred — it would run AFTER the
+   * first frame, and the reader would see the rails drawn across the hero for
+   * one frame and then wiped. Two lines inline are cheaper than that flash.
+   */
+}
+<script is:inline>
+  document.documentElement.dataset.chrome = "on";
+</script>
+
+<header class="site-nav" data-site-nav>
+  <div class="site-nav__veil" aria-hidden="true"></div>
+
+  <Container width="content" class="site-nav__row">
+    <a class="site-nav__mark" href={`#${TOP_ID}`}>Personal Jarvis</a>
+
+    <nav class="site-nav__links" aria-label="Sections">
+      {
+        NAV_LINKS.map(({ id, label }) => (
+          <a class="site-nav__link" href={`#${id}`} data-nav-link={id}>
+            {/*
+              The current-section mark. A small square, because the page already
+              has one — the section marker walking the rails — and a second
+              indicator in a second shape would read as a second system. It is
+              laid out at all times and only revealed for the current link, so
+              nothing shifts as the reader scrolls past a boundary.
+            */}
+            <span class="site-nav__dot" aria-hidden="true" />
+            {label}
+          </a>
+        ))
+      }
+      {/*
+         Docs is NOT a section of this page. Five places on the site pointed at
+         `#docs`, which has never existed on any element — every one of them was
+         a link that scrolled nowhere. See src/lib/nav.ts.
+      */}
+      <a class="site-nav__link" href={DOCS_URL}>Docs</a>
+    </nav>
+
+    <a class="site-nav__cta" href={`#${INSTALL_ID}`}>Download</a>
+  </Container>
+</header>
+
+<script>
+  import { NAV_LINKS, TOP_ID } from "@/lib/nav";
+
+  /*
+   * ONE READ PER FRAME, AND ONLY ON A FRAME THE READER ASKED FOR.
+   *
+   * This drives two things off the same measurement, because they are two
+   * answers to one question — how far out of the hero is the reader, and which
+   * section are they in:
+   *
+   *   --chrome-reveal   0..1. The rails and the section marker read it — the
+   *                     frame around the page below the hero. It is
+   *                     scroll-coupled rather than a
+   *                     transition on a class, which is the whole point: a
+   *                     class flip is a thing that HAPPENS to the reader at one
+   *                     scroll position, and that is exactly the abrupt arrival
+   *                     the maintainer asked to be rid of. Coupled to the
+   *                     gesture, the chrome is simply somewhere between absent
+   *                     and present at every moment, and it runs backwards on
+   *                     the way up for free.
+   *
+   *   --nav-veil        0..1, on a much shorter ramp — see VEIL_SPAN below.
+   *
+   *   aria-current      on the nav link whose section the reader is in.
+   *
+   * NO rAF LOOP. `SectionTrack` runs one because it moves a square every frame
+   * for the whole life of the page; this changes two numbers and only when the
+   * document actually scrolls, so it hangs off a passive scroll listener with a
+   * frame's worth of coalescing. A second permanent loop would cost a layout
+   * flush a frame forever to do nothing on a page nobody is scrolling.
+   */
+
+  const root = document.documentElement;
+  const hero = document.getElementById(TOP_ID);
+  const nav = document.querySelector<HTMLElement>("[data-site-nav]");
+
+  const links = new Map<HTMLElement, HTMLElement>();
+  for (const { id } of NAV_LINKS) {
+    const section = document.getElementById(id);
+    const link = document.querySelector<HTMLElement>(`[data-nav-link="${id}"]`);
+    if (section && link) links.set(section, link);
+  }
+
+  /* The fraction of a screen the hero's floor travels up before the chrome is
+   * fully in. Short of a full screen on purpose: at 1 the chrome would only
+   * finish arriving once the hero was completely gone, which puts the end of
+   * the reveal past the moment anyone is still looking for it. */
+  const REVEAL_SPAN = 0.7;
+
+  /* The veil is on a much shorter fuse, and it is not the same question.
+   *
+   * The rails ask "is the hero over" — they belong to the page below and have
+   * no business being drawn across the first screen. The veil asks "is anything
+   * passing under the lettering", and the answer is yes from the very first
+   * pixel of scrolling, whatever section it belongs to. Put the veil on the
+   * rails' timing and the nav spends most of a screen with the hero's headline
+   * sliding through it unshaded.
+   *
+   * Arriving early costs nothing: the veil IS the page's own ground colour, so
+   * over the hero — which is that colour — there is nothing to see until
+   * something brighter reaches it, which is exactly when it is wanted. */
+  const VEIL_SPAN = 0.12;
+
+  /* A move too small to see is a paint nobody asked for. */
+  const EPSILON = 0.002;
+
+  /* Spelled the same way in the CSS — see layout.css § "The page chrome
+   * arrives". A reader who asked for less motion gets the chrome present from
+   * the first frame rather than assembled as they scroll. */
+  const still = matchMedia("(prefers-reduced-motion: reduce)");
+
+  let reveal = -1;
+  let veil = -1;
+  let current: HTMLElement | null = null;
+  let queued = false;
+
+  const ramp = (travelled: number, span: number) =>
+    span > 0 ? Math.min(1, Math.max(0, travelled / span)) : 1;
+
+  /* The two endpoints are written exactly even when the step is tiny: 0 is "not
+   * there at all" and 1 is "fully in", and stopping a hair short of either
+   * leaves a rail 2% faded for good, which is visible on a hairline. */
+  const write = (name: string, next: number, held: number) => {
+    const settled = next === 0 || next === 1;
+    if (Math.abs(next - held) > EPSILON || (settled && next !== held)) {
+      root.style.setProperty(name, String(next));
+      return next;
+    }
+    return held;
+  };
+
+  const measure = () => {
+    queued = false;
+
+    /* How far out of the hero the reader is. No hero on the page — a future
+     * route that reuses this nav — means the chrome is simply always there. */
+    let nextReveal = 1;
+    let nextVeil = 1;
+    if (hero && !still.matches) {
+      /* getBoundingClientRect every frame, never a stored offsetTop: the hero's
+       * height moves with the viewport and with every island that hydrates. */
+      const floor = hero.getBoundingClientRect().bottom;
+      nextReveal = ramp(window.innerHeight - floor, window.innerHeight * REVEAL_SPAN);
+      /* The veil is driven by how far the DOCUMENT has moved, not by the hero's
+       * floor: what it shades is whatever has travelled up under the nav, and on
+       * the first screen that is the hero's own headline. */
+      nextVeil = ramp(window.scrollY, window.innerHeight * VEIL_SPAN);
+    }
+
+    reveal = write("--chrome-reveal", nextReveal, reveal);
+    veil = write("--nav-veil", nextVeil, veil);
+
+    /* WHICH SECTION THE READER IS IN — the last one whose top edge has passed
+     * under the nav, and none at all while the hero is still the page.
+     *
+     * `SectionTrack` resolves its owner against the top of the WINDOW; this
+     * resolves against the bottom of the NAV, one `--nav-height` lower. The two
+     * are the same rule measured from the two different lines each one is about:
+     * the marker walks the corners of a box, which are where the box is, and a
+     * nav link is lit for the section the reader can actually READ — which
+     * begins under the nav, and which is also exactly where `scroll-padding`
+     * lands a section when its own link is clicked. Resolve the link against
+     * the window's top edge instead and a freshly clicked link goes dark for
+     * the 4rem it was itself responsible for.
+     *
+     * THE LINE IS MEASURED OFF THE NAV, NOT READ OUT OF `--nav-height`. A custom
+     * property is not resolved by `getComputedStyle` unless it has been
+     * registered with `@property`, so what comes back is the literal string
+     * `round(4rem, 1px)`; `parseFloat` of that is NaN and the fallback quietly
+     * puts the line at the top of the window — which is precisely the failure
+     * this paragraph is about, and it shipped that way for an afternoon:
+     * clicking `Skills` scrolled Skills to 76px, the comparison used 0, and the
+     * link the reader had just pressed stayed dark. Asked of the element, the
+     * number is right by construction and follows the root font size as the
+     * viewport scales it. */
+    const line = nav ? nav.getBoundingClientRect().height : 0;
+    let owner: HTMLElement | null = null;
+    for (const [section, link] of links) {
+      if (section.getBoundingClientRect().top - 1 <= line) owner = link;
+    }
+
+    if (owner !== current) {
+      if (current) current.removeAttribute("aria-current");
+      /* `true`, not `page`: the link points at a place on this page, not at
+       * another page in a set. */
+      if (owner) owner.setAttribute("aria-current", "true");
+      current = owner;
+    }
+  };
+
+  const schedule = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(measure);
+  };
+
+  addEventListener("scroll", schedule, { passive: true });
+  addEventListener("resize", schedule, { passive: true });
+  still.addEventListener("change", schedule);
+
+  /* The page grows as islands hydrate and images land, which moves the hero's
+   * floor without a scroll ever happening. */
+  if (hero && "ResizeObserver" in window) new ResizeObserver(schedule).observe(hero);
+
+  measure();
+</script>

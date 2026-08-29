@@ -3,10 +3,12 @@
  * The hero — one viewport tall, with everything inside it.
  * See docs/hero.md.
  *
- * Vertical structure is a three-row grid, not a flex column with justify-end:
+ * Vertical structure is a two-row grid, not a flex column with justify-end:
  * flex pushed the whole block to the bottom and left a dead field above the
- * headline. The rows are nav / copy / stage, and only the stage row flexes, so
- * the copy keeps its position near the top at any viewport height.
+ * headline. The rows are copy / stage, and only the stage row flexes, so the
+ * copy keeps its position near the top at any viewport height. There used to be
+ * a third row above them for the nav; the nav is fixed over the whole document
+ * now (SiteNav.astro) and the box pays for it in padding instead.
  *
  * The stage row is `minmax(0, 1fr)` and the frame inside it is `h-full`, so the
  * stage takes exactly the height that is left over and never a pixel more. The
@@ -21,6 +23,7 @@ import { Image } from "astro:assets";
 import Container from "@/components/Container.astro";
 import DemoStage from "@/components/demo/DemoStage";
 import SectionTrack from "@/components/SectionTrack.astro";
+import { DOCS_URL, INSTALL_ID, TOP_ID } from "@/lib/nav";
 import backdrop from "@/assets/hero/stage-backdrop.webp";
 
 // The frame is the `content` step, so on a wide screen the backdrop only
@@ -45,58 +48,28 @@ const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <
   one: this section's closing line, `2 x --section-inset` of air, that band's
   opening line. See docs/layout.md § "One boundary, one shape".
 
-  THE NAV'S LINE IS NOT A SECTION BOUNDARY. It is the bottom edge of the sticky
-  band and the last `.section-rule` on the page — see the comment on it below.
+  THE HERO HAS NO EDGES OF ITS OWN, and that is the point of this screen. There
+  is no rule across the top and no rails down the sides: the page chrome is held
+  at nothing while the hero owns the screen and arrives as the reader scrolls
+  out of it — see layout.css § "The page chrome arrives". A framed field is a
+  form; the first screen is meant to read as open ground.
 -->
 <section
-  class="relative grid min-h-[calc(100svh_-_var(--section-inset))] grid-rows-[auto_minmax(0,1fr)] overflow-hidden"
+  id={TOP_ID}
+  class="relative grid min-h-[calc(100svh_-_var(--section-inset))] grid-rows-[minmax(0,1fr)] overflow-hidden"
 >
   <!--
-    Nav sits on the `full` step: background edge to edge, content inside.
+    THE HERO'S OWN BOX. It stays a separate element from the `<section>` — the
+    section is what the reader scrolls past, this is what they look at — and it
+    is what `SectionTrack` measures, since the track measures the box it is
+    dropped into.
 
-    Its bottom edge is not a `border-b` on the band any more: that border ran
-    the full width of the window, the one horizontal line on the page that did
-    not start and end on a rail. It is a `.section-rule` in a Container instead,
-    so it spans exactly the two rails like every other section boundary and
-    gives the marker a corner to start from (maintainer, 2026-08-29).
-
-    IT HAS TO LIVE INSIDE THIS BAND, not at the top of the hero's box below.
-    Drawn there it is invisible: `h-16` is 4rem against a root size that scales
-    with the viewport, so the band's bottom edge lands on a FRACTION of a device
-    pixel (75.83px at 1.5x), and a sticky opaque band is a composited layer that
-    snaps its own edge up to the next whole one — straight over a hairline that
-    begins exactly where it ends. Inside the band the line is painted by the
-    same layer and nothing can round over it. It also keeps the line pinned
-    under the nav for as long as the nav is pinned, which is what the eye
-    expects of a band with an edge.
-  -->
-  <header class="sticky top-0 z-30 h-[var(--nav-height)] bg-canvas relative">
-    <Container width="content" class="flex h-[var(--nav-height)] items-center justify-between">
-      <span class="text-[18px] font-semibold text-ink">Personal Jarvis</span>
-      <nav class="flex items-center gap-7 text-[14px] font-medium text-body">
-        <a href="#features" class="hover:text-ink">Features</a>
-        <a href="#docs" class="hover:text-ink">Docs</a>
-        <a
-          href="#install"
-          class="rounded-full bg-ink px-5 py-2.5 text-on-ink transition-colors hover:bg-ink-active"
-        >
-          Download
-        </a>
-      </nav>
-    </Container>
-
-    <Container width="content" class="pointer-events-none absolute inset-x-0 bottom-0">
-      <div class="section-rule"></div>
-    </Container>
-  </header>
-
-  <!--
-    THE HERO'S OWN BOX — everything under the nav. It is a separate element and
-    not the `<section>` because the section's top edge is the top of the NAV,
-    and a marker starting there would begin its walk behind an opaque sticky
-    band. This box starts on the rule instead, which is the corner the reader
-    can actually see. `SectionTrack` measures the box it is dropped into, so
-    naming the box is all it takes.
+    IT PAYS FOR THE NAV ITSELF, in padding. Until 2026-08-29 the nav was a row
+    of this section's own grid, so the hero's content began under it for free.
+    The nav is fixed over the whole document now (SiteNav.astro) and is out of
+    the flow entirely, so without this the headline would start behind it. The
+    figure is the same `--nav-height` the row used to be, which is what keeps
+    every proportion in docs/hero.md exactly where it was.
 
     `open`, because NOTHING RAIL-TO-RAIL IS DRAWN AT THIS BOX'S BOTTOM EDGE.
     What closes the hero is its own stage frame, and that is a rounded card
@@ -107,7 +80,9 @@ const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <
     line". Open, it comes down the rail and carries straight on into the logo
     strip's opening rule, which is the next line that actually exists.
   -->
-  <div class="relative grid min-h-0 grid-rows-[auto_minmax(0,1fr)]">
+  <div
+    class="relative grid min-h-0 grid-rows-[auto_minmax(0,1fr)] pt-[var(--nav-height)]"
+  >
     <SectionTrack open />
 
     <div class="pt-[5svh]">
@@ -126,13 +101,19 @@ const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <
 
         <div class="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
           <a
-            href="#install"
+            href={`#${INSTALL_ID}`}
             class="inline-flex min-h-[44px] items-center justify-center rounded-full bg-ink px-6 text-[15px] font-medium text-on-ink transition-colors hover:bg-ink-active"
           >
             Download for Windows
           </a>
+          {/*
+            This used to point at `#docs`, an id no element on this page has
+            ever carried — the button scrolled nowhere. The docs live in the
+            repository until this site grows a route of its own; the URL is a
+            constant in src/lib/nav.ts so there is one place to change it then.
+          */}
           <a
-            href="#docs"
+            href={DOCS_URL}
             class="inline-flex min-h-[44px] items-center justify-center rounded-full border border-hairline-strong bg-card px-6 text-[15px] font-medium text-ink transition-colors hover:border-ink"
           >
             Read the docs

@@ -200,18 +200,30 @@
  * lies past the document's last scroll position: a snap point there could only
  * pull the reader back off the end of the page.
  *
- * NO `scroll-padding-top`, and the reason is worth writing down because the
- * usual answer is the opposite. A snap point is the top of the window, so a
- * bar pinned there would cover the very edge the reader was sent to — the
- * section's own rule included — and the fix would be a scroll-padding the
- * height of the bar. This page has no such bar: the nav is `sticky` INSIDE the
- * hero, so it stops at the hero's bottom edge and every boundary below it
- * meets a clear window. Give the nav a home outside the hero and this becomes
- * `scroll-padding-block-start: 4rem`.
+ * `scroll-padding-block-start`, AND IT IS NOT OPTIONAL ANY MORE. This note used
+ * to say the opposite and end with the condition that has now happened: the nav
+ * left the hero on 2026-08-29 and is fixed over the whole document
+ * (SiteNav.astro). A snap point is the top of the window, so without this every
+ * boundary the page rests on — and every heading a nav link sends the reader to
+ * — arrives underneath the nav, including the section's own opening rule.
+ *
+ * It is `--nav-height` rather than the `4rem` this note predicted, because that
+ * is the same rounded figure the nav is actually laid out at; two spellings of
+ * one height drift the moment the root font size scales, which it does with the
+ * viewport here.
+ *
+ * `scroll-behavior: smooth` belongs with it and not with the nav: a fragment
+ * jump is the browser scrolling the document, so the document is what decides
+ * whether that scroll is instant or travelled. Reduced motion turns it off with
+ * the snap below — a reader who asked not to be moved did not exclude the one
+ * movement they started themselves, but a page that vaults four screens in one
+ * animation is exactly what that setting is about.
  * ------------------------------------------------------------------------ */
 
 html {
   scroll-snap-type: y proximity;
+  scroll-padding-block-start: var(--nav-height);
+  scroll-behavior: smooth;
 }
 
 /* The marker is positioned against the section, so the section has to be its
@@ -239,6 +251,7 @@ body > section::before {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-snap-type: none;
+    scroll-behavior: auto;
   }
 }
 
@@ -289,6 +302,102 @@ body > section::before {
 }
 
 /* ---------------------------------------------------------------------------
+ * The page chrome ARRIVES — it is not there in the hero, and it does not pop
+ *
+ * The maintainer asked on 2026-08-29 for the hero to have no edges: no rails
+ * down its sides, no rule under the nav. The hero is the one screen that is
+ * meant to read as an open field, and a framed field is a form.
+ *
+ * But chrome that is simply switched on at some scroll position is worse than
+ * chrome that was always there — the rails would snap into a full-height line
+ * down both sides of the window in one frame, which is the abrupt arrival the
+ * maintainer specifically asked to be rid of. So it is not switched; it is
+ * SCRUBBED, on this one number:
+ *
+ *   --chrome-reveal   0 while the hero owns the screen, 1 once the reader is
+ *                     0.7 of a screen out of it, and every value in between at
+ *                     every scroll position between the two.
+ *
+ * Coupling it to the gesture rather than to a transition is what makes it
+ * reversible for free: scroll back up and the chrome withdraws at exactly the
+ * speed the reader is returning, which no timed animation can do.
+ *
+ * WHAT READS IT: the rails and the section marker — everything that frames the
+ * page without being it. They arrive together because arriving separately is
+ * two events where the reader should perceive one.
+ *
+ * THE NAV'S VEIL IS ON ITS OWN NUMBER, `--nav-veil`, and that is not an
+ * inconsistency. The rails belong to the page below the hero and have no
+ * business being drawn across the first screen. The veil answers a different
+ * question — is anything passing under the lettering — and the answer is yes
+ * from the first pixel of scrolling, so it runs on a much shorter ramp. Both
+ * are written by the same measurement in SiteNav.astro.
+ *
+ * THE RAILS ALSO GROW, and upwards. Fading a hairline in on its own leaves it
+ * momentarily grey, which on a 1px line reads as a rendering fault rather than
+ * as a fade; growing gives the eye an edge to follow instead. Upwards, not
+ * down, because the content it belongs to is arriving from the bottom of the
+ * window — a rail drawn downwards would be moving against everything else on
+ * screen. `clip-path` and not a height, so nothing is laid out twice.
+ *
+ * THE DEFAULT IS 1, NOT 0. With no JavaScript, no attribute is ever written and
+ * the page gets its chrome from the first frame — the site as it was, rather
+ * than a page permanently missing its rails. `SiteNav.astro` stamps
+ * `data-chrome` inline before the first paint, which is what hands the number
+ * to the script; deferred, it would draw the rails for one frame and wipe them.
+ *
+ * REDUCED MOTION is handled in the script, which simply pins the number at 1 —
+ * spelled there rather than here because a media query cannot beat the inline
+ * custom property the script writes on the root element.
+ * ------------------------------------------------------------------------ */
+
+:root {
+  --chrome-reveal: 1;
+  --nav-veil: 1;
+}
+
+:root[data-chrome] {
+  --chrome-reveal: 0;
+  --nav-veil: 0;
+}
+
+.page-chrome,
+.section-marker {
+  opacity: var(--chrome-reveal);
+}
+
+/*
+ * A MASK AND NOT A `clip-path`, and the difference is the whole effect. Clipped,
+ * the rail ends on a hard horizontal cut — a hairline that has been sliced, which
+ * is what a rendering fault looks like. Masked with a short ramp above the cut,
+ * the same line fades out over its last few per cent and reads as a line being
+ * drawn. The ramp is a fraction of the window rather than a fixed distance so it
+ * stays in proportion on a laptop and on a tall monitor.
+ *
+ * `black` and `transparent` are the mask's own alpha, not colours anyone sees —
+ * a mask reads nothing but the alpha channel, so there is no token to reach for
+ * here and nothing to keep in step with the palette.
+ *
+ * The `-webkit-` line is for Safari before 15.4, which supports the property
+ * only under the prefix. Dropped, the rails there are simply always drawn:
+ * the reveal is lost, nothing is broken.
+ */
+.page-chrome__rails {
+  --rail-drawn: calc(var(--chrome-reveal) * 100%);
+
+  -webkit-mask-image: linear-gradient(
+    to top,
+    black var(--rail-drawn),
+    transparent calc(var(--rail-drawn) + 9%)
+  );
+  mask-image: linear-gradient(
+    to top,
+    black var(--rail-drawn),
+    transparent calc(var(--rail-drawn) + 9%)
+  );
+}
+
+/* ---------------------------------------------------------------------------
  * The section marker
  *
  * One small square per section, walking that section's own perimeter: down the
@@ -309,10 +418,6 @@ body > section::before {
  * `.section-track__column { height: 100% }` silently fails to match, the box
  * collapses to zero height, and the marker parks in a corner. The page chrome's
  * rules are here for the same reason.
- *
- * z-index 20: above the cards, which have surfaces of their own and would
- * otherwise bury the square, and below the sticky nav at 30, which is opaque —
- * a marker passing THROUGH the nav reads as a bug rather than as chrome.
  * ------------------------------------------------------------------------ */
 
 /* The per-section layer PAINTS NOTHING. It is a box laid over the section, on
@@ -409,10 +514,14 @@ body > section::before {
  * 32px and the joint would read as a cross rather than a corner. Inside, the
  * line starts and ends exactly on a rail.
  *
- * THIS IS NO LONGER HOW A SECTION IS BOUNDED. Every section on this page is a
- * framed band now (see below) and draws its own two lines; the last user of
- * this class is the line under the sticky nav in `Hero.astro`, which is the
- * nav band's bottom edge and not a section boundary at all.
+ * THIS IS NO LONGER HOW A SECTION IS BOUNDED, AND IT NOW HAS NO USERS AT ALL.
+ * Every section on this page is a framed band (see below) and draws its own two
+ * lines. The last user of this class was the line under the sticky nav in
+ * `Hero.astro` — the nav band's bottom edge, never a section boundary — and
+ * that line went with the band on 2026-08-29 (SiteNav.astro). The class is kept
+ * because "one horizontal line spanning exactly the two rails" is a thing this
+ * page will need again and there is no second way to draw it correctly; see the
+ * note above about why the line goes on an element INSIDE the container.
  *
  * Reaching for it to open a section is what produced the doubled boundaries
  * the maintainer reported on 2026-08-29: a section that opened with this line
@@ -457,6 +566,177 @@ body > section::before {
 @supports (height: round(4rem, 1px)) {
   :root {
     --nav-height: round(4rem, 1px);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * The nav — lettering fixed over the page, with no band under it
+ *
+ * The markup, and why each piece exists, is in src/components/SiteNav.astro.
+ * Only the boxes are here, beside the height they are measured against and the
+ * `--chrome-reveal` the veil reads — the same reason the page chrome's and the
+ * marker's rules live in this file rather than in a scoped block: their edges
+ * come from a `Container`, which does not carry a component's scope attribute
+ * to its root element.
+ *
+ * WHAT CHANGED, 2026-08-29. This was a `sticky` band inside the hero with a
+ * `--canvas` ground and a `.section-rule` along its bottom. It stopped at the
+ * hero's bottom edge, so nine tenths of the page had no nav; and the ground
+ * plus the rule were two thirds of the frame the maintainer asked to have taken
+ * off the hero. It is now fixed for the whole document and has neither.
+ *
+ * `docs/design.md` § "Top nav" described the old band. It has been rewritten;
+ * if the two ever disagree again, the doc is the contract and this is the bug.
+ * ------------------------------------------------------------------------ */
+
+.site-nav {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 30;
+  height: var(--nav-height);
+  /* A transparent strip across the window would still swallow every click that
+   * lands in it — the hero's stage frame comes within a hair of it on a short
+   * screen. The strip lets them through; the controls take them back. */
+  pointer-events: none;
+}
+
+/*
+ * The veil. NOT A BAND: it is twice the nav's height and ends in nothing, so it
+ * has no bottom edge anywhere for the eye to read as the underside of a bar.
+ * What it does is keep the lettering legible over what passes beneath it — a
+ * lit painting, a globe, a wall of logos — which a shadow would also do and
+ * which this system does not have (docs/design.md: hairlines only, and
+ * scripts/check-style.mjs fails the build over one).
+ *
+ * It is `--canvas`, the page's own ground, at partial strength: the reader
+ * should register the top of the page as slightly deeper, not as a surface.
+ * And it is absent in the hero — `--chrome-reveal` is 0 there — where the
+ * ground behind the nav is that same colour anyway and nothing is passing under
+ * it, so the nav really is nothing but its words.
+ */
+.site-nav__veil {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: calc(var(--nav-height) * 2);
+  background: linear-gradient(
+    to bottom,
+    var(--canvas) 0%,
+    color-mix(in srgb, var(--canvas) 70%, transparent) 52%,
+    transparent 100%
+  );
+  /* `--nav-veil` and not `--chrome-reveal`: this arrives as soon as anything
+   * passes under the lettering, which is the first pixel of scrolling, while
+   * the rails wait for the hero to be over. See SiteNav.astro for why they are
+   * two questions and not one. */
+  opacity: var(--nav-veil);
+}
+
+.site-nav__row {
+  position: relative;
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+}
+
+.site-nav__row > * {
+  pointer-events: auto;
+}
+
+.site-nav__mark {
+  color: var(--ink);
+  font-size: var(--text-title-md);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.site-nav__links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  font-size: var(--text-body-sm);
+  font-weight: 500;
+}
+
+.site-nav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xxs);
+  color: var(--body);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 200ms ease;
+}
+
+.site-nav__link:hover,
+.site-nav__link[aria-current] {
+  color: var(--ink);
+}
+
+/*
+ * The current-section mark.
+ *
+ * A square, and the same ink as the marker on the rails, because the page
+ * already answers "where am I" in that shape — a dot, a bar or an underline
+ * here would be a second visual language for one idea. It is smaller than the
+ * marker's 8px on purpose: this one says WHICH section, the one on the rail
+ * says how far through it, and the quieter of the two should be the one that
+ * only repeats what the highlighted label already says.
+ *
+ * Laid out at all times and revealed with opacity, never inserted: a mark that
+ * appears would push every label after it sideways as the reader crosses a
+ * boundary, which is a page that twitches while it is being scrolled.
+ */
+.site-nav__dot {
+  width: 3px;
+  height: 3px;
+  background: var(--ink);
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.site-nav__link[aria-current] .site-nav__dot {
+  opacity: 1;
+}
+
+.site-nav__cta {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  padding-block: var(--space-xs);
+  padding-inline: var(--space-md);
+  color: var(--on-ink);
+  font-size: var(--text-body-sm);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 200ms ease;
+}
+
+.site-nav__cta:hover {
+  background: var(--ink-active);
+}
+
+/*
+ * Below the container's breakpoint the section links go and the wordmark and
+ * the download button stay — the same width at which the rails disappear,
+ * spelled the same way (see the two blocks above).
+ *
+ * There is no hamburger, and that is a decision rather than an omission: a menu
+ * button opens a panel, a panel needs a ground, and a ground is the one thing
+ * this nav is built not to have. The sections it lists are five scroll gestures
+ * apart on a phone, which is a shorter journey than opening a menu to pick one.
+ * `docs/design.md` still called for a hamburger below 768px and has been
+ * corrected.
+ */
+@media (max-width: 767px) {
+  .site-nav__links {
+    display: none;
   }
 }
 

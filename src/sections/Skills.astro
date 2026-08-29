@@ -18,6 +18,7 @@
  */
 import Container from "@/components/Container.astro";
 import SectionTrack from "@/components/SectionTrack.astro";
+import { DOCS_URL } from "@/lib/nav";
 import { SkillsDemo } from "@/components/skills-demo/SkillsDemo";
 ---
 
@@ -56,7 +57,7 @@ import { SkillsDemo } from "@/components/skills-demo/SkillsDemo";
         </p>
 
         <a
-          href="#docs"
+          href={DOCS_URL}
           class="mt-6 inline-flex items-center gap-2 text-[16px] font-medium text-ink underline-offset-4 hover:underline"
         >
           See how a skill is written

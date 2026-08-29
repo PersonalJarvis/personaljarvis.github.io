@@ -15,9 +15,16 @@
  * document rather than to any one section — which is also what lets it cross
  * the gaps BETWEEN sections instead of parking in a corner until the next one
  * starts. The sections declare their own geometry with `SectionTrack`.
+ *
+ * SiteNav is here for the same class of reason. It used to be markup inside
+ * `Hero.astro`, pinned with `sticky` — and sticky pins a child only for as long
+ * as its own parent is on screen, so the nav slid away at the hero's bottom
+ * edge and the other ten sections had none at all. A nav that belongs to the
+ * whole document has to be rendered by the thing that owns the whole document.
  */
 import PageChrome from "@/components/PageChrome.astro";
 import SectionMarker from "@/components/SectionMarker.astro";
+import SiteNav from "@/components/SiteNav.astro";
 import "@/styles/global.css";
 
 interface Props {
@@ -45,6 +52,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   <body>
     <PageChrome />
     <SectionMarker />
+    <SiteNav />
     <slot />
   </body>
 </html>
