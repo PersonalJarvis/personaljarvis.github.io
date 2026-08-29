@@ -346,9 +346,13 @@ body > section::before {
  * `data-chrome` inline before the first paint, which is what hands the number
  * to the script; deferred, it would draw the rails for one frame and wipe them.
  *
- * REDUCED MOTION is handled in the script, which simply pins the number at 1 —
- * spelled there rather than here because a media query cannot beat the inline
- * custom property the script writes on the root element.
+ * REDUCED MOTION is handled in the script, spelled there rather than here
+ * because a media query cannot beat the inline custom property the script writes
+ * on the root element. It does NOT pin the number at 1: the hero having no edges
+ * is a decision about what the first screen looks like, not an animation, and
+ * pinning would quietly hand that reader the framed hero nobody asked for. The
+ * number steps between 0 and 1 at the middle of the ramp instead — the design
+ * kept, the travel dropped.
  * ------------------------------------------------------------------------ */
 
 :root {

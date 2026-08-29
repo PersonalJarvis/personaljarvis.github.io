@@ -167,8 +167,9 @@ import { DOCS_URL, INSTALL_ID, NAV_LINKS, TOP_ID } from "@/lib/nav";
   const EPSILON = 0.002;
 
   /* Spelled the same way in the CSS — see layout.css § "The page chrome
-   * arrives". A reader who asked for less motion gets the chrome present from
-   * the first frame rather than assembled as they scroll. */
+   * arrives". A reader who asked for less motion gets the chrome switched on
+   * rather than assembled as they scroll; what they do NOT get is the framed
+   * hero, which is a look and not a movement. See `measure` below. */
   const still = matchMedia("(prefers-reduced-motion: reduce)");
 
   let reveal = -1;
@@ -198,15 +199,25 @@ import { DOCS_URL, INSTALL_ID, NAV_LINKS, TOP_ID } from "@/lib/nav";
      * route that reuses this nav — means the chrome is simply always there. */
     let nextReveal = 1;
     let nextVeil = 1;
-    if (hero && !still.matches) {
+    if (hero) {
       /* getBoundingClientRect every frame, never a stored offsetTop: the hero's
        * height moves with the viewport and with every island that hydrates. */
       const floor = hero.getBoundingClientRect().bottom;
-      nextReveal = ramp(window.innerHeight - floor, window.innerHeight * REVEAL_SPAN);
+      const revealed = ramp(window.innerHeight - floor, window.innerHeight * REVEAL_SPAN);
       /* The veil is driven by how far the DOCUMENT has moved, not by the hero's
        * floor: what it shades is whatever has travelled up under the nav, and on
        * the first screen that is the hero's own headline. */
-      nextVeil = ramp(window.scrollY, window.innerHeight * VEIL_SPAN);
+      const veiled = ramp(window.scrollY, window.innerHeight * VEIL_SPAN);
+
+      /* REDUCED MOTION KEEPS THE DESIGN AND DROPS THE SCRUB. The hero having no
+       * edges is a decision about what the first screen looks like, not an
+       * animation, so pinning both numbers at 1 — the obvious reading — would
+       * quietly give that reader the framed hero nobody asked for. What the
+       * setting is actually about is the travel: so the chrome steps between the
+       * two states at the middle of the ramp instead of being drawn through
+       * every value on the way. */
+      nextReveal = still.matches ? (revealed >= 0.5 ? 1 : 0) : revealed;
+      nextVeil = still.matches ? (veiled >= 0.5 ? 1 : 0) : veiled;
     }
 
     reveal = write("--chrome-reveal", nextReveal, reveal);
