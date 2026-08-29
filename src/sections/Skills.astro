@@ -2,11 +2,16 @@
 /**
  * Feature section — copy left, skills demo right.
  *
- * The third of three cards that share one shape. Everything structural here —
- * the card, the 16/9, the 5/7 split, the rule above it — is deliberately
- * identical to Plugins.astro, and the demo's stage and window come from
- * src/components/window-demo/. Two cards that are nearly the same read as a
- * mistake; two that are exactly the same read as one product.
+ * One of three blocks that share one shape. Everything structural here — the
+ * 16/9, the 5/7 split, the missing frame and the missing ground — is
+ * deliberately identical to Plugins.astro, and the demo's stage and window come
+ * from src/components/window-demo/. Two blocks that are nearly the same read as
+ * a mistake; two that are exactly the same read as one product.
+ *
+ * The three draw no boundary between them and no ground of their own: they are
+ * one run between the logo strip's closing rule and the voice section's opening
+ * one, and the marker descends the left rail across all three without stopping.
+ * Plugins.astro carries the whole reasoning; change it there, not here.
  *
  * See docs/feature-section.md.
  */
@@ -15,46 +20,46 @@ import SectionTrack from "@/components/SectionTrack.astro";
 import { SkillsDemo } from "@/components/skills-demo/SkillsDemo";
 ---
 
-<section id="skills" class="relative">
-  <SectionTrack />
-  <Container width="content">
-    <!--
-      The rule sits INSIDE the container so it starts and ends on a rail, and
-      the vertical padding travels with it. Same as the section above.
-    -->
-    <div class="section-rule py-24">
-      <div
-        class="grid items-center gap-12 rounded-[var(--radius-xl)] border border-rule bg-card p-8 lg:aspect-[16/9] lg:min-h-[560px] lg:grid-cols-12 lg:p-14"
-      >
-        <div class="lg:col-span-5">
-          <!--
-            Heading and body are one optical block: same size, separated by
-            weight and ink alone.
-          -->
-          <p class="text-[22px] leading-snug sm:text-[26px]">
-            <span class="font-medium text-ink"
-              >Skills are what Jarvis knows how to do.</span
-            >{" "}
-            <span class="text-body"
-              >Each one is a plain text file with a switch: a few lines saying what
-              it is for, and what sets it off — a spoken phrase, a shortcut, or
-              the clock. The ones it ships with and the ones you write sit in the
-              same list.</span
-            >
-          </p>
-
-          <a
-            href="#docs"
-            class="mt-6 inline-flex items-center gap-2 text-[16px] font-medium text-ink underline-offset-4 hover:underline"
+<!--
+  No shell, and no ground: one of the three sections that read as one run. See
+  Plugins.astro for the whole reasoning, including why the marker is tracked on
+  the section rather than `nested`, and why `open` is what keeps the square on
+  the left rail across all three.
+-->
+<section id="skills" class="relative flex flex-col">
+  <SectionTrack open />
+  <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
+    <div
+      class="grid items-center gap-12 px-8 lg:aspect-[16/9] lg:min-h-[560px] lg:grid-cols-12 lg:px-14"
+    >
+      <div class="lg:col-span-5">
+        <!--
+          Heading and body are one optical block: same size, separated by
+          weight and ink alone.
+        -->
+        <p class="text-[22px] leading-snug sm:text-[26px]">
+          <span class="font-medium text-ink"
+            >Skills are what Jarvis knows how to do.</span
+          >{" "}
+          <span class="text-body"
+            >Each one is a plain text file with a switch: a few lines saying what
+            it is for, and what sets it off — a spoken phrase, a shortcut, or
+            the clock. The ones it ships with and the ones you write sit in the
+            same list.</span
           >
-            See how a skill is written
-            <span aria-hidden="true">&#8594;</span>
-          </a>
-        </div>
+        </p>
 
-        <div class="lg:col-span-7 lg:h-full">
-          <SkillsDemo client:visible />
-        </div>
+        <a
+          href="#docs"
+          class="mt-6 inline-flex items-center gap-2 text-[16px] font-medium text-ink underline-offset-4 hover:underline"
+        >
+          See how a skill is written
+          <span aria-hidden="true">&#8594;</span>
+        </a>
+      </div>
+
+      <div class="lg:col-span-7 lg:h-full">
+        <SkillsDemo client:visible />
       </div>
     </div>
   </Container>
