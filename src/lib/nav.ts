@@ -39,7 +39,7 @@ export interface NavLink {
   readonly id: string;
   /**
    * What the nav calls it. Short enough to sit beside six others AND the Docs
-   * link at 768px, which is the narrowest screen that still shows the row —
+   * link at 1024px, which is the narrowest screen that still shows the row —
    * see the width note under the list.
    */
   readonly label: string;
@@ -54,10 +54,12 @@ export interface NavLink {
  * THE ROW IS WIDTH-CONSTRAINED AND THIS LIST IS WHY. Seven section links, the
  * Docs link, the wordmark and the Download button share one `content` row, and
  * the row has no way to say it is full — flex simply pushes the wordmark and
- * the button towards each other until something wraps or overflows. The links'
- * gap steps down between 768px and 1200px to buy the room the two additions
- * cost (see `.site-nav__links` in layout.css). ADDING A NINTH ENTRY MEANS
- * MEASURING AGAIN at 768px, not just typing a line here.
+ * the button towards each other until the labels run out through the Download
+ * button. Seven entries need 977px of row and the two additions of 2026-08-29
+ * cost 180px of that, which is why the links' gap steps down below 1280px (56px
+ * back, bringing the row to 921px) and why the links are put away below 1024px
+ * rather than below 768px — both in `layout.css`, with the arithmetic. ADDING A
+ * NINTH ENTRY MEANS MEASURING AGAIN AT 1024px, not just typing a line here.
  */
 export const NAV_LINKS: readonly NavLink[] = [
   { id: "features", label: "Plugins" },
