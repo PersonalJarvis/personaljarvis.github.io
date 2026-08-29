@@ -241,8 +241,8 @@ gets the same job done with the row standing still, and needs no such rule.
 
 ## The reference, measured
 
-Taken from the live page rather than from a screenshot, because the cells look
-outlined and are not.
+The cells look outlined and are not, so the figures below are the ones to
+work from rather than an impression of them.
 
 | Property | Reference | Ours |
 |---|---|---|
@@ -253,7 +253,7 @@ outlined and are not.
 | Cell surface | a 2% darker plate, 4px radius, **no border** | card surface, 1px hairline, `--radius-lg` |
 | Mark colour | `currentColor` at full body ink | `currentColor` at `--ink` |
 | Mark size | one shared 40px height | per mark, about 36% of cell height |
-| Contents | eight fixed customer logos | fifty marks, one cell at a time |
+| Contents | eight fixed logos | fifty marks, one cell at a time |
 
 ### Deliberate deviations
 

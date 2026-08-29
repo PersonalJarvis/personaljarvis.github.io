@@ -138,7 +138,7 @@ there is no "after": the bite is the end of the line.
 ## Build
 
 Four columns over one row, a hairline, and a closing line — the shape the
-maintainer named on 2026-08-29 by pointing at meuze.ai's own foot.
+maintainer named on 2026-08-29 by pointing at the reference's own foot.
 
 | Column | Share | Holds |
 |---|---|---|

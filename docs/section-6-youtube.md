@@ -6,8 +6,9 @@
 >
 > **Its own viewport.** The section fills one screen and no more.
 
-Layout reference: <https://www.bridgemind.ai>, its "Built in public" section.
-The stat row at the bottom takes its styling from <https://meuze.ai>. What is
+Layout reference: the "built in public" section of one design reference the
+maintainer supplied; the stat row at the bottom takes its styling from a
+second. What is
 taken in both cases is the layout, the proportions and the embedding technique.
 Not their text, their numbers or their content — see [`design.md`](design.md)
 § "What this is not" for why that line matters here too.
@@ -349,7 +350,7 @@ Four cells. YouTube subscribers, X followers, GitHub stars, Discord members —
 in that order, left to right: YouTube first because the section is about a
 video series, Discord last because it is the invitation the reader leaves on.
 
-Styling reference is meuze.ai's stat row, and the whole of it is:
+Styling reference is the reference's stat row, and the whole of it is:
 
 - one horizontal row of **equal cells**, `repeat(4, minmax(0, 1fr))`
 - **thin vertical hairlines between them and nothing else** — no card, no

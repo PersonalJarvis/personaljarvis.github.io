@@ -11,7 +11,7 @@ colours from [`design.md`](design.md); this file governs the rest.
 
 ## What came from the reference, and what did not
 
-The maintainer chose the effect from a section on meuze.ai and asked for the
+The maintainer chose the effect from a reference section and asked for the
 same viewpoint. On the record, because "where did this come from" is a question
 that deserves an answer that was written down at the time rather than
 reconstructed later:

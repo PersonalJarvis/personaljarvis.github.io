@@ -79,7 +79,7 @@ boundaries are `--rule`'s job.
 
 For one build each section painted its own near-black under itself —
 `--tone-deep` `#060605`, `--tone-floor` `#0a0a09`, `--tone-raised` `#131210`,
-plus a shallow gradient inside each one — following meuze.ai's white/near-black
+plus a shallow gradient inside each one — following the reference's white/near-black
 alternation, dialled down to what a dark page can carry. A full inversion was
 never an option: every app mockup on this page is a clone of the product's own
 dark theme rather than an illustration, and cannot be re-lit.

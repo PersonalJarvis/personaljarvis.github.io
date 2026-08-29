@@ -947,7 +947,7 @@ the section above it — had no line at all. Worse, the two sticky sections drew
 their `.section-rule` **and** their frame's top line, 76px apart at voice and
 33px at install; with the card border of the section above in the same view,
 that is three horizontal lines at one joint. That is the screenshot the
-maintainer sent, with `meuze.ai` as the reference: one framed sheet per
+maintainer sent, pointing at the reference: one framed sheet per
 section, the same air around every one of them.
 
 The reference's own numbers, measured rather than eyeballed: **80px outside the
@@ -1168,7 +1168,7 @@ glance precisely so that tone does not have to help.
 For one build each section painted its own near-black under itself
 (`--tone-deep` `#060605`, `--tone-floor` `#0a0a09`, `--tone-raised` `#131210`,
 set with a `data-tone` attribute), with a shallow gradient inside each one so a
-single section was not flat either. It was meuze.ai's white/near-black
+single section was not flat either. It was the reference's white/near-black
 alternation dialled down to what a dark page can carry — and dialled down that
 far, it did not read as alternation. It read as an uneven black: three values
 within two points of each other, plus a visible step at every joint where one

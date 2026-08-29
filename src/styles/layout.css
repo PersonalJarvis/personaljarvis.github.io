@@ -762,7 +762,7 @@ body > section {
  * different shells produced a different gap — measured on the built page: 78,
  * 113, 114, 80, 160 and 303 pixels — and the joints where a rule met a framed
  * body drew two lines 33 to 76px apart, three with the card border above them.
- * The maintainer reported exactly that, with meuze.ai as the reference: one
+ * The maintainer reported exactly that, pointing at the reference: one
  * framed sheet per section, the same air around every one of them.
  *
  * The reference's own numbers, for the record: 80px outside the frame, 72px

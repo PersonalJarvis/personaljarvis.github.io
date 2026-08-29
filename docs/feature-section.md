@@ -24,8 +24,8 @@ window. If a measurement has to change, it changes in one file for all three.
 
 ## Reference
 
-Layout model: the section on <https://cursor.com> under the logo strip, headed
-"Agents turn ideas into code".
+Layout model: the section under the logo strip in the reference the
+maintainer supplied.
 
 **The reference governs layout, measurements, proportions and nesting.** Not
 copy, not content, not brand material. See `design.md` § "What this is not" —

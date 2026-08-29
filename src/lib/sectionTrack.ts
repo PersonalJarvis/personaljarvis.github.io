@@ -70,8 +70,8 @@
  * else sets the pacing, and the milestones below are read back out of those
  * numbers rather than tuned by hand.
  *
- * Adapted from <https://www.meuze.ai>, whose section marker walks the same
- * alternating path and which the maintainer asked for by name on 2026-08-29.
+ * Adapted from the design reference the maintainer supplied on 2026-08-29,
+ * whose section marker walks the same alternating path.
  * The geometry is a rectangle's perimeter and belongs to nobody — nothing
  * brand-bearing is carried over. Its tail is the one thing not taken: that site
  * draws a square per section, and this one draws a single square for the whole

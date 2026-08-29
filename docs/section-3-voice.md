@@ -43,22 +43,21 @@ nicht, was Jarvis wirklich der Unterschied ist."*
 
 ## Reference, and where it stops
 
-The treatment is modelled on <https://www.meuze.ai> — photographs rendered as a
+The treatment is modelled on the design reference — photographs rendered as a
 fine dither, near-monochrome, with an eyebrow, a headline set beside its
 standfirst, and a bar of figures underneath. The maintainer asked for that
 section's effect and its layout by name on 2026-08-29.
 
 **Carried over:** the technique. A one-bit dot grid is newspaper halftone and
-belongs to nobody. The mechanism was read out of the reference's own bundle and
-is described under "The wipe" below; the sticky-track-plus-scroll-scrub shape is
-a standard scrollytelling pattern.
+belongs to nobody; the implementation here is our own and is described under
+"The wipe" below. The sticky-track-plus-scroll-scrub shape is a standard
+scrollytelling pattern.
 
 **Deliberately not carried over:** their serif display face, their blue accent,
 their bordered section frame, their five-column figure bar, their counting
 numbers, their isometric illustrations. `design.md` § "What this is not" exists
-because another product's brand was once copied into this site wholesale, and
-taking a second one would be the same mistake with a different logo. This site
-stays on Inter, on the app's own dark tokens, and on its own layout.
+because a reference's brand is never the thing to take from it. This site stays
+on Inter, on the app's own dark tokens, and on its own layout.
 
 **Where this one goes further:** the reference cuts between its two frames on a
 straight-edged rectangular clip. Here the boundary dissolves cell by cell on the
