@@ -65,6 +65,10 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit --only -- src/data/social-counts.json \
-            -m "chore(social): refresh the build-in-public counts"
+          # The message goes BEFORE the `--`. Everything after that separator is
+          # a pathspec, so `-m` there is read as a filename and the commit fails
+          # with "pathspec '-m' did not match any file(s)" — which is what the
+          # first real run of this workflow did.
+          git commit -m "chore(social): refresh the build-in-public counts" \
+            --only -- src/data/social-counts.json
           git push

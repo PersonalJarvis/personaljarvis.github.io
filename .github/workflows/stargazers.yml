@@ -36,10 +36,22 @@ jobs:
           node-version: 22
 
       - name: Fetch stargazer locations
-        # The repository being read is public, so the workflow's own token is
-        # enough — no secret to create, rotate, or leak.
+        # The repository being read is a DIFFERENT one — the app, not this
+        # site — and that is what decides the token.
+        #
+        # The workflow's own GITHUB_TOKEN is scoped to this repository alone.
+        # It can read another public repository over REST, but GraphQL refuses
+        # it outright: "Resource not accessible by integration", measured on
+        # the first real run of this workflow. So the fetcher falls back to
+        # REST, which costs one request per stargazer and is fine at this size.
+        #
+        # STARGAZERS_TOKEN is OPTIONAL and the run is green without it. It buys
+        # the GraphQL path back — a hundred people per request instead of one —
+        # which starts to matter somewhere in the low hundreds of stars. A
+        # fine-grained token with public read access is enough.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STARGAZERS_TOKEN: ${{ secrets.STARGAZERS_TOKEN }}
         run: node scripts/fetch-stargazers.mjs
 
       - name: Commit if it changed
@@ -50,6 +62,10 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit --only -- src/data/stargazers.json \
-            -m "chore(stargazers): refresh the globe's markers"
+          # The message goes BEFORE the `--`. Everything after that separator is
+          # a pathspec, so `-m` there is read as a filename and the commit fails
+          # with "pathspec '-m' did not match any file(s)" — which is what the
+          # first real run of this workflow did.
+          git commit -m "chore(stargazers): refresh the globe's markers" \
+            --only -- src/data/stargazers.json
           git push

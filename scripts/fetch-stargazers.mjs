@@ -50,7 +50,11 @@ function repoArg() {
 }
 
 function token() {
-  const fromEnv = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+  // STARGAZERS_TOKEN first. In CI it is the only credential that can reach
+  // ANOTHER repository's GraphQL, so where it exists it is the one to use;
+  // see `collect` for what happens where it does not.
+  const fromEnv =
+    process.env.STARGAZERS_TOKEN || process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
   if (fromEnv) return fromEnv;
   try {
     // Locally there is usually a signed-in gh; in CI there is always a
@@ -91,12 +95,7 @@ async function graphql(auth, variables) {
   return body.data.repository;
 }
 
-async function main() {
-  const repo = repoArg();
-  const [owner, name] = repo.split("/");
-  if (!owner || !name) throw new Error(`--repo wants owner/name, got "${repo}"`);
-
-  const auth = token();
+async function collectByGraphql(auth, owner, name) {
   const locations = [];
   let after = null;
   let count = 0;
@@ -114,6 +113,107 @@ async function main() {
     if (!data.stargazers.pageInfo.hasNextPage) break;
     after = data.stargazers.pageInfo.endCursor;
   }
+
+  return { count, forks, locations, requests, via: "GraphQL" };
+}
+
+/**
+ * Past this many stargazers, REST is no longer a polite way to ask.
+ *
+ * One request per person against a ceiling of a thousand an hour: at the
+ * current few dozen it is nothing, at a few hundred it is most of the budget
+ * and several minutes of runtime. Beyond it the script stops and names the fix
+ * rather than spending the budget and writing half a globe.
+ */
+const REST_CEILING = 600;
+
+async function rest(auth, path) {
+  const res = await fetch(`https://api.github.com${path}`, {
+    headers: {
+      authorization: `bearer ${auth}`,
+      accept: "application/vnd.github+json",
+      "user-agent": "personal-jarvis-website-build",
+    },
+  });
+  if (!res.ok) throw new Error(`GitHub REST ${path}: HTTP ${res.status}`);
+  return res.json();
+}
+
+/**
+ * The same two facts over REST, for a token GraphQL will not answer.
+ *
+ * REST hands back logins and nothing else, so a location costs one more
+ * request per person — the very cost the GraphQL query exists to avoid. It is
+ * the fallback and not the default for that reason alone; the answer it
+ * produces is identical.
+ */
+async function collectByRest(auth, owner, name) {
+  const repo = await rest(auth, `/repos/${owner}/${name}`);
+  let requests = 1;
+
+  if (repo.stargazers_count > REST_CEILING) {
+    throw new Error(
+      `${repo.stargazers_count} stargazers is past what REST can fetch politely ` +
+        `(${REST_CEILING}). Set STARGAZERS_TOKEN to a token with public read ` +
+        "access and the GraphQL path takes over.",
+    );
+  }
+
+  const logins = [];
+  for (let page = 1; ; page += 1) {
+    const batch = await rest(
+      auth,
+      `/repos/${owner}/${name}/stargazers?per_page=${PAGE}&page=${page}`,
+    );
+    requests += 1;
+    for (const user of batch) if (user?.login) logins.push(user.login);
+    if (batch.length < PAGE) break;
+  }
+
+  // One at a time, deliberately. A burst of parallel requests is what trips
+  // GitHub's secondary rate limit, and a job that runs every six hours has all
+  // the time it needs.
+  const locations = [];
+  for (const login of logins) {
+    const user = await rest(auth, `/users/${login}`);
+    requests += 1;
+    if (user.location) locations.push(user.location);
+  }
+
+  return { count: repo.stargazers_count, forks: repo.forks_count, locations, requests, via: "REST" };
+}
+
+/**
+ * GraphQL where the token is allowed to use it, REST where it is not.
+ *
+ * A workflow's built-in GITHUB_TOKEN is scoped to the repository it runs in.
+ * It reads another PUBLIC repository over REST without complaint, but GraphQL
+ * rejects it outright — "Resource not accessible by integration", measured on
+ * this workflow's first real run. The globe is built in the website's
+ * repository while the stars belong to the app's, so in CI that is the
+ * ordinary case rather than an edge one.
+ *
+ * ONLY that one rejection falls through. A network failure, an expired token
+ * or a repository that does not exist has to keep failing loudly: quietly
+ * spending several hundred requests to work around a typo is worse than
+ * stopping.
+ */
+async function collect(auth, owner, name) {
+  try {
+    return await collectByGraphql(auth, owner, name);
+  } catch (err) {
+    if (!/not accessible by integration/i.test(String(err?.message))) throw err;
+    console.log("stargazers: GraphQL is closed to this token — falling back to REST");
+    return collectByRest(auth, owner, name);
+  }
+}
+
+async function main() {
+  const repo = repoArg();
+  const [owner, name] = repo.split("/");
+  if (!owner || !name) throw new Error(`--repo wants owner/name, got "${repo}"`);
+
+  const { count, forks, locations, requests, via } = await collect(token(), owner, name);
 
   // One cluster per resolved place, so "SF", "San Francisco, CA" and
   // "san francisco" arrive as one marker of three rather than three markers
@@ -166,7 +266,7 @@ async function main() {
     [
       `stargazers: ${count} stars${delta === null ? "" : delta === 0 ? " (unchanged)" : ` (${delta > 0 ? "+" : ""}${delta})`}, ${forks} forks`,
       `            ${locations.length} gave a location, ${out.placed} of those resolved, ${list.length} places`,
-      `            ${requests} GraphQL request${requests === 1 ? "" : "s"} -> src/data/stargazers.json`,
+      `            ${requests} ${via} request${requests === 1 ? "" : "s"} -> src/data/stargazers.json`,
     ].join("\n"),
   );
   if (rejected.length) {
