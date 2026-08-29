@@ -20,16 +20,21 @@
  */
 
 import type { DemoPlugin, FilterId, PluginStatus } from "./frames";
+import {
+  CANVAS_WIDTH,
+  HAIRLINE,
+  RADIUS,
+  STROKE,
+  WindowChrome,
+  WindowHeader,
+} from "@/components/window-demo/chrome";
 
-/** The canvas. Both numbers are also PluginsDemo's scaling reference — change
- *  one and you change the other, so they live here and are imported there. */
-export const CANVAS_WIDTH = 1440;
+export { CANVAS_WIDTH };
+
+/** How tall this window is. The width is shared with the other feature demos
+ *  (see chrome.tsx); the height is this one's own, because a five-row list and
+ *  a terminal do not want the same proportion. */
 export const CANVAS_HEIGHT = 1340;
-
-/** A hairline, in design pixels, so it renders as one real pixel. */
-const HAIRLINE = 2;
-/** An 8px radius, in design pixels. */
-const RADIUS = 18;
 
 export interface PluginCounts {
   /** How many the real catalog ships — not how many rows are on screen. */
@@ -150,15 +155,7 @@ function RowButton({
 // --- Icons ----------------------------------------------------------------
 // Drawn inline rather than pulled from an icon package: eight strokes are
 // cheaper than a dependency, and they inherit `currentColor`, so the hover
-// states below need no second copy.
-
-const STROKE = {
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 2.4,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-};
+// states below need no second copy. STROKE is shared with the other demos.
 
 function PlusIcon() {
   return (
@@ -425,90 +422,14 @@ export function PluginsView({
         fontFamily: "var(--font-sans)",
       }}
     >
-      {/* Title bar — three dots left, the window's name centred. */}
-      <div
-        style={{
-          height: 76,
-          flexShrink: 0,
-          background: "var(--canvas-soft)",
-          borderBottom: `${HAIRLINE}px solid var(--hairline)`,
-          display: "flex",
-          alignItems: "center",
-          padding: "0 32px",
-          position: "relative",
-        }}
-      >
-        <span style={{ display: "flex", gap: 14 }}>
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: 999,
-                background: "var(--hairline-strong)",
-              }}
-            />
-          ))}
-        </span>
-        <span
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            fontSize: 28,
-            color: "var(--muted)",
-          }}
-        >
-          Personal Jarvis
-        </span>
-      </div>
+      <WindowChrome />
 
       <div style={{ padding: "44px 56px 32px", flex: 1, minHeight: 0 }}>
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 24 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <span
-              style={{
-                display: "block",
-                fontSize: 56,
-                fontWeight: 400,
-                color: "var(--ink)",
-                letterSpacing: "-1px",
-                lineHeight: 1.15,
-              }}
-            >
-              Plugins
-            </span>
-            <span
-              style={{
-                display: "block",
-                fontSize: 30,
-                color: "var(--muted)",
-                marginTop: 8,
-              }}
-            >
-              {counts.total} available · {counts.connected} connected
-            </span>
-          </div>
-          <span
-            style={{
-              height: 64,
-              padding: "0 28px",
-              borderRadius: RADIUS,
-              background: "var(--ink)",
-              color: "var(--on-ink)",
-              fontSize: 28,
-              fontWeight: 500,
-              display: "inline-flex",
-              alignItems: "center",
-              flexShrink: 0,
-            }}
-          >
-            Add
-          </span>
-        </div>
+        <WindowHeader
+          title="Plugins"
+          subtitle={`${counts.total} available · ${counts.connected} connected`}
+          action="Add"
+        />
 
         {/* Search — a mockup, not an input: the stage is aria-hidden, and an
             unreachable text field inside it would be a trap, not a feature. */}

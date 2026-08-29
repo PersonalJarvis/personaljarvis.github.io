@@ -1,0 +1,188 @@
+/**
+ * The demo stage — the machinery every feature card's demo shares.
+ *
+ * One well, one window, one fixed canvas scaled to fit. The three feature
+ * sections (plugins, skills, CLIs) differ only in what is drawn inside the
+ * canvas; everything about how it is sized, clipped, framed and handed over to
+ * the visitor lives here, once.
+ *
+ * That is not tidiness. The scaler below carries a guard against a feedback
+ * loop that is invisible until it fires (see useFitScale), and three copies of
+ * a subtle guard is two copies that will lose it.
+ *
+ * See docs/feature-section.md.
+ */
+
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
+
+/** True when the visitor asked their system for less motion. Read on mount,
+ *  not during render: reading it during render would differ between the
+ *  server-rendered HTML and the first client render. */
+export function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduced(query.matches);
+    const onChange = (e: MediaQueryListEvent) => setReduced(e.matches);
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, []);
+  return reduced;
+}
+
+/**
+ * Scale a fixed canvas to fit the stage.
+ *
+ * The hero scales by width alone; its stage owns its aspect ratio and may grow
+ * as tall as it likes. A feature card's height is already fixed by `16/9`, so a
+ * width-only scale would push the window through the card's bottom edge. Fit
+ * both axes and the window is always whole.
+ */
+export function useFitScale(
+  ref: RefObject<HTMLDivElement | null>,
+  canvasWidth: number,
+  canvasHeight: number,
+): number {
+  const [scale, setScale] = useState(0);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const measure = (width: number, height: number) => {
+      if (width <= 0) return;
+      const byWidth = width / canvasWidth;
+      // The width is always definite — the column is. The height only is while
+      // the stage has an aspect ratio (narrow) or the card's 16/9 gives it one
+      // (wide). Fall back to the width if it ever is not, because a height read
+      // from the content is a height the window itself decided: scale feeds
+      // size feeds scale, and the mockup runs away to full size.
+      const byHeight = height > 0 ? height / canvasHeight : byWidth;
+      // Never above 1:1. A mockup enlarged past its design size looks soft.
+      setScale(Math.min(1, byWidth, byHeight));
+    };
+
+    const box = node.getBoundingClientRect();
+    measure(box.width, box.height);
+
+    const observer = new ResizeObserver((entries) => {
+      const rect = entries[0]?.contentRect;
+      if (rect) measure(rect.width, rect.height);
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [ref, canvasWidth, canvasHeight]);
+
+  return scale;
+}
+
+/**
+ * Autoplay through a looping script, and hand it over for good at the first
+ * touch. A demo that keeps moving under someone's hand is worse than one that
+ * never moved.
+ *
+ * `durations` is read per frame rather than taken as a constant, so a script
+ * can hold its most interesting beat longer than its transitions.
+ */
+export function useFrameScript(
+  durations: number[],
+  paused: boolean,
+): { index: number; tookOver: boolean; takeOver: () => void } {
+  const [index, setIndex] = useState(0);
+  const [tookOver, setTookOver] = useState(false);
+
+  const takeOver = useCallback(() => setTookOver(true), []);
+
+  const hold = durations[index] ?? 2500;
+  useEffect(() => {
+    if (tookOver || paused || durations.length < 2) return;
+    const timer = window.setTimeout(
+      () => setIndex((i) => (i + 1) % durations.length),
+      hold,
+    );
+    return () => window.clearTimeout(timer);
+  }, [index, hold, tookOver, paused, durations.length]);
+
+  return { index, tookOver, takeOver };
+}
+
+export interface DemoStageProps {
+  /** The canvas the children are drawn on. Every measurement inside them is in
+   *  design pixels against this box, and nothing inside reacts to the
+   *  viewport — that is the whole point of the technique. */
+  canvasWidth: number;
+  canvasHeight: number;
+  /** What a screen reader is told instead of the stage, which is aria-hidden. */
+  description: string;
+  /** Called on the first pointer press anywhere in the stage. */
+  onTakeOver?: () => void;
+  children: ReactNode;
+}
+
+/**
+ * The well and the window.
+ *
+ * The window's own frame sits OUTSIDE the transform, so its 1px border and 8px
+ * radius stay exactly that at any scale. Everything inside is design pixels and
+ * scales; a window's chrome does not.
+ */
+export function DemoStage({
+  canvasWidth,
+  canvasHeight,
+  description,
+  onTakeOver,
+  children,
+}: DemoStageProps) {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const scale = useFitScale(stageRef, canvasWidth, canvasHeight);
+
+  return (
+    <div className="h-full w-full">
+      {/*
+        The recessed well. Its 24px of padding is what keeps the window off its
+        edge — the second of the two nested radii that carry the depth in this
+        system, since it has no shadows.
+
+        aria-hidden, because a screen reader should get the sentence below, not
+        a table of fictional rows.
+      */}
+      <div
+        ref={stageRef}
+        aria-hidden="true"
+        onMouseDownCapture={onTakeOver}
+        className="grid aspect-[7/6] w-full place-items-center overflow-hidden rounded-[var(--radius-lg)] border border-hairline bg-canvas p-6 lg:aspect-auto lg:h-full"
+      >
+        <div
+          className="overflow-hidden rounded-[var(--radius-md)] border border-hairline bg-card"
+          style={{
+            width: canvasWidth * scale,
+            height: canvasHeight * scale,
+            // Nothing to show until the observer has measured; drawing at
+            // scale 0 would flash a collapsed window on first paint.
+            visibility: scale > 0 ? "visible" : "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: canvasWidth,
+              height: canvasHeight,
+              transform: `scale(${scale})`,
+              transformOrigin: "top left",
+            }}
+          >
+            {children}
+          </div>
+        </div>
+      </div>
+
+      <p className="sr-only">{description}</p>
+    </div>
+  );
+}
