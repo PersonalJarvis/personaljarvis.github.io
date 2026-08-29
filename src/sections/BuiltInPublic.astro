@@ -1,0 +1,860 @@
+---
+/**
+ * Section 6 — "Built in public": the videos and the channels.
+ *
+ * See docs/section-6-youtube.md. Three things in this file are contractual
+ * rather than stylistic, and each one is a rule that costs something real when
+ * it is broken:
+ *
+ *  1. THE FACADE. No YouTube iframe exists until the visitor presses play. A
+ *     real embed pulls roughly a megabyte of JavaScript from four Google hosts
+ *     on page load and takes 20-30 Lighthouse points with it. What ships
+ *     instead is a poster frame and a button; the iframe is created in the
+ *     click handler.
+ *
+ *  2. THE POSTER FRAMES ARE OURS. They live in public/video-thumbs/, fetched
+ *     once by scripts/fetch-video-thumbs.mjs. Loading them from i.ytimg.com
+ *     would send every visitor's IP address to Google before they consented to
+ *     anything — the same disclosure the facade exists to prevent, just
+ *     through the image tag instead of the iframe.
+ *
+ *  3. NOTHING HERE IS INVENTED. Every title is the video's real title, read
+ *     from YouTube's oEmbed endpoint; every date is its real upload date. The
+ *     channel cards carry no follower counts, because the honest numbers are
+ *     small enough that showing them would be a different argument than the
+ *     one this section makes, and inventing better ones is forbidden outright.
+ *
+ * Framework note: the reference implementation in the brief is React, using
+ * `useState` and `next/image`. This site is Astro with no Next and no island
+ * on this section, so the same pattern is built with a data attribute and
+ * fifty lines of vanilla script. The pattern is the contract; the hooks were
+ * only how the brief happened to spell it.
+ */
+import Container from "@/components/Container.astro";
+import { GitHubMark } from "@/components/logos/GitHubMark";
+import { YouTubeMark } from "@/components/logos/YouTubeMark";
+
+/**
+ * The four videos, in the order the brief fixes.
+ *
+ * `title` is verbatim from
+ * `https://www.youtube.com/oembed?url=https://youtu.be/{id}&format=json`,
+ * inconsistent capitalisation and trailing full stops included. They are the
+ * author's own titles; smoothing them here would be inventing titles, which
+ * docs/section-6-youtube.md forbids.
+ *
+ * `uploaded` is the `uploadDate` from each video's own watch page, as an ISO
+ * date so <time datetime> is honest and the rendered label is derived rather
+ * than typed twice.
+ *
+ * Re-run scripts/fetch-video-thumbs.mjs after changing this list — the poster
+ * frames are keyed by id and it reads the same four.
+ */
+const VIDEOS = [
+  {
+    id: "3nV-3ygIJ0I",
+    title: "All things you have to know about personal Jarvis V2",
+    uploaded: "2026-08-24",
+  },
+  {
+    id: "BBcwq0jn7_E",
+    title: "Personal Jarvis has now a free and open source AI dictation tool.",
+    uploaded: "2026-08-01",
+  },
+  {
+    id: "0ZrUVxfKFME",
+    title: "Real-time local voice assistant PersonalJarvis MIT license",
+    uploaded: "2026-08-08",
+  },
+  {
+    id: "M5PbmWV8OQc",
+    title: "localDemo of personalJarvis the best Open Source AI Ecosystem.",
+    uploaded: "2026-08-12",
+  },
+];
+
+/** The video on the stage when the page loads; the other three fill the rail. */
+const FEATURED = VIDEOS[0];
+const RAIL = VIDEOS.slice(1);
+
+/**
+ * Formatted at build time, not in the browser: this section ships no
+ * framework, and pulling in Intl at runtime to render three dates would be a
+ * worse trade than a string computed here.
+ */
+const dateLabel = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+/**
+ * Both channels are verified to exist, and only verified ones appear: YouTube
+ * through the oEmbed responses above (`author_url`), GitHub through its own
+ * API. A third card for X was dropped rather than filled with a placeholder —
+ * the account could not be confirmed, and the brief forbids padding the row.
+ *
+ * No `value` field, on purpose. The brief allows a real, rounded number or no
+ * number at all, and nothing in between. The real figures on 2026-08-29 were
+ * 12 YouTube subscribers and 31 GitHub stars; a card built around either would
+ * undercut the invitation it is meant to extend, so both cards make their case
+ * in words. Adding numbers later is a `value` line per entry and a rule in the
+ * stylesheet — it is deliberately cheap to change our minds about.
+ */
+const CHANNELS = [
+  {
+    href: "https://www.youtube.com/@PersonalJarvis",
+    Mark: YouTubeMark,
+    label: "YouTube",
+    lines: [
+      "Demos, walkthroughs and the sessions where the features get made.",
+      "Nothing is re-recorded once it works.",
+    ],
+  },
+  {
+    href: "https://github.com/PersonalJarvis/PersonalJarvis",
+    Mark: GitHubMark,
+    label: "GitHub",
+    lines: [
+      "The source itself, Apache-2.0, with the issues and the commit history.",
+      "Clone it and run the same build.",
+    ],
+  },
+];
+
+const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
+---
+
+<section
+  id="built-in-public"
+  aria-labelledby="bip-heading"
+  class="flex min-h-svh flex-col"
+  data-bip
+  data-active={FEATURED.id}
+  data-active-uploaded={FEATURED.uploaded}
+  data-active-meta={dateLabel(FEATURED.uploaded)}
+>
+  {/*
+    The section rule sits in the same container the rails stand on, so it
+    starts and ends exactly on them — see docs/layout.md § "Horizontal rules".
+    It is a child of the section rather than of the centred block, because the
+    line marks where the section begins and the block floats in the leftover
+    height.
+  */}
+  <Container width="content">
+    <div class="section-rule"></div>
+  </Container>
+
+  <div class="flex flex-1 flex-col justify-center py-8">
+    <Container width="content">
+      {/*
+        Headline and standfirst sit on `content`, not on the `prose` column.
+        Everything in this section shares ONE left edge — the card and the
+        channel cards below are content-width, and prose is centred inside
+        content, so a prose headline would start 300px further in and the
+        section would read as having two different left margins. The
+        standfirst keeps a prose MEASURE instead, through a `ch` limit, which
+        is what "max prose width" is actually protecting.
+      */}
+      <h2 id="bip-heading" class="bip-headline">
+        This is being built in public.<br />You can watch how it happens.
+      </h2>
+
+      <p class="bip-standfirst">
+        Development happens on camera, and the code lands in a public
+        repository anyone can read. Everything published so far is below.
+      </p>
+
+      <div class="bip-card">
+        {/*
+          The card head. The title is the video currently on the stage, and the
+          link points at that same video — both are rewritten when the rail
+          swaps something in, so the link never sends anyone to a video they
+          are not looking at.
+        */}
+        <div class="bip-cardhead">
+          <p class="bip-cardtitle" data-active-title>{FEATURED.title}</p>
+          <a
+            class="bip-watch"
+            data-watch
+            href={watchUrl(FEATURED.id)}
+            target="_blank"
+            rel="noopener"
+          >
+            Watch on YouTube <span aria-hidden="true">&rarr;</span>
+          </a>
+        </div>
+
+        <div class="bip-body">
+          {/*
+            The stage. Until the button is pressed this is a local JPEG and
+            nothing else — no iframe, no script, no request to any Google host.
+            The script replaces the button's contents with an iframe in place.
+          */}
+          <div class="bip-stage" data-stage>
+            <button
+              type="button"
+              class="bip-play"
+              data-play
+              aria-label={`Play video: ${FEATURED.title}`}
+            >
+              <img
+                class="bip-poster"
+                data-poster
+                src={`/video-thumbs/${FEATURED.id}.jpg`}
+                alt=""
+                width="1280"
+                height="720"
+                loading="lazy"
+                decoding="async"
+              />
+              <span class="bip-playbadge" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor" focusable="false">
+                  <path d="M8 5.14v13.72L19 12 8 5.14Z"></path>
+                </svg>
+              </span>
+            </button>
+          </div>
+
+          {/*
+            The rail. Three entries, always — the video on the stage is not one
+            of them. Clicking an entry trades it with whatever is on the stage,
+            so all four stay reachable and the rail never changes length.
+          */}
+          <ol class="bip-rail">
+            {
+              RAIL.map((video) => (
+                <li>
+                  <button
+                    type="button"
+                    class="bip-entry"
+                    data-entry
+                    data-id={video.id}
+                  >
+                    <img
+                      class="bip-entrythumb"
+                      data-entry-thumb
+                      src={`/video-thumbs/${video.id}-sm.jpg`}
+                      alt=""
+                      width="320"
+                      height="180"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <span class="bip-entrytext">
+                      <span class="bip-entrytitle" data-entry-title>
+                        {video.title}
+                      </span>
+                      <time
+                        class="bip-entrymeta"
+                        data-entry-meta
+                        datetime={video.uploaded}
+                      >
+                        {dateLabel(video.uploaded)}
+                      </time>
+                    </span>
+                  </button>
+                </li>
+              ))
+            }
+          </ol>
+        </div>
+      </div>
+
+      {/*
+        The one line the brief asks for under the card. It is a disclosure, not
+        a paragraph — a body paragraph here is forbidden, and would not fit in
+        900px of height anyway.
+      */}
+      <p class="bip-note">
+        Nothing is loaded from YouTube until you press play.
+      </p>
+
+      <ul class="bip-channels">
+        {
+          CHANNELS.map(({ href, Mark, label, lines }) => (
+            <li>
+              <a href={href} target="_blank" rel="noopener">
+                <span class="bip-channelhead">
+                  <Mark className="bip-channelicon" />
+                  <svg
+                    class="bip-channelarrow"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path d="M7 17 17 7M9 7h8v8" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </span>
+                <span class="bip-channelfoot">
+                  <span class="bip-channellabel">{label}</span>
+                  <span class="bip-channelcopy">
+                    {lines.map((line) => <span>{line}</span>)}
+                  </span>
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </Container>
+  </div>
+</section>
+
+<!--
+  Global rather than scoped: every selector is anchored on [data-bip], so the
+  section still owns all of them, and a global block is what lets one rule
+  reach the iframe the script creates — an element Astro's scoping hash never
+  touched, because it did not exist at build time.
+-->
+<style is:global>
+  /* How tall the featured video is allowed to get.
+   *
+   * The brief budgets 420px for the card at 1440x900 and also asks for a
+   * featured video at 68% of the card width. At this content width those two
+   * numbers cannot both hold — 68% is an 805px video, which is 453px tall on
+   * its own, before the 44px head and the padding. The brief settles it:
+   * "Passt die Karte nicht, wird ihre Höhe reduziert, nicht die Kanal-Karten
+   * weggelassen." So the height leads and the width follows it.
+   *
+   * The subtrahend is everything else the section owes at that viewport: the
+   * rule, the vertical padding, headline, standfirst, card chrome, the
+   * disclosure line, the channel row and the gaps between them. Below roughly
+   * 930px of viewport the video shrinks; above it, it settles at 68% and
+   * stops. One number to tune, and it is this one. */
+  [data-bip] {
+    --stage-cap: clamp(190px, calc(100svh - 548px), 460px);
+  }
+
+  /* Sized from the tokens rather than Tailwind's rem utilities: the root font
+   * size grows with the viewport (layout.css), so `text-4xl` would climb past
+   * the display token on a wide screen and this headline would outgrow every
+   * other section head on the page. */
+  [data-bip] .bip-headline {
+    font-size: var(--text-display-lg);
+    letter-spacing: var(--tracking-display-lg);
+    line-height: 1.2;
+    text-align: left;
+  }
+
+  [data-bip] .bip-standfirst {
+    margin-top: var(--space-base);
+    /* The prose MEASURE, kept without the prose COLUMN — see the markup for
+     * why this section cannot use the column itself. 62ch lands within a few
+     * pixels of the 672px floor at the base font size and, unlike a pixel
+     * value, stays a measure as the type scales. */
+    max-inline-size: 62ch;
+    color: var(--body);
+    font-size: var(--text-body);
+    line-height: 1.6;
+  }
+
+  /* --- The video card --------------------------------------------------- */
+
+  [data-bip] .bip-card {
+    margin-top: var(--space-lg);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-xl);
+    background: var(--surface-card);
+    padding: var(--space-base);
+  }
+
+  [data-bip] .bip-cardhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-base);
+    block-size: 44px;
+    padding-inline: var(--space-xs);
+  }
+
+  [data-bip] .bip-cardtitle {
+    margin: 0;
+    min-inline-size: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--ink);
+    font-size: var(--text-title-sm);
+    font-weight: 600;
+  }
+
+  [data-bip] .bip-watch {
+    flex: none;
+    color: var(--muted);
+    font-size: var(--text-body-sm);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  [data-bip] .bip-watch:hover,
+  [data-bip] .bip-watch:focus-visible {
+    color: var(--ink);
+  }
+
+  /* The featured column is capped by the stage height rather than set to a
+   * flat 68%, so the video keeps its 16:9 ratio instead of being cropped or
+   * letterboxed when the viewport is short. `min()` takes whichever is
+   * smaller: on a tall screen that is the 68% the brief asks for; on a 900px
+   * screen it is whatever height is left. The rail takes the remainder either
+   * way, so no empty gap ever opens up inside the card. */
+  [data-bip] .bip-body {
+    display: grid;
+    grid-template-columns:
+      minmax(0, min(68%, calc(var(--stage-cap) * 16 / 9)))
+      minmax(0, 1fr);
+    gap: var(--space-sm);
+  }
+
+  [data-bip] .bip-stage {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    background: var(--canvas);
+  }
+
+  /* --- The facade ------------------------------------------------------- */
+
+  [data-bip] .bip-play {
+    position: absolute;
+    inset: 0;
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    border: 0;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  [data-bip] .bip-poster {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    /* Sits a step back until the pointer arrives, so the play badge reads as
+     * the thing to press rather than competing with the artwork behind it. */
+    opacity: 0.82;
+    transition: opacity 0.2s ease, transform 0.4s ease;
+  }
+
+  [data-bip] .bip-play:hover .bip-poster,
+  [data-bip] .bip-play:focus-visible .bip-poster {
+    opacity: 1;
+    transform: scale(1.015);
+  }
+
+  /* Paper on ink, the one action colour this system has — the same treatment
+   * as the primary CTA, because pressing this is the one thing the card asks
+   * for. No shadow: depth here is the ring in the page colour, which is what
+   * keeps the badge readable over a bright or a dark poster alike. */
+  [data-bip] .bip-playbadge {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    display: grid;
+    place-items: center;
+    inline-size: 64px;
+    block-size: 64px;
+    border-radius: var(--radius-pill);
+    background: var(--ink);
+    color: var(--on-ink);
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  [data-bip] .bip-playbadge svg {
+    /* Optically centred: a triangle's visual centre is left of its box centre,
+     * so a badge with it geometrically centred reads as leaning backwards. */
+    inline-size: 26px;
+    block-size: 26px;
+    margin-inline-start: 3px;
+  }
+
+  [data-bip] .bip-play:hover .bip-playbadge {
+    transform: scale(1.06);
+  }
+
+  [data-bip] .bip-play:active .bip-playbadge {
+    background: var(--ink-active);
+  }
+
+  /* The iframe the script creates on click. It replaces the button entirely,
+   * so there is nothing to fade between and nothing left that could send a
+   * second request. */
+  [data-bip] .bip-frame {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    border: 0;
+  }
+
+  /* --- The playlist rail ------------------------------------------------ */
+
+  [data-bip] .bip-rail {
+    display: grid;
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    max-block-size: var(--stage-cap);
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  [data-bip] .bip-entry {
+    display: grid;
+    /* A fixed width, not a share of the column. At 40% the thumbnail grew with
+     * the rail, and since it is 16:9 its HEIGHT grew with it too — three rows
+     * then came to more than the video beside them and the rail, not the
+     * stage, decided how tall the card was. */
+    grid-template-columns: minmax(0, 140px) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-sm);
+    inline-size: 100%;
+    block-size: 100%;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: none;
+    padding: var(--space-xs);
+    text-align: start;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  [data-bip] .bip-entry:hover,
+  [data-bip] .bip-entry:focus-visible {
+    border-color: var(--hairline);
+    background: var(--canvas-soft);
+  }
+
+  [data-bip] .bip-entrythumb {
+    inline-size: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+  }
+
+  [data-bip] .bip-entrytext {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+    gap: var(--space-xxs);
+  }
+
+  /* Two lines, then an ellipsis. These titles run long and uneven, and a rail
+   * whose rows each pick their own height turns the card into a staircase. */
+  [data-bip] .bip-entrytitle {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    color: var(--ink);
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+    line-height: 1.35;
+  }
+
+  [data-bip] .bip-entrymeta {
+    color: var(--muted);
+    font-size: var(--text-caption);
+  }
+
+  /* --- The disclosure line ---------------------------------------------- */
+
+  [data-bip] .bip-note {
+    margin-top: var(--space-sm);
+    /* --muted, not --muted-soft. design.md reserves the softer token for
+     * disabled text at 3.7:1 and says never to use it for something a visitor
+     * has to read — and this line is a disclosure about where their data goes,
+     * which is the last thing on the page that should be hard to read. */
+    color: var(--muted);
+    font-size: var(--text-caption);
+  }
+
+  /* --- The channel cards ------------------------------------------------ */
+
+  /* `auto-fit` rather than a fixed three columns: the brief asks for a card
+   * per channel that actually exists — one, two or three — and forbids
+   * padding the row out with placeholders. Two verified channels therefore
+   * make two full-width columns, not two thirds of a row with a hole in it. */
+  [data-bip] .bip-channels {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    gap: var(--space-base);
+    margin: var(--space-lg) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  [data-bip] .bip-channels a {
+    display: flex;
+    block-size: 100%;
+    min-block-size: 155px;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--space-base);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    background: var(--surface-card);
+    padding: var(--space-lg);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  [data-bip] .bip-channels a:hover,
+  [data-bip] .bip-channels a:focus-visible {
+    border-color: var(--hairline-strong);
+    background: var(--canvas-soft);
+  }
+
+  [data-bip] .bip-channelhead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  [data-bip] .bip-channelicon {
+    inline-size: 28px;
+    block-size: 28px;
+    color: var(--ink);
+  }
+
+  [data-bip] .bip-channelarrow {
+    inline-size: 18px;
+    block-size: 18px;
+    color: var(--muted);
+    transition: color 0.15s ease, transform 0.15s ease;
+  }
+
+  [data-bip] .bip-channels a:hover .bip-channelarrow,
+  [data-bip] .bip-channels a:focus-visible .bip-channelarrow {
+    color: var(--ink);
+    transform: translate(2px, -2px);
+  }
+
+  [data-bip] .bip-channelfoot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  [data-bip] .bip-channellabel {
+    color: var(--ink);
+    font-size: var(--text-display-sm);
+    letter-spacing: var(--tracking-display-sm);
+    line-height: 1.2;
+  }
+
+  [data-bip] .bip-channelcopy {
+    display: flex;
+    flex-direction: column;
+    color: var(--body);
+    font-size: var(--text-body-sm);
+    line-height: 1.45;
+  }
+
+  /* --- Narrow ------------------------------------------------------------
+   * Below 1024px the rail goes under the video and the channel cards stack,
+   * as the brief specifies. The stage cap is released at the same time: once
+   * the section is allowed to be taller than one screen, holding the video to
+   * a viewport-derived height only makes it small for no reason. */
+  @media (max-width: 1023px) {
+    [data-bip] {
+      --stage-cap: 100%;
+    }
+
+    [data-bip] .bip-body {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    [data-bip] .bip-rail {
+      grid-template-rows: none;
+      grid-auto-rows: minmax(0, auto);
+    }
+
+    [data-bip] .bip-entry {
+      grid-template-columns: minmax(0, 160px) minmax(0, 1fr);
+    }
+
+    [data-bip] .bip-channels {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-bip] .bip-poster,
+    [data-bip] .bip-playbadge,
+    [data-bip] .bip-channelarrow {
+      transition: none;
+    }
+
+    [data-bip] .bip-play:hover .bip-poster,
+    [data-bip] .bip-play:hover .bip-playbadge {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  /*
+   * Two behaviours, and the privacy rule sits between them.
+   *
+   *  - PRESS PLAY: build the iframe. This is the first and only moment a
+   *    request reaches a Google host, and it happens because someone asked
+   *    for it.
+   *
+   *  - PRESS A RAIL ENTRY: trade that video with the one on the stage. This
+   *    must NOT start a connection on its own, so a swap while the facade is
+   *    still up stays on the facade. Once a video IS playing, the visitor has
+   *    already chosen YouTube for this visit, and a swap keeps playing —
+   *    dropping them back to a poster frame mid-session would read as the
+   *    player breaking.
+   */
+  interface Video {
+    id: string;
+    title: string;
+    uploaded: string;
+    meta: string;
+  }
+
+  const section = document.querySelector<HTMLElement>("[data-bip]");
+
+  if (section) {
+    const stage = section.querySelector<HTMLElement>("[data-stage]");
+    const headTitle = section.querySelector<HTMLElement>("[data-active-title]");
+    const watchLink = section.querySelector<HTMLAnchorElement>("[data-watch]");
+    const entries = Array.from(
+      section.querySelectorAll<HTMLButtonElement>("[data-entry]"),
+    );
+
+    /* The rail's own DOM is the source of truth for what is in it, so the
+     * markup and the script cannot drift apart the way a second hardcoded
+     * list would. Only the stage's video needs to be held separately. */
+    const read = (entry: HTMLButtonElement): Video => ({
+      id: entry.dataset.id ?? "",
+      title: entry.querySelector("[data-entry-title]")?.textContent?.trim() ?? "",
+      uploaded:
+        entry.querySelector<HTMLTimeElement>("[data-entry-meta]")?.dateTime ?? "",
+      meta: entry.querySelector("[data-entry-meta]")?.textContent?.trim() ?? "",
+    });
+
+    const write = (entry: HTMLButtonElement, video: Video) => {
+      entry.dataset.id = video.id;
+      const thumb = entry.querySelector<HTMLImageElement>("[data-entry-thumb]");
+      const title = entry.querySelector<HTMLElement>("[data-entry-title]");
+      const meta = entry.querySelector<HTMLTimeElement>("[data-entry-meta]");
+      if (thumb) thumb.src = `/video-thumbs/${video.id}-sm.jpg`;
+      if (title) title.textContent = video.title;
+      if (meta) {
+        meta.textContent = video.meta;
+        meta.dateTime = video.uploaded;
+      }
+    };
+
+    let active: Video = {
+      id: section.dataset.active ?? "",
+      title: headTitle?.textContent?.trim() ?? "",
+      /* The stage carries no date of its own — the rail is where dates are
+       * shown — so these travel with the video and come back when it does. */
+      uploaded: "",
+      meta: "",
+    };
+
+    /* Seeded from the markup so the featured video's date survives a swap: it
+     * is the one video whose date is never rendered, and losing it would mean
+     * the rail showing a blank line the moment it came back. */
+    const seed = section.dataset.activeUploaded;
+    if (seed) {
+      active.uploaded = seed;
+      active.meta = section.dataset.activeMeta ?? "";
+    }
+
+    /** The facade, rebuilt for whichever video is on the stage. */
+    const renderFacade = () => {
+      if (!stage) return;
+      stage.innerHTML = "";
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "bip-play";
+      button.dataset.play = "";
+      button.setAttribute("aria-label", `Play video: ${active.title}`);
+
+      const poster = document.createElement("img");
+      poster.className = "bip-poster";
+      poster.src = `/video-thumbs/${active.id}.jpg`;
+      poster.alt = "";
+      poster.width = 1280;
+      poster.height = 720;
+      poster.decoding = "async";
+
+      const badge = document.createElement("span");
+      badge.className = "bip-playbadge";
+      badge.setAttribute("aria-hidden", "true");
+      badge.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="currentColor" focusable="false"><path d="M8 5.14v13.72L19 12 8 5.14Z"></path></svg>';
+
+      button.append(poster, badge);
+      stage.append(button);
+    };
+
+    /**
+     * The only place in this file that reaches a Google host, and it runs from
+     * a click and nowhere else.
+     *
+     * `youtube-nocookie.com` is contractual, not a preference: the ordinary
+     * embed domain sets its tracking cookies on arrival, which is a
+     * disclosure the visitor did not agree to by pressing play on a video.
+     */
+    const play = () => {
+      if (!stage) return;
+      const frame = document.createElement("iframe");
+      frame.className = "bip-frame";
+      frame.src = `https://www.youtube-nocookie.com/embed/${active.id}?autoplay=1&rel=0`;
+      frame.allow =
+        "accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture";
+      frame.allowFullscreen = true;
+      frame.title = active.title;
+      stage.innerHTML = "";
+      stage.append(frame);
+    };
+
+    const isPlaying = () => Boolean(stage?.querySelector("iframe"));
+
+    const swap = (entry: HTMLButtonElement) => {
+      const incoming = read(entry);
+      const outgoing = active;
+      active = incoming;
+
+      write(entry, outgoing);
+      section.dataset.active = incoming.id;
+      if (headTitle) headTitle.textContent = incoming.title;
+      if (watchLink) {
+        watchLink.href = `https://www.youtube.com/watch?v=${incoming.id}`;
+      }
+
+      /* Keep playing if we were playing; otherwise stay behind the facade and
+       * make no request at all. */
+      if (isPlaying()) play();
+      else renderFacade();
+    };
+
+    /* Delegated, because the play button is replaced whenever the stage
+     * changes and a listener bound to the original node would be thrown away
+     * with it after the first swap. */
+    stage?.addEventListener("click", (event) => {
+      if ((event.target as HTMLElement).closest("[data-play]")) play();
+    });
+
+    for (const entry of entries) {
+      entry.addEventListener("click", () => swap(entry));
+    }
+  }
+</script>

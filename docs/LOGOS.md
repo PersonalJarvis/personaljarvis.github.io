@@ -176,13 +176,9 @@ make a 35-second cycle.
 - **Both halves are the same full card, clipped.** Each half draws the whole
   mark and hides the other half with `clip-path`. Laying out a separate top and
   bottom would drift by a pixel and the seam would stop lining up.
-- **There is no seam line.** A real board has a visible gap between its flaps,
-  and drawing one did read as a split card — but it also struck a line through
-  every mark on a strip that stands still 3.5 seconds out of every 5, which is
-  what a visitor actually looks at. The movement makes the split plain enough.
-  The two halves overlap by three tenths of a percent rather than meeting at
-  50%, because an exact cut leaves a sub-pixel gap on fractional card heights
-  and the page shows through it as that same line.
+- **The seam is drawn on the cell**, not on the halves — a one-pixel line in
+  the page colour, so it reads as the gap between two flaps even while nothing
+  is moving.
 - **CSS only.** No JavaScript reaches the browser. The stagger is an
   `animation-delay` per flap, and the delays are **negative**, so every
   animation starts already in progress: at the first paint each cell holds a
@@ -246,6 +242,23 @@ outlined and are not.
 5. Add a row to the table above. An entry without a row is a licence gap.
 
 ---
+
+## Marks used outside the strip
+
+The table above is generated and covers the connection strip — the services
+Jarvis itself talks to. A mark can also be needed somewhere else on the site,
+and it is recorded here instead so the generated table stays generated.
+
+Rules 3 and 5 still apply: `currentColor`, no surviving hex, and no mark
+without a provenance line.
+
+| Mark | Where | Source | Licence |
+|---|---|---|---|
+| YouTube | Channel card in `BuiltInPublic.astro` | Simple Icons `icons/youtube.svg`, kept at `src/assets/brands/youtube.svg` | CC0-1.0 |
+
+YouTube is deliberately **not** in `marks.ts`. It is a channel the project
+publishes to, not a service Jarvis connects to, and putting it in the strip
+would make a claim the app does not support.
 
 ## Open questions
 
