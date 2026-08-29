@@ -10,9 +10,8 @@ command-line tools it drives, and the plugins it connects. It is one section,
 `src/components/logos/`, and one generated list in
 `src/components/logos/marks.ts`.
 
-There are fifty marks and eight cells, so each cell cycles a stack of them: a
-mark retreats into the depth of its card and dissolves, and the next arrives
-out of that same depth.
+There are fifty marks and eight cells, so each cell cycles a stack of them:
+the card is a fixed opening, and the marks are wound up past it from below.
 
 ---
 
@@ -145,41 +144,44 @@ in `LogoStrip.astro` — not the fifty values in `marks.ts`.
 
 ## The change
 
-Each cell holds seven marks and shows one at a time. A mark leaves by
-**retreating into the depth of its card** and dissolving; the next arrives out
-of that same depth and settles onto the face. Both travel the same way, so the
-pair reads as one movement through the card rather than as two events on its
-surface.
+Each cell holds seven marks and shows one at a time. **The card never moves.**
+It is a fixed opening, and the marks are wound up past it from below: one
+travels out of the top while the next follows it in.
 
-The **whole card** travels, border and ground included, not just the mark
-inside it. Moving only the contents reads as a slideshow behind a fixed frame;
-moving the card is what gives the strip its depth.
+That the card stays put is the whole character of it. Border, ground and
+clipping therefore live on the cell, not on the moving element — put the border
+on the mark instead and the card appears to slide, which is a different effect
+and a far busier one, because eight sliding cards is the entire row in motion.
 
-The arriving card is scaled **above** 1 and comes back down to it, so it enters
-from in front of the page and settles, rather than growing into place from
-behind. It carries `z-index: 2` while it does, which is what puts it over the
-card it replaces and over its neighbours.
+`overflow: hidden` on the cell is load-bearing rather than tidiness. Marks
+queue directly above and below the opening, so without it every cell would show
+its whole waiting stack.
 
-That last part only works because **the cell establishes no stacking context** —
-no `perspective`, no `z-index`, no `transform` on `.cell`. An arriving card is
-briefly wider than its cell and overlaps its neighbours, and a context there
-would trap it inside the cell so it passed behind them instead. This is the one
-place where the split-flap's requirements were the exact opposite: it needed
-`perspective` on the cell, and therefore needed the cell lifted by its own
-animation while its flaps moved.
+The two marks in flight move **at the same moment, at the same speed, on the
+same easing curve**, staying exactly 115% of a card apart the whole way. All
+three have to hold or the illusion goes: different curves make the gap between
+them stretch and squeeze mid-travel, which reads as a slip. The 115% leaves 15%
+of a card as clear space between one mark and the next — at exactly 100% they
+touch, and two marks meeting at the edge of the opening look like a single
+shape breaking apart.
 
-One mark's turn is six seconds: 1.3s of change, then 4.7s holding. Seven marks
-make a 42-second cycle. The outgoing mark starts leaving 0.5s before the
-incoming one appears, so the two overlap through the middle of the change and
-the card is never empty.
+There is no `opacity` anywhere in the animation. A waiting mark is out of sight
+because it is outside the opening, not because it has been faded out. Adding a
+fade on top of the travel would undo the effect: a band does not dissolve at
+the edge of the window it moves through.
 
-### Why this replaced a split-flap
+One mark's turn is six seconds: 0.9s of travel, then 5.1s holding. Seven marks
+make a 42-second cycle.
 
-The cell used to be a station board: the card was cut across the middle and the
-top half fell forward about the seam, uncovering the next one underneath. It
-was asked for, it was built, and it was wrong. Worth recording, because the
-reasoning that made it look right on paper is the same reasoning that hid the
-fault.
+### What this replaced, and why
+
+Two mechanisms came before this one.
+
+**A split-flap.** The cell was a station board: the card was cut across the
+middle and the top half fell forward about the seam, uncovering the next one
+underneath. It was asked for, it was built, and it was wrong. Worth recording,
+because the reasoning that made it look right on paper is the same reasoning
+that hid the fault.
 
 A real split-flap board can cut its card in half because its **seam, frame and
 shadow explain the cut**. The seam was deliberately left out here, for a sound
@@ -197,6 +199,13 @@ normally checked from a screenshot of it at rest, which is always clean.
 **The rule to take from it:** a mechanical effect borrowed at half its
 mechanism does not degrade gracefully, it reads as broken. Either bring the
 parts that explain it, or choose an effect that needs no explaining.
+
+**Then the whole card travelled through depth**, retreating and dissolving as
+the next arrived out of the same depth. That one worked. It was replaced on
+preference, not on a fault: it put all eight cards in motion at once, and each
+arriving card had to paint over its neighbours to do it, which forced the cell
+to establish no stacking context of its own. Winding marks past a fixed opening
+gets the same job done with the row standing still, and needs no such rule.
 
 - **One element per mark, and one animation.** The split-flap needed two
   clipped halves per mark plus a second animation lifting the cell — a hundred
