@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-08-29T14:10:52.978Z",
+  "platforms": {
+    "youtube": {
+      "value": 12,
+      "readAt": "2026-08-29T14:10:52.978Z",
+      "source": "youtube-channel-page",
+      "account": "@PersonalJarvis"
+    },
+    "x": {
+      "value": 26,
+      "readAt": "2026-08-29T14:09:00.000Z",
+      "source": "profile-header-read-by-hand",
+      "account": "@Ruben_Luetke"
+    },
+    "github": {
+      "value": 31,
+      "readAt": "2026-08-29T14:10:52.978Z",
+      "source": "github-rest-api",
+      "account": "PersonalJarvis/PersonalJarvis"
+    },
+    "discord": {
+      "value": 6,
+      "readAt": "2026-08-29T14:10:52.978Z",
+      "source": "discord-invite-api",
+      "account": "discord.gg/x7USduHxbc"
+    }
+  }
+}

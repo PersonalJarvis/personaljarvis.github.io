@@ -277,11 +277,22 @@ without a provenance line.
 
 | Mark | Where | Source | Licence |
 |---|---|---|---|
-| YouTube | Channel card in `BuiltInPublic.astro` | Simple Icons `icons/youtube.svg`, kept at `src/assets/brands/youtube.svg` | CC0-1.0 |
+| YouTube | Stat row in `BuiltInPublic.astro` | Simple Icons `icons/youtube.svg`, kept at `src/assets/brands/youtube.svg` | CC0-1.0 |
+| X | Stat row in `BuiltInPublic.astro` | Simple Icons `icons/x.svg`, kept at `src/assets/brands/x.svg` | CC0-1.0 |
+| GitHub | Stat row in `BuiltInPublic.astro` | Already in the strip table above — the same `GitHubMark` component | CC0-1.0 |
+| Discord | Stat row in `BuiltInPublic.astro` | Already in the strip table above — the same `DiscordMark` component | CC0-1.0 |
 
-YouTube is deliberately **not** in `marks.ts`. It is a channel the project
-publishes to, not a service Jarvis connects to, and putting it in the strip
-would make a claim the app does not support.
+None of these four is in `marks.ts` for the strip's sake. That list is the
+services Jarvis itself connects to; these four are places the project
+publishes to, and GitHub and Discord happen to be both — they are in the strip
+because the app talks to them, and they appear in section 6 because the
+project has an account there. One component serves both uses.
+
+**`XMark` is X, `XaiMark` is xAI.** Two different companies, two glyphs that
+are each a small black shape at 14px, and two file names one letter apart in a
+directory that is read alphabetically. Anything pointing at `x.com` takes
+`XMark`; anything about the Grok models takes `XaiMark`. This is written down
+because the failure is silent: the wrong mark renders perfectly.
 
 ## Open questions
 

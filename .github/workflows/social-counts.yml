@@ -1,0 +1,70 @@
+# Keep section 6's stat row current.
+#
+# Two of the four numbers are live already — the browser asks GitHub and
+# Discord for them on every visit. This workflow exists for the other two:
+# YouTube sends no CORS header, and X has no keyless route left, so both are
+# settled at build time. See scripts/fetch-social-counts.mjs for the full
+# reasoning and the measurements behind it.
+#
+# It also refreshes the live pair, because the committed figure is what a
+# crawler and the first paint see before any JavaScript runs.
+#
+# Daily, and on demand. It commits only when the file actually changed, so a
+# quiet day leaves no commit behind and no rebuild is triggered.
+name: social-counts
+
+on:
+  schedule:
+    # Once a day, off the hour. Subscriber and follower counts move on the
+    # scale of days; a workflow that runs hourly to move nothing is noise in
+    # the history and in the Actions bill.
+    - cron: "43 5 * * *"
+  workflow_dispatch:
+
+# Least privilege: this job writes one JSON file back to its own branch and
+# needs nothing else.
+permissions:
+  contents: write
+
+concurrency:
+  group: social-counts
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Fetch social counts
+        # Both secrets are OPTIONAL and the run is green without them: GitHub
+        # and Discord need no credential at all, and a platform whose key is
+        # missing keeps its previous figure rather than writing a zero.
+        #
+        # YOUTUBE_API_KEY buys an exact subscriber count instead of the
+        # rounded one the public channel page prints past a thousand.
+        # X_BEARER_TOKEN is the only route X has left; without it the follower
+        # figure has to be refreshed by hand.
+        #
+        # Neither ever reaches the bundle — that is the entire reason this
+        # file exists rather than the page asking for itself.
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+        run: node scripts/fetch-social-counts.mjs --verbose
+
+      - name: Commit if it changed
+        run: |
+          if git diff --quiet -- src/data/social-counts.json; then
+            echo "no change"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --only -- src/data/social-counts.json \
+            -m "chore(social): refresh the build-in-public counts"
+          git push
