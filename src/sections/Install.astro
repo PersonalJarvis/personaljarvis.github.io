@@ -378,6 +378,24 @@ function segments(body: string) {
   }
 
   /*
+    THE HEADING BLOCK IS CENTRED ON THE FRAME (maintainer, 2026-08-29). Both
+    elements span the full content width, so centring them puts the heading
+    over the middle of the WHOLE section — the steps and the artwork together
+    — rather than over the steps column it happens to sit above. `text-balance`
+    on the h2 does the rest: a centred line that breaks unevenly reads worse
+    than a left-aligned one.
+
+    Stated on these two elements through a child combinator, never on
+    `[data-frame]` itself. `text-align` inherits, and on the frame it would run
+    down into the step list and the closing band as well — both of which are
+    left-aligned by design (docs/section-5-steps-cta.md).
+  */
+  [data-frame] > .eyebrow,
+  [data-frame] > .headline {
+    text-align: center;
+  }
+
+  /*
     THE BADGE COLUMN, and the three numbers the whole of it is built from.
     They live together because they are one measurement split three ways: move
     the inset alone and the text closes up on the numbers; change the badge
@@ -390,9 +408,10 @@ function segments(body: string) {
     2026-08-29). Small on purpose: the column should look set in from the rule,
     not indented from it.
 
-    The heading and the eyebrow stay on the rule. Only the badges step in, and
-    the body text steps in with them by exactly the same amount, so the gap
-    between a number and its title is the one thing that does not change.
+    The heading and the eyebrow no longer sit on that rule at all — they are
+    centred on the frame, above. Only the badges step in, and the body text
+    steps in with them by exactly the same amount, so the gap between a number
+    and its title is the one thing that does not change.
 
     IN REM, NOT IN THE `--space-*` TOKENS, and that is not a slip. The root
     font size on this site grows with the viewport, so the utilities these

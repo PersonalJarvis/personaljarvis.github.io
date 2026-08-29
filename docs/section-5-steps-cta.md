@@ -117,9 +117,16 @@ down it, or a title closing up on the number.
 **`--badge-inset` is the one to touch**, and it exists because the badges sat
 *on* the frame's left rule rather than near it (maintainer, 2026-08-29): the
 section marker draws that rule at exactly the content's left edge, and a
-bordered box touching a border reads as stuck to it. The heading and the
-eyebrow stay on the rule; only the badges step in, and the text steps in with
-them so the gap between a number and its title never changes.
+bordered box touching a border reads as stuck to it. Only the badges step in,
+and the text steps in with them so the gap between a number and its title never
+changes.
+
+**The heading and the eyebrow are centred on the frame** (maintainer,
+2026-08-29). They span the full content width, so centring puts them over the
+middle of the whole section — steps and artwork together — instead of over the
+steps column they sit above. The rule is written against `[data-frame] >` with
+a child combinator: `text-align` inherits, and set on the frame it would centre
+the step list and the closing band too, both of which stay left.
 
 **In `rem`, not in the `--space-*` tokens.** The root font size grows with the
 viewport, so the utilities these replaced grew too; stated in the fixed-pixel
