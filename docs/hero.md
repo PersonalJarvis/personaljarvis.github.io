@@ -12,48 +12,75 @@ The hero fills exactly one viewport: `min-height: 100svh`. **Not `100vh`** — o
 iOS the address bar slides in on scroll and the section changes height mid-
 animation. The section has `overflow: hidden`.
 
-The section is a **three-row grid**, `grid-rows-[auto_auto_1fr]`:
+The section is a **three-row grid**, `grid-rows-[auto_auto_minmax(0,1fr)]`:
 
 1. Nav — 64px, sticky, `full` step for the background
-2. Copy — headline on `prose`, CTAs 32px under it
-3. Demo stage — `content` step, takes the remaining row, **cropped** at the bottom
+2. Copy — headline on `prose`, CTAs 28px under it
+3. Demo stage — `content` step, takes the remaining row **and fits inside it**
 
 **Not a flex column with `justify-end`.** That pushes the whole block to the
 bottom of the viewport and leaves a dead field above the headline — the copy
 ends up past the middle of the screen, which is what this layout is for.
+
+`minmax(0, 1fr)` and not `1fr`, and `min-h-0` on the stage's container: a grid
+track's automatic minimum is its content's intrinsic size, so without both the
+track grows to whatever the stage wants and the hero spills past the fold
+again — the exact failure this layout exists to prevent.
 
 Spacing above the copy is in `svh`, so the proportions hold on a short laptop
 and a tall monitor alike.
 
 ### Target proportions
 
-Measured at 1440x900. These are the numbers to check a change against:
+Measured at 2560x1250. These are the numbers to check a change against:
 
 | Element | Top edge |
 |---|---|
-| Headline | ~13% of viewport height |
-| CTAs | ~31% |
-| Stage top | ~37% |
+| Headline | ~11% of viewport height |
+| CTAs | ~29% |
+| Stage top | ~36% |
+| Stage bottom | ~92% |
 
-The stage runs past the bottom edge; about a quarter of it is never visible.
+### Fit, and the air below it
 
-### The crop
+**The whole hero is visible in one viewport. Nothing is cut off.**
 
-The stage deliberately overruns the section's bottom edge and is clipped by
-`overflow: hidden`. Its lower border is never visible.
+The hero used to crop the stage against the section's bottom edge and call the
+cut-off border a scroll cue. The maintainer retired that on 2026-08-29: the
+demo is the argument the page is making, and an argument that runs off the
+screen is one the visitor has to work for.
 
-This is not a bug, it is the scroll cue: a cut-off edge tells the visitor the
-page continues. Roughly a fifth of the stage should disappear under the edge.
+Two rules hold it:
+
+- The stage row gets whatever height is left, and the stage **contains** itself
+  inside it — `min(width / STAGE_W, height / STAGE_H)`, never width alone. A
+  short viewport shrinks the window rather than pushing its lower half out of
+  the frame.
+- The row carries `pb-[10svh]`, so the frame ends with a clear band of page
+  under it instead of touching the fold. In `svh`, so a tall monitor gets
+  proportionally more air rather than the same 100px.
+
+The cost is real and worth naming: on a short laptop the frame gets shallow and
+the window inside it small. That is the honest trade — a small readable whole
+beats a large cropped fragment.
 
 ---
 
 ## Headline
 
 - Centred, `text-balance`, `prose` step
-- Wraps to 2–3 lines on desktop. A single line means `prose` is too wide
+- **Three lines on a wide screen, two on a laptop.** The `prose` column is a
+  constant 672px from 1440px up to 2585px, so the line count is decided by the
+  font size alone: three lines above roughly 1900px, two below. Four lines is
+  too big and one means `prose` is too wide — neither happens at this clamp
 - **Exactly one headline, no subline.** If a subline feels necessary, the
   headline is too weak — fix the headline
-- `line-height: 1.05`, size via `clamp()`
+- `line-height: 1.08`, size via `clamp()`, capped at **3.25rem**
+
+The cap is the load-bearing part. The headline is the one element that decides
+whether the stage still has room, so it is sized against the vertical budget
+and not against how large it could be: at the old 6rem cap the hero could not
+hold the stage on any screen, which is what the crop was hiding.
 
 ## CTAs
 
@@ -75,36 +102,69 @@ on the site the 8px radius still applies.
 Every word in the mockup is real text in the markup — it is selectable,
 searchable, and legible to a screen reader that ignores our `aria-hidden`.
 
+The **frame** is the bordered box. It has no ratio of its own: it fills the
+content column and the height the hero row has left.
+
 ```
 position: relative
-aspect-ratio: 16/10
-border-radius: var(--radius-lg)
+height: 100%
+min-height: 300px
+border-radius: var(--radius-xl)
 overflow: hidden
 border: 1px solid var(--hairline)
 ```
 
-Any background image goes through Astro's `<Image />` from `astro:assets` with
-an explicit width and `loading="eager"` — this is above the fold.
+### Backdrop
+
+The frame is filled by a painting, not by a flat colour. Before that, the stage
+painted `--app-bg` across its whole area, and because the window only reaches
+part of the way down, the rest read as a hole punched in the page.
+
+- One `<Image />` from `astro:assets`, `absolute inset-0`, `object-cover`,
+  `loading="eager"` — it is above the fold. `object-cover` because the frame's
+  ratio moves with the viewport height
+- The stage itself paints **nothing**. The window is the only opaque thing in
+  the frame, so the painting shows as an even margin around it
+- **Licence:** the backdrop is generated for this site (xAI
+  `grok-imagine-image-2.0`, prompt in the commit that added it), so nothing
+  third-party is attached to it. If it is ever swapped for someone else's work,
+  the replacement must be public domain or explicitly licensed, and the source
+  recorded here
 
 ### Scaling
 
-An inner `div` of **fixed 1440×900px**, `origin-top-left`, then
-`transform: scale(containerWidth / 1440)` driven by a `ResizeObserver`.
+An inner `div` at a **fixed design size**, `origin-top-left`, scaled by a
+`ResizeObserver`.
+
+The factor is `min(width / STAGE_W, height / STAGE_H)` — **contain, not
+fill-the-width.** The frame's height is whatever the hero has left over, so
+scaling on width alone would push the lower half of the window out through the
+bottom.
 
 Every child measurement inside is in px. **No responsive styling inside the
 stage.** Otherwise the mockup looks different at every viewport instead of
 scaling like a real screenshot does.
 
 ```tsx
-<div ref={wrap} className="relative w-full" style={{ aspectRatio: "16/10" }}>
+<div ref={wrap} style={{ position: "relative", width: "100%", height: "100%" }}>
   <div
-    className="absolute left-0 top-0 origin-top-left"
-    style={{ width: 1440, height: 900, transform: `scale(${scale})` }}
+    style={{
+      position: "absolute",
+      left: "50%",
+      top: "50%",
+      width: STAGE_W,
+      height: STAGE_H,
+      transform: `translate(-50%, -50%) scale(${scale})`,
+    }}
   >
-    {/* windows live here, everything in px */}
+    {/* the window lives here, everything in px */}
   </div>
 </div>
 ```
+
+The design size is the window **plus the air around it**, not a screen shape.
+A baked-in 16:10 leaves a dead band under the window as soon as the frame's own
+ratio moves, which is exactly what the backdrop makes visible.
 
 ---
 
@@ -242,7 +302,10 @@ known one.
 ## Forbidden
 
 - `100vh` instead of `100svh`
-- A fixed height on the stage. Aspect ratio plus crop, nothing else
+- Cropping the stage against the fold, or any other part of the hero. The whole
+  hero fits in one viewport
+- Scaling the stage on width alone
+- A backdrop whose licence is not recorded in this file
 - Screenshots, video, canvas, or image sequences for the mockup
 - Text in the mockup that is not real text in the DOM
 - Responsive styling inside the stage
@@ -256,29 +319,32 @@ known one.
 ## Skeleton
 
 ```astro
-<section class="grid min-h-svh grid-rows-[auto_auto_1fr] overflow-hidden">
+<section class="grid min-h-svh grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden">
   <header class="sticky top-0 z-30 h-16 border-b border-hairline bg-canvas">
     <Container width="content" class="flex h-16 items-center justify-between">
       …
     </Container>
   </header>
 
-  <div class="pt-[6svh]">
+  <div class="pt-[5svh]">
     <Container width="prose">
-      <h1 class="text-center text-balance leading-[1.05]">…</h1>
-      <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">…</div>
+      <h1 class="text-center text-balance leading-[1.08]">…</h1>
+      <div class="mt-7 flex flex-col justify-center gap-3 sm:flex-row">…</div>
     </Container>
   </div>
 
-  <Container width="content" class="pt-6">
-    <div class="overflow-hidden rounded-2xl border border-hairline">
-      <DemoStage client:load />
+  <Container width="content" class="min-h-0 pt-6 pb-[10svh]">
+    <div class="relative h-full min-h-[300px] overflow-hidden rounded-2xl border border-hairline">
+      <Image src={backdrop} alt="" loading="eager"
+             class="pointer-events-none absolute inset-0 h-full w-full object-cover" />
+      <DemoStage client:load className="relative h-full" />
     </div>
   </Container>
 </section>
 ```
 
-The stage row is `1fr`, so it takes whatever height is left and runs past the
-section's bottom edge, where `overflow-hidden` clips it. The stage is the one React island on the page — `client:load`, because it sits above
-the fold and its first frame is the point; everything around it ships as plain
-HTML.
+The stage row is `minmax(0, 1fr)`, so it takes whatever height is left and the
+frame fills it exactly — `pb-[10svh]` is the air that keeps the frame off the
+fold. The stage is the one React island on the page — `client:load`, because it
+sits above the fold and its first frame is the point; everything around it
+ships as plain HTML.
