@@ -104,7 +104,7 @@ moved to the band with the marker.
 }
 ```
 
-`440px` is everything in the section other than the video itself, measured
+`434px` is everything in the section other than the video itself, measured
 against the built page at 1440×900:
 
 | Part | Height |
@@ -120,10 +120,10 @@ against the built page at 1440×900:
 | Gap | 12px |
 | Disclosure line | 19.5px |
 | Gap | 24px |
-| Stat row, one line | 39.6px |
+| Stat row, one line | 33.0px |
 | Band padding, bottom | 24px |
 | Bottom boundary rule | 1px |
-| **Total** | **440.2px → 440px** |
+| **Total** | **433.6px → 434px** |
 
 If any of those change, re-measure and change this number — not the individual
 rules.
@@ -158,16 +158,26 @@ built page:
 
 | Viewport | Section height | Inset per side | Video |
 |---|---|---|---|
-| 1440×900 | **900px exactly** | 63px | 594×334, **48.8%** of the card |
+| 1440×900 | **900px exactly** | 63px | 604×340, **49.7%** of the card |
 | 1920×1200 | **1200px exactly** | 80px | 804×452, **66.1%** of the card |
-| 1280×900 | 900px exactly | 63px | 594×334 |
+| 1280×900 | 900px exactly | 63px | 604×340 |
 | 1024×900 | 900px exactly | 63px | 576×324 |
+
+Only the two middle widths moved when the budget went from 440px to 434px, and
+that is not an accident about where the height went — it is which of the two
+limits on `--stage-cap` is doing the work. At 1440px and 1280px the height cap
+is the binding one, so six pixels of budget are six pixels of video. At 1920px
+the cap has already hit its 460px ceiling and at 1024px the 68% width limit
+binds first; at both of those the video is as large as it is allowed to be for
+a reason that has nothing to do with the budget, and neither number moves.
 
 The video is smaller than it was before the two rules existed — it was 53% of
 the card when the section had one rule and no inset. The 25px the one-line stat
-row gave back went here, which is the 45.2% → 48.8% step. 126px of the height went
-to the frame the maintainer asked for, and the video is the part of this
-section that gives way. That is the trade, stated rather than hidden.
+row gave back went here, which is the 45.2% → 48.8% step, and setting the
+caption at the figure's own size gave back 6.6px more, which is 48.8% → 49.7%.
+126px of the height went to the frame the maintainer asked for, and the video is
+the part of this section that gives way. That is the trade, stated rather than
+hidden.
 
 **The one-screen guarantee has a floor.** `--stage-cap` bottoms out at 190px,
 below which the video stops shrinking, so the section fits a window down to
@@ -344,17 +354,37 @@ Styling reference is meuze.ai's stat row, and the whole of it is:
 - one horizontal row of **equal cells**, `repeat(4, minmax(0, 1fr))`
 - **thin vertical hairlines between them and nothing else** — no card, no
   fill, no border round a cell, no radius. The divider is the only chrome
-- a **large plain number**, `--text-display-lg`, tabular, `--ink`
-- a **tiny uppercase caption beside it**, `--text-caption-upper` with
-  `--tracking-caption-upper`, in `--muted`, sitting on the figure's baseline.
-  It was stacked under the figure until 2026-08-29, when the maintainer asked
-  for it alongside: a cell is around 300px wide and the caption is roughly
-  110px of it, so the width was there and the stack was spending height the
-  section has to buy back from the video. `flex-wrap` is the escape hatch
-  rather than a media query — where the caption no longer fits beside its
-  figure it drops back under it
+- a **plain tabular number**, `--text-display-sm`, in `--ink` at weight 400
+- an **uppercase caption beside it at the same size**, `--text-display-sm` with
+  `--tracking-caption-upper`, in `--muted` at weight 500, sitting on the
+  figure's baseline. `flex-wrap` is the escape hatch rather than a media
+  query — where the caption no longer fits beside its figure it drops back
+  under it
 - where the reference puts a small square bullet before the caption, **ours
-  puts the platform's own brand mark**
+  puts the platform's own brand mark**, sized in `em` so it follows the caption
+
+**One size for both halves of the cell.** The caption was `--text-caption-upper`
+— a third of the figure — until 2026-08-29, when the maintainer asked for it "the
+same size as the 12". The reference sets a large figure against a tiny label;
+this row now sets both at `display-sm`, so a cell reads as one line of type in
+which the number and its label carry equal weight. What separates them is colour
+and weight, not size: `--ink` at 400 against `--muted` at 500.
+
+It is the caption that was raised and the figure that came down to meet it,
+because the row has a width budget and the caption is the wide half of it. At
+2560px — where a cell is narrowest relative to the root size, since below it the
+content column is pinned at 1280px while the type keeps shrinking and above it
+the column grows faster than the type — "12 SUBSCRIBERS" uses 253px of the 280px
+it has. One step up, at 1.5rem, it uses 274px, and six pixels is a coin toss
+rather than a margin. Raising the caption while leaving the figure at
+`display-lg` fits at that width too, but leaves 2.5px at 1024px, which is the
+same coin toss one breakpoint down.
+
+The same instruction is why the caption was already beside the figure rather
+than under it, asked for on the same day: a cell is around 300px wide and the
+caption was roughly 110px of it, so the width was there and the stack was
+spending height the section has to buy back from the video. The caption is about
+215px of the cell now, so the shape survives and the slack does not.
 
 The dividers go on `li + li`, never as a border on every cell: the row's outer
 edges are the rails, and a second hairline a pixel beside a rail is exactly the
@@ -458,8 +488,8 @@ ships.
 ### Below 768px
 
 The row reflows to **two columns**. Four cells at that width are about 80px
-each — too narrow for a 36px figure beside an uppercase caption, and the
-captions would wrap to two lines while the figures did not.
+each — too narrow for a 22px figure over an uppercase caption at the same size,
+and the captions would wrap to two lines while the figures did not.
 
 The dividers **stay**, because they are the row's only chrome and dropping them
 leaves four numbers floating. Cells 2 and 4 keep a vertical hairline; the
@@ -528,6 +558,7 @@ does not rediscover it.
 | First stat cell against the band's left edge | **0.0px** — one left margin |
 | Stat row at 420px wide | two columns, cells at the same two x positions |
 | Stat cell shape | one line at 1024px and up, stacked below it — never mixed within a row |
+| Widest stat cell against its own width | **253 of 280px** at 2560, **186 of 200px** at 1024 |
 | Requests to any Google host on load | 0 |
 | Requests after pressing play | 1, to `youtube-nocookie.com` |
 | Style gate | `103 files, no violations` |

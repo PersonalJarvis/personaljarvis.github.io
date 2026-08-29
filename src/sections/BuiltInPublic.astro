@@ -454,12 +454,15 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
    * "Passt die Karte nicht, wird ihre Höhe reduziert, nicht die Kanal-Karten
    * weggelassen." So the height leads and the width follows it.
    *
-   * `440px` is everything else the section owes at that viewport, INSIDE the
+   * `434px` is everything else the section owes at that viewport, INSIDE the
    * two boundary rules: the band's own padding, the eyebrow, the headline, the
    * standfirst, the card chrome and its new head seam, the disclosure line, the
    * stat row and the gaps between all of them. It was 465px until the stat row
    * put its captions beside the figures instead of under them, which took the
-   * row from 64.1px to 39.6px and handed the difference to the video. The breakdown is itemised in
+   * row from 64.1px to 39.6px and handed the difference to the video, and 440px
+   * until the caption was set at the figure's own size: a 22px figure on a 22px
+   * line is shorter than a 36px one, so the row measures 33.0px and gives the
+   * video another 6.6px. The breakdown is itemised in
    * docs/section-6-youtube.md § "The one number to tune"; when one of those
    * parts changes, re-measure and change THIS number, not the individual rules.
    *
@@ -472,7 +475,7 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
   [data-bip] {
     --stage-cap: clamp(
       190px,
-      calc(100svh - 440px - 2 * var(--section-inset)),
+      calc(100svh - 434px - 2 * var(--section-inset)),
       460px
     );
   }
@@ -849,9 +852,11 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
   }
 
   /* Number and caption sit SIDE BY SIDE, not stacked — the maintainer's
-   * instruction on 2026-08-29: a cell is around 300px wide and the caption is
+   * instruction on 2026-08-29: a cell is around 300px wide and the caption was
    * roughly 110px of it, so the width was there and stacking spent height the
-   * section has to buy back from the video.
+   * section has to buy back from the video. The caption is now about 215px of
+   * that cell — see `.bip-statnumber` for why both halves are set at one size
+   * and where the width went — so the shape survives but the slack does not.
    *
    * `wrap` is the escape hatch rather than a media query. Below the width where
    * "SUBSCRIBERS" no longer fits beside its figure the caption drops under it
@@ -882,13 +887,30 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
     padding-inline-end: 0;
   }
 
-  /* Large, plain, and tabular — the figures are set in `tabular-nums` by
-   * LiveCount itself, so a digit changing during the count-up cannot shift the
-   * caption under it. */
+  /* ONE TYPE SIZE FOR THE WHOLE CELL — `display-sm` for the figure AND for the
+   * caption, at the maintainer's instruction on 2026-08-29. The caption used to
+   * be `caption-upper`, a third of the figure's size, and read as an annotation
+   * hung off a number; asked for "the same size as the 12", the cell now reads
+   * as one line of type in which the figure and its label carry equal weight.
+   *
+   * `display-sm` rather than the old `display-lg` because the row has a width
+   * budget and the caption is the wide half of it. Measured at 2560px, the
+   * point where a cell is narrowest relative to the root size (below 2560 the
+   * content column is pinned at 1280px while the type keeps shrinking, above it
+   * the column grows faster than the type): at `display-sm` the widest cell,
+   * "12 SUBSCRIBERS", uses 253px of 280px. One step up, at 1.5rem, it uses 274px
+   * — six pixels of slack, which is not a margin, it is a coin toss. Raising the
+   * caption without lowering the figure fits at this width too and leaves 2.5px
+   * at 1024px, so it is the same coin toss one breakpoint down.
+   *
+   * The figure stays plain and tabular — set in `tabular-nums` by LiveCount
+   * itself, so a digit changing during the count-up cannot shift the caption
+   * beside it — and it is the only part of the cell in `--ink` at weight 400.
+   * That contrast, not size, is now what makes it read as the number. */
   [data-bip] .bip-statnumber {
     color: var(--ink);
-    font-size: var(--text-display-lg);
-    letter-spacing: var(--tracking-display-lg);
+    font-size: var(--text-display-sm);
+    letter-spacing: var(--tracking-display-sm);
     line-height: 1.1;
   }
 
@@ -904,8 +926,16 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
     align-items: baseline;
     gap: var(--space-xs);
     color: var(--muted);
-    font-size: var(--text-caption-upper);
-    font-weight: 600;
+    font-size: var(--text-display-sm);
+    /* 500, not the 600 it carried at caption size. Weight is what keeps a
+     * small uppercase label from dissolving; at 22px the label has size for
+     * that on its own, and 600 beside a figure set at 400 would make the label
+     * the louder half of the cell — the opposite of what it is. */
+    font-weight: 500;
+    /* The tracking token is unchanged and is now doing a different job by
+     * arithmetic alone: 0.88px was 0.08em against an 11px caption, the wide
+     * spacing small uppercase needs to stay readable; against 22px it is
+     * 0.04em, which is about what uppercase wants at this size. */
     letter-spacing: var(--tracking-caption-upper);
     text-transform: uppercase;
     transition: color 0.15s ease;
@@ -925,24 +955,33 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
    * set the width — Discord's is 256x199 and forcing it square would squash
    * the mark. YouTube's glyph is 17 units tall in a 24-unit box, so it takes
    * the largest number here to end up the same weight on screen as GitHub's,
-   * which fills its box corner to corner. */
+   * which fills its box corner to corner.
+   *
+   * In `em`, not pixels, since the caption went to `display-sm`: a mark pinned
+   * at 13px beside 22px of type is a detail that fell off the line, and the
+   * ratios are the whole point of the numbers below — pixels would freeze them
+   * at one root size on a page whose type scales with the viewport. The four
+   * values are the old pixel heights re-expressed against the new caption size
+   * and then eased down a little: a mark reads heavier the larger it gets, and
+   * holding the old ratio exactly would have put a 32px YouTube mark beside a
+   * 22px figure. */
   [data-bip] .bip-statmark {
     flex: none;
     align-self: center;
     inline-size: auto;
-    block-size: 13px;
+    block-size: 1em;
   }
 
   [data-bip] .bip-statmark--youtube {
-    block-size: 16px;
+    block-size: 1.23em;
   }
 
   [data-bip] .bip-statmark--x {
-    block-size: 12px;
+    block-size: 0.92em;
   }
 
   [data-bip] .bip-statmark--discord {
-    block-size: 12px;
+    block-size: 0.92em;
   }
 
   /* --- Narrow ------------------------------------------------------------
@@ -981,7 +1020,14 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
      * stacked and two not reads as a fault rather than as a layout. The row
      * switches shape together or not at all, and this is the width where it
      * switches. The `wrap` on the cell stays underneath as a last resort for
-     * a reader who has scaled the type up. */
+     * a reader who has scaled the type up.
+     *
+     * This breakpoint got tighter when the caption went to `display-sm`, and it
+     * was re-measured rather than assumed: at 1024px, the last width that keeps
+     * the one-line shape, "12 SUBSCRIBERS" uses 186px of the 200px it has. The
+     * root size shrinks faster than the cell does between here and 2560px, so
+     * 14px is the narrowest the margin gets across the whole desktop range —
+     * thin, but it is the same 14px at every width in between, not a cliff. */
     [data-bip] .bip-stats a {
       flex-direction: column;
       align-items: flex-start;
@@ -990,8 +1036,9 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
   }
 
   /* Below 768px four cells would be about 80px wide each — too narrow for a
-   * 36px figure beside an uppercase caption, and the captions would wrap into
-   * two lines while the figures did not. Two columns keep every cell legible.
+   * 22px figure over an uppercase caption at the same size, and the captions
+   * would wrap into two lines while the figures did not. Two columns keep every
+   * cell legible.
    *
    * The dividers stay, because they are the row's only chrome and dropping
    * them turns it into four floating numbers: cells 2 and 4 keep a vertical
