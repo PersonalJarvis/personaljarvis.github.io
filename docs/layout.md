@@ -234,6 +234,14 @@ nothing — test with a real one.)
 violation fails the build. The two owner files — `src/styles/layout.css` and
 `src/lib/widths.ts` — are exempt, because the formula has to live somewhere.
 
+**What the gate covers, exactly:** source files under `src/`, `app/`, `pages/`,
+`styles/` and `components/` **inside this repo only** — it roots itself at the
+website folder and cannot see anything above it. The desktop app's frontend is a
+different design system with its own scale and no `Container`; its `max-w-*`
+utilities are correct there and must not be swept up by this contract. `docs/`
+and `scripts/` are not scanned either, so a document may quote a retired class
+name to explain why it was retired.
+
 ---
 
 ## The four numbers to tune

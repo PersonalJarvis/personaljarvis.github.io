@@ -518,7 +518,10 @@ export default function DemoStage({ className = "" }: { className?: string }) {
     <div className={className}>
       <div
         ref={wrap}
-        style={{ position: "relative", width: "100%", aspectRatio: "16 / 10" }}
+        // overflow hidden here, not only on an ancestor: until the first
+        // measurement lands the inner board is 1440px wide at scale 1, which
+        // otherwise pushes the page into horizontal overflow on a narrow screen.
+        style={{ position: "relative", width: "100%", aspectRatio: "16 / 10", overflow: "hidden" }}
         aria-hidden="true"
       >
         <div

@@ -91,21 +91,25 @@ colours, **not** decoration, and never appear outside a timeline.
 
 **Inter** for display and body, **JetBrains Mono** for every code surface.
 
+Sizes are **rem**, shown here with the px they render at the 16px base. The
+root font size grows with the viewport (`layout.md`), so these travel with it;
+a px token here would freeze while the rem utilities around it grew.
+
 | Role | Size | Weight | Line height | Tracking | Use |
 |---|---|---|---|---|---|
-| display-mega | 72px | 400 | 1.1 | -2.16px | Hero h1 |
-| display-lg | 36px | 400 | 1.2 | -0.72px | Section heads |
-| display-md | 26px | 400 | 1.25 | -0.325px | Sub-section heads |
-| display-sm | 22px | 400 | 1.3 | -0.11px | Card group titles |
-| title-md | 18px | 600 | 1.4 | 0 | Component titles |
-| title-sm | 16px | 600 | 1.4 | 0 | List labels |
-| body | 16px | 400 | 1.5 | 0 | Default body |
-| body-sm | 14px | 400 | 1.5 | 0 | Footer body |
-| caption | 13px | 400 | 1.4 | 0 | Captions |
-| caption-upper | 11px | 600 | 1.4 | 0.88px | Section labels, pill labels |
-| code | 13px | 400 | 1.5 | 0 | Code — JetBrains Mono |
-| button | 14px | 500 | 1.0 | 0 | CTA labels |
-| nav-link | 14px | 500 | 1.4 | 0 | Top nav |
+| display-mega | 4.5rem (72px) | 400 | 1.1 | -2.16px | Hero h1 |
+| display-lg | 2.25rem (36px) | 400 | 1.2 | -0.72px | Section heads |
+| display-md | 1.625rem (26px) | 400 | 1.25 | -0.325px | Sub-section heads |
+| display-sm | 1.375rem (22px) | 400 | 1.3 | -0.11px | Card group titles |
+| title-md | 1.125rem (18px) | 600 | 1.4 | 0 | Component titles |
+| title-sm | 1rem (16px) | 600 | 1.4 | 0 | List labels |
+| body | 1rem (16px) | 400 | 1.5 | 0 | Default body |
+| body-sm | 0.875rem (14px) | 400 | 1.5 | 0 | Footer body |
+| caption | 0.8125rem (13px) | 400 | 1.4 | 0 | Captions |
+| caption-upper | 0.6875rem (11px) | 600 | 1.4 | 0.88px | Section labels, pill labels |
+| code | 0.8125rem (13px) | 400 | 1.5 | 0 | Code — JetBrains Mono |
+| button | 0.875rem (14px) | 500 | 1.0 | 0 | CTA labels |
+| nav-link | 0.875rem (14px) | 500 | 1.4 | 0 | Top nav |
 
 **Principles**
 
@@ -123,10 +127,11 @@ colours, **not** decoration, and never appear outside a timeline.
 Vertical section padding is 80px. Cards inside a band sit close together
 (16–24px gap) — the space belongs between sections, not inside them.
 
-**Widths come from [`layout.md`](layout.md)**, not from this file: `prose` 672px,
-`content` 1280px, `full` 100%, via the one `Container`. The reference system
-named 1200px; we use 1280 because the width contract predates this one and the
-hero spec is built on it. There is no second number.
+**Widths come from [`layout.md`](layout.md)**, not from this file: `prose` is
+`max(672px, 26vw)`, `content` is `max(1280px, 50vw)`, `full` is 100% — via the
+one `Container`. They are a formula, not a constant, so the column keeps its
+share of a wide screen. The reference system named a flat 1200px; that is
+exactly the shape of constant this site had to move away from.
 
 Grids inside `content`: 3-up for benefit cards at desktop, 2-up for splits,
 5-column footer.
