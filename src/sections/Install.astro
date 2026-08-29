@@ -1,0 +1,351 @@
+---
+/**
+ * Section 5 — the four steps, and the closing CTA.
+ *
+ * Two blocks in one file because together they are the end of the page: the
+ * steps show that getting in is small and reversible, and the band under them
+ * closes it. See docs/section-5-steps-cta.md.
+ *
+ * THE FOCUS BEHAVIOUR IS THE SIGNATURE. Exactly one step stands at full
+ * opacity; the other three sit at .35, and only the active one carries its
+ * button. The active step is whichever sits closest to the middle of the
+ * screen, found with an IntersectionObserver — no scroll hijacking and no
+ * sticky pinning, so the reader scrolls normally and the focus follows.
+ *
+ * The dimming is opt-in, applied by the script through `data-focus` on the
+ * list. Without JavaScript, and under `prefers-reduced-motion`, the attribute
+ * is never set: every step reads at full opacity and the button stays put.
+ * That is the accessible resting state, not a degraded one.
+ *
+ * NOTHING HERE IS INVENTED. Every step is provable from README.md ("Install",
+ * "Run it") or from jarvis.toml.example; see the comment on each one.
+ *
+ * Type sizes live in the style block, not in `text-[…]` utilities. A Tailwind
+ * arbitrary value holding a bare custom property is ambiguous and resolves as
+ * a COLOUR, which silently leaves every heading at body size.
+ */
+import Container from "@/components/Container.astro";
+import { TurningMark } from "@/components/mark/TurningMark";
+import { REPO } from "@/lib/install";
+
+const steps = [
+  {
+    title: "One command",
+    // README § Install: "One command on Windows, macOS, or Linux. You need
+    // Python 3.11 or newer and Git; the installer checks for both and stops
+    // with a download link if one is missing." Plus the note under the
+    // one-liners: it creates a venv, prefetches the voice models, launches.
+    body: "Windows, macOS or Linux, one line. You need Python 3.11 or newer and Git; the installer checks for both and stops with a download link if either is missing. It asks nothing else, builds its own environment, fetches the voice models and opens the app.",
+    cta: true,
+  },
+  {
+    title: "Pick a wake word",
+    // README § Install: "the app walks you through a one-time setup for
+    // language, wake word, and API keys". jarvis.toml.example
+    // [trigger.wake_word]: "no wake word ships with the product";
+    // [persona]: the name is derived from the phrase you choose.
+    body: "The app walks you through language, wake word and keys once. Nothing is preset — you type any phrase you like, and the assistant takes its name from it.",
+    cta: false,
+  },
+  {
+    title: "Add a key, or skip it",
+    // README § Install, optional table: a provider API key or subscription
+    // login (Gemini, Claude, OpenAI, OpenRouter), stored in the credential
+    // manager. README § "Runs on your own hardware": every layer has a local
+    // option needing no API key and no signup.
+    body: "In the same setup you hand over a provider key or a subscription login — Gemini, Claude, OpenAI or OpenRouter. It goes into your operating system's credential manager, never into a file. Every tier also has a local option that needs no key at all, so this step is skippable.",
+    cta: false,
+  },
+  {
+    title: "Say it",
+    // README § Run it: `jarvis` is the full desktop with voice and the Orb
+    // overlay; `jarvis serve` is the headless server whose full experience,
+    // microphone included, lives in the browser.
+    body: "`jarvis` opens the desktop window with voice and the Orb overlay. On a server, `jarvis serve` runs the same assistant in a browser tab, microphone and all.",
+    cta: false,
+  },
+];
+
+/** Backticks in a body become real code spans; the copy is authored here. */
+function segments(body: string) {
+  return body
+    .split(/`([^`]+)`/)
+    .map((text, i) => ({ text, code: i % 2 === 1 }));
+}
+---
+
+<section id="install" class="section-full-height flex flex-col">
+  <Container width="content">
+    <div class="section-rule"></div>
+  </Container>
+
+  <div class="flex flex-1 flex-col justify-center py-20">
+    <Container width="content">
+      <p class="eyebrow uppercase text-muted">Getting started</p>
+      <h2 class="headline mt-4 text-balance">How to install Jarvis</h2>
+
+      <div class="mt-12 grid gap-12 lg:grid-cols-12">
+        <ol class="relative lg:col-span-7" data-steps>
+          {/*
+            One hairline running the length of the badges. It stops 12px short
+            at each end — half a badge — so it meets the first and last numbers
+            at their centres instead of overshooting into nothing.
+          */}
+          <span
+            aria-hidden="true"
+            class="absolute bottom-3 left-3 top-3 w-px bg-hairline"></span>
+
+          {
+            steps.map((step, i) => (
+              <li class="step relative pl-10 [&:not(:last-child)]:mb-12" data-step>
+                <span class="badge absolute left-0 top-0 grid h-6 w-6 place-items-center rounded-[var(--radius-xs)] border border-hairline bg-canvas font-mono text-muted">
+                  {i + 1}
+                </span>
+
+                <h3 class="step-title font-medium text-ink">{step.title}</h3>
+
+                <p class="step-body mt-2 text-body">
+                  {segments(step.body).map((part) =>
+                    part.code ? <code>{part.text}</code> : <Fragment>{part.text}</Fragment>,
+                  )}
+                </p>
+
+                {step.cta && (
+                  <p class="mt-4" data-cta-home>
+                    <button
+                      type="button"
+                      class="action inline-flex h-11 items-center rounded-[var(--radius-md)] bg-ink px-5 font-medium text-on-ink transition-colors hover:bg-ink-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                      data-copy
+                    >
+                      <span data-copy-label>Copy the install command</span>
+                    </button>
+                  </p>
+                )}
+              </li>
+            ))
+          }
+        </ol>
+
+        {/*
+          Decorative, and gone below 1024px rather than shrunk. `client:media`
+          means the WebGL bundle is never even fetched on a phone.
+
+          The frame is a GRID, not a block. Astro wraps a client component in
+          `<astro-island>`, a custom element that defaults to `display: inline`
+          — a percentage height inside one resolves to nothing and the mark
+          renders a few pixels wide. A grid item is blockified whatever its own
+          display says, which makes the island fill the frame.
+        */}
+        <div class="mark-frame hidden lg:col-span-5 lg:grid">
+          <TurningMark client:media="(min-width: 1024px)" />
+        </div>
+      </div>
+    </Container>
+  </div>
+</section>
+
+{/*
+  The closing band. No margin above it: it begins where the steps end, which is
+  what makes it read as the end of the page rather than one more section.
+
+  Sharp corners, flat ink, no gradient. It breaks with everything above it on
+  purpose. On this palette the accent IS the ink — docs/design.md keeps one
+  action colour and no borrowed hue — so the band is paper and its type is the
+  page floor, 18.5:1, well past AA.
+*/}
+<Container width="content">
+  <div
+    class="cta flex flex-col justify-between gap-8 rounded-none bg-ink p-8 text-on-ink md:min-h-[268px] md:flex-row md:items-center md:p-14"
+  >
+    <div>
+      <h2 class="headline text-balance leading-tight">
+        Talk to your computer.<br />It does the thing.
+      </h2>
+      <p class="cta-sub mt-4 opacity-70">
+        Apache 2.0, running on your own machine. Bring the AI subscription you
+        already pay for, or an API key, or nothing at all and keep it offline.
+      </p>
+    </div>
+
+    <a
+      href={`${REPO}#install`}
+      class="action inline-flex h-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-on-ink px-6 font-medium text-ink transition-opacity hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-ink"
+    >
+      Install Personal Jarvis
+    </a>
+  </div>
+</Container>
+
+<style>
+  .eyebrow {
+    font-size: var(--text-caption-upper);
+    letter-spacing: var(--tracking-caption-upper);
+    font-family: var(--font-mono);
+  }
+
+  .headline {
+    font-size: var(--text-display-lg);
+    letter-spacing: var(--tracking-display-lg);
+    line-height: 1.2;
+  }
+
+  .step-title {
+    font-size: var(--text-title-md);
+  }
+
+  .step-body {
+    font-size: var(--text-body-sm);
+  }
+
+  .badge {
+    font-size: var(--text-caption-upper);
+  }
+
+  .action {
+    font-size: var(--text-body-sm);
+  }
+
+  .cta-sub {
+    font-size: var(--text-body-sm);
+  }
+
+  /* The band's heading has to be stated here, not with a `text-on-ink`
+     utility. Tailwind v4 puts utilities in `@layer utilities`, and global.css
+     colours h1-h4 from an UNLAYERED rule — unlayered always beats layered,
+     whatever the specificity. The utility loses silently and the heading comes
+     out paper-on-paper: invisible. */
+  .cta .headline {
+    color: var(--on-ink);
+  }
+
+  /* The dimming only exists once the script has opted in. Without it — no
+     JavaScript, or reduced motion — every step reads at full strength. */
+  [data-focus] .step {
+    opacity: 0.35;
+    transition: opacity 300ms ease;
+  }
+
+  [data-focus] .step[data-active],
+  [data-focus] .step:hover {
+    opacity: 1;
+  }
+
+  /* The active number is filled, the rest are outlines. */
+  [data-focus] .step[data-active] .badge {
+    background: var(--surface-strong);
+    border-color: var(--surface-strong);
+    color: var(--ink);
+  }
+
+  /* Square, so the turn never changes the space the mark occupies, and capped
+     at roughly 60% of the section's height. */
+  .mark-frame {
+    aspect-ratio: 1;
+    max-height: 60svh;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-focus] .step {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * The focus behaviour, and the copy button.
+   *
+   * The observer is only a trigger. Which step is active is decided by
+   * measuring, because a 10% band in the middle of the screen can hold two
+   * steps at once or none at all, and "closest to the middle" is the rule the
+   * spec actually states.
+   */
+  import { installCommandFor, isWindows } from "@/lib/install";
+
+  const list = document.querySelector<HTMLElement>("[data-steps]");
+
+  if (list) {
+    const items = Array.from(list.querySelectorAll<HTMLElement>("[data-step]"));
+    const cta = list.querySelector<HTMLElement>("[data-copy]");
+    const ctaHome = cta?.closest<HTMLElement>("[data-cta-home]") ?? null;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    if (!reduce.matches && items.length > 0) {
+      list.dataset.focus = "";
+
+      let active = -1;
+
+      const apply = (next: number) => {
+        if (next === active) return;
+        active = next;
+
+        items.forEach((item, i) => {
+          item.toggleAttribute("data-active", i === next);
+        });
+
+        /* The button is removed from the DOM rather than hidden, so a screen
+           reader never announces four buttons where only one is offered. */
+        if (cta && ctaHome) {
+          const owner = items.findIndex((item) => item.contains(ctaHome));
+          if (owner === next) ctaHome.appendChild(cta);
+          else cta.remove();
+        }
+      };
+
+      const measure = () => {
+        const middle = window.innerHeight / 2;
+        let best = 0;
+        let bestDistance = Infinity;
+
+        items.forEach((item, i) => {
+          const rect = item.getBoundingClientRect();
+          const distance = Math.abs(rect.top + rect.height / 2 - middle);
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            best = i;
+          }
+        });
+
+        apply(best);
+      };
+
+      const observer = new IntersectionObserver(measure, {
+        rootMargin: "-45% 0px -45% 0px",
+        threshold: [0, 1],
+      });
+      items.forEach((item) => observer.observe(item));
+
+      /* The observer fires on crossings; scroll keeps it honest in between. */
+      window.addEventListener("scroll", measure, { passive: true });
+      window.addEventListener("resize", measure);
+      measure();
+    }
+
+    /* The copy button hands over the line for the visitor's own shell. */
+    if (cta) {
+      const label = cta.querySelector<HTMLElement>("[data-copy-label]");
+      const windows = isWindows(navigator.userAgent);
+      const command = installCommandFor(navigator.userAgent);
+      const resting = label?.textContent ?? "Copy the install command";
+      let restore = 0;
+
+      cta.addEventListener("click", async () => {
+        if (!label) return;
+        try {
+          await navigator.clipboard.writeText(command);
+          label.textContent = windows
+            ? "Copied — paste it into PowerShell"
+            : "Copied — paste it into your terminal";
+        } catch {
+          /* Clipboard access can be refused outright. Saying so beats a button
+             that silently does nothing. */
+          label.textContent = "Copy blocked — the command is in the README";
+        }
+        window.clearTimeout(restore);
+        restore = window.setTimeout(() => {
+          label.textContent = resting;
+        }, 2600);
+      });
+    }
+  }
+</script>
