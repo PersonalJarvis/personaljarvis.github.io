@@ -227,7 +227,10 @@ Three rules come with it, and each one has already cost a defect:
   the script**, or a scrub ends up driving a section that no longer has a track.
 
 `VoiceSwitch.astro` is the worked example; the reasoning behind its numbers is
-in [`section-3-voice.md`](section-3-voice.md).
+in [`section-3-voice.md`](section-3-voice.md). `Install.astro` is the second,
+and shows the other thing a track is good for: not a scrub but a sequence —
+four steps, a quarter of the track each. Its numbers are in
+[`section-5-steps-cta.md`](section-5-steps-cta.md).
 
 ---
 

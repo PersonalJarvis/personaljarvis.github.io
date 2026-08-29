@@ -62,7 +62,7 @@ naming what proves it.
 | Number badge | 24×24px, radius 4px, `--font-mono` |
 | Install box | step `content`'s left column, ~105px tall — header 33px, two command lines |
 | Connecting line | 1px, `--hairline`, one segment per gap |
-| Boundary | `.section-rule` above the steps **and** below them |
+| Boundary | the pinned frame's own two rules, plus `.section-rule` opening the section and one under the track for the band to hang from |
 
 Widths come from `<Container>` alone. The step names a `max-width` of its own
 nowhere — `check-style.mjs` enforces that.
@@ -117,15 +117,50 @@ other three at `opacity: .35`.
 - Step 1 carries the install box, and it dims with step 1 like any other
   content. It is **not** added and removed as the focus moves — see below
 
-### How the active step is decided
+### The section holds the page still while it happens
 
-An `IntersectionObserver` with `rootMargin: "-45% 0px -45% 0px"` is the
-trigger; which step is active is then decided by **measuring**, because a 10%
-band in the middle of the screen can hold two steps at once or none at all.
-Active is whichever step's centre sits closest to the middle of the viewport.
+**The steps are pinned, and each one owns a quarter of the scrolling.** The
+frame stops under the reader, step 1 lights, then 2, then 3, then 4, and only
+once the fourth has had its share does the section let go (maintainer,
+2026-08-29).
 
-**No scroll hijacking, no sticky pinning.** The reader scrolls normally and the
-focus follows. Sticky variants break on mobile and feel sluggish.
+This file forbade exactly that until then, in as many words — *"no scroll
+hijacking, no sticky pinning; sticky variants break on mobile and feel
+sluggish"*. The reason was sound and is why the pin is **conditional**, not
+why it is absent: it is off below 1280px, below 1040px of window height, and
+under `prefers-reduced-motion`. Where it is off, the section is an ordinary
+block and the old rule decides — whichever step's centre sits closest to the
+middle of the window.
+
+The construction is [`layout.md`](layout.md) § "A section that is one viewport
+and still scrolls", the same one `VoiceSwitch.astro` uses: a tall track, a
+sticky child, and `track - viewport` of scrolling as the running length.
+
+| Element | Value |
+|---|---|
+| Track | `400svh` — three screens of pinned scrolling, 75svh per step |
+| Sticky child | `100svh`, `var(--space-xl)` padding, `overflow: hidden` |
+| Frame | `border-block: 1px solid var(--rule)`, `var(--space-lg)` padding, content centred |
+| Pin drops out at | `(max-width: 1279px), (max-height: 1039px), (prefers-reduced-motion: reduce)` |
+
+**Where the height threshold comes from.** The frame's natural height is 950px
+at 1280 wide and 972px at 2560 — the root scale grows with the viewport — plus
+64px of padding on the sticky child. So the pin needs about 1040px of window,
+and below that it gives up rather than clipping: the sticky child hides
+overflow, so a frame shorter than its content loses the bottom of step 4.
+
+Measure that again whenever anything is added to a step. It is the one number
+in this file that a copy change can invalidate.
+
+**The progress comes from `spanProgress`** in `src/lib/scrollSpan.ts` — the
+same function the section marker and the voice wipe measure with. Three things
+draw this page's scroll position and exactly one decides it, or the last step
+lights up before the marker reaches the corner.
+
+**The media query is spelled identically in the CSS and in the script.** The
+stylesheet decides the geometry, the script decides where the value comes
+from, and a mismatch leaves a scrub driving a section that no longer has a
+track.
 
 Hovering an inactive step also brings it to full opacity, without taking over
 the active state.
@@ -305,7 +340,9 @@ the button is therefore dark on the pale band.
 
 ## Forbidden
 
-- Scroll hijacking or sticky pinning for the focus behaviour
+- A pin that cannot drop out. It is off on a narrow screen, on a short window
+  and under `prefers-reduced-motion`, and those three conditions are spelled
+  the same in the CSS and in the script
 - More than four steps
 - A second install box, or one on any step but the first
 - Hiding the command behind a button again, or printing a line the copy button

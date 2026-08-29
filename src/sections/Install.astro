@@ -7,15 +7,20 @@
  * closes it. See docs/section-5-steps-cta.md.
  *
  * THE FOCUS BEHAVIOUR IS THE SIGNATURE. Exactly one step stands at full
- * opacity; the other three sit at .35. The active step is whichever sits
- * closest to the middle of the screen, found with an IntersectionObserver — no
- * scroll hijacking and no sticky pinning, so the reader scrolls normally and
- * the focus follows.
+ * opacity; the other three sit at .35.
+ *
+ * THE SECTION HOLDS THE PAGE STILL WHILE IT HAPPENS. A tall track with a
+ * sticky child: the frame stops under the reader, each step owns a quarter of
+ * the scrolling, and the section lets go once the fourth has had its share
+ * (maintainer, 2026-08-29). This file forbade exactly that until then, and the
+ * reason it did — sticky variants break on a phone and feel sluggish — is
+ * still true, which is why the pin is off below 1280px, below 1020px of window
+ * height, and under `prefers-reduced-motion`.
  *
  * The dimming is opt-in, applied by the script through `data-focus` on the
  * list. Without JavaScript, and under `prefers-reduced-motion`, the attribute
- * is never set: every step reads at full opacity. That is the accessible
- * resting state, not a degraded one.
+ * is never set: every step reads at full opacity, and the section is an
+ * ordinary block. That is the accessible resting state, not a degraded one.
  *
  * STEP 1 CARRIES THE INSTALL BOX, AND IT NEVER LEAVES. What used to sit there
  * was a button that was pulled out of the DOM whenever another step took
@@ -86,84 +91,114 @@ function segments(body: string) {
 }
 ---
 
-<section id="install" class="section-full-height relative flex flex-col">
-  <SectionTrack />
-
+<section id="install">
+  {/*
+    The line the section opens on, like every other section. It stays put and
+    scrolls away; the frame's own top line below is the one that gets pinned.
+  */}
   <Container width="content">
     <div class="section-rule"></div>
   </Container>
 
-  <div class="install-steps flex flex-1 flex-col justify-center">
-    <Container width="content">
-      <p class="eyebrow uppercase text-muted">Getting started</p>
-      <h2 class="headline mt-4 text-balance">How to install Jarvis</h2>
+  {/*
+    THE SCROLL TRACK. The section stops under the reader and the four steps
+    take their turn one at a time, which is what the maintainer asked for
+    (2026-08-29) and what the file used to forbid in as many words.
 
-      <div class="mt-10 grid gap-12 lg:grid-cols-12">
-        <ol class="relative lg:col-span-6" data-steps>
-          {
-            steps.map((step, i) => (
-              <li class="step relative pl-10 [&:not(:last-child)]:mb-10" data-step>
-                {/*
-                  The connecting hairline, drawn as one segment PER GAP rather
-                  than as a single line down the list. A single line is spanned
-                  against the <ol>, whose box ends at the bottom of the last
-                  step's body — several lines below the last badge — so it ran
-                  on past the final number into empty space. A segment knows
-                  where it has to stop: it starts at its own badge's bottom
-                  edge and reaches exactly one step gap down (`-bottom-10`
-                  against `mb-10`), to the top of the next badge. The last step has no gap under it and therefore
-                  draws nothing.
-                */}
-                {i < steps.length - 1 && (
-                  <span
-                    aria-hidden="true"
-                    class="absolute -bottom-10 left-3 top-6 w-px bg-hairline"
-                  />
-                )}
+    Same construction as VoiceSwitch, deliberately: the track's only job is to
+    be tall, the sticky child inside it is the single screen anyone sees, and
+    `track - viewport` of scrolling is the running length the steps are spread
+    over. See docs/layout.md, "A section that is one viewport and still
+    scrolls".
 
-                <span class="badge absolute left-0 top-0 grid h-6 w-6 place-items-center rounded-[var(--radius-xs)] border border-hairline bg-canvas font-mono text-muted">
-                  {i + 1}
-                </span>
-
-                <h3 class="step-title font-medium text-ink">{step.title}</h3>
-
-                <p class="step-body mt-2 text-body">
-                  {segments(step.body).map((part) =>
-                    part.code ? <code>{part.text}</code> : <Fragment>{part.text}</Fragment>,
-                  )}
-                </p>
-
-                {step.cta && (
-                  <div class="mt-4">
-                    <InstallCommand />
-                  </div>
-                )}
-              </li>
-            ))
-          }
-        </ol>
-
+    Below the breakpoints in the styles the track collapses to `auto`, the
+    child goes static and this is an ordinary block with four steps in it. A
+    scroll trap is only worth it where the whole frame actually fits on the
+    screen.
+  */}
+  <div data-track data-scroll-span>
+    <div data-viewport>
+      <Container width="content" class="flex h-full min-h-0 flex-col">
         {/*
-          Decorative, and gone below 1024px rather than shrunk. `client:media`
-          means the WebGL bundle is never even fetched on a phone.
-
-          The frame is a GRID, not a block. Astro wraps a client component in
-          `<astro-island>`, a custom element that defaults to `display: inline`
-          — a percentage height inside one resolves to nothing and the mark
-          renders a few pixels wide. A grid item is blockified whatever its own
-          display says, which makes the island fill the frame.
+          The pinned frame — the section as the reader sees it, a box closed on
+          all four sides: the rails give the two verticals, these two rules the
+          horizontals. The section marker walks that perimeter, so it lives in
+          HERE and not on the section: the section element is several screens
+          tall and a marker halfway down it would be a screen below the fold.
         */}
-        <div class="mark-frame hidden lg:col-span-6 lg:grid">
-          <TurningMark client:media="(min-width: 1024px)" />
+        <div data-frame>
+          <SectionTrack nested />
+          <p class="eyebrow uppercase text-muted">Getting started</p>
+          <h2 class="headline mt-4 text-balance">How to install Jarvis</h2>
+
+          <div class="mt-10 grid gap-12 lg:grid-cols-12">
+            <ol class="relative lg:col-span-6" data-steps>
+              {
+                steps.map((step, i) => (
+                  <li class="step relative pl-10 [&:not(:last-child)]:mb-10" data-step>
+                    {/*
+                      The connecting hairline, drawn as one segment PER GAP rather
+                      than as a single line down the list. A single line is spanned
+                      against the <ol>, whose box ends at the bottom of the last
+                      step's body — several lines below the last badge — so it ran
+                      on past the final number into empty space. A segment knows
+                      where it has to stop: it starts at its own badge's bottom
+                      edge and reaches exactly one step gap down (`-bottom-10`
+                      against `mb-10`), to the top of the next badge. The last step has no gap under it and therefore
+                      draws nothing.
+                    */}
+                    {i < steps.length - 1 && (
+                      <span
+                        aria-hidden="true"
+                        class="absolute -bottom-10 left-3 top-6 w-px bg-hairline"
+                      />
+                    )}
+
+                    <span class="badge absolute left-0 top-0 grid h-6 w-6 place-items-center rounded-[var(--radius-xs)] border border-hairline bg-canvas font-mono text-muted">
+                      {i + 1}
+                    </span>
+
+                    <h3 class="step-title font-medium text-ink">{step.title}</h3>
+
+                    <p class="step-body mt-2 text-body">
+                      {segments(step.body).map((part) =>
+                        part.code ? <code>{part.text}</code> : <Fragment>{part.text}</Fragment>,
+                      )}
+                    </p>
+
+                    {step.cta && (
+                      <div class="mt-4">
+                        <InstallCommand />
+                      </div>
+                    )}
+                  </li>
+                ))
+              }
+            </ol>
+
+            {/*
+              Decorative, and gone below 1024px rather than shrunk. `client:media`
+              means the WebGL bundle is never even fetched on a phone.
+
+              The frame is a GRID, not a block. Astro wraps a client component in
+              `<astro-island>`, a custom element that defaults to `display: inline`
+              — a percentage height inside one resolves to nothing and the mark
+              renders a few pixels wide. A grid item is blockified whatever its own
+              display says, which makes the island fill the frame.
+            */}
+            <div class="mark-frame hidden lg:col-span-6 lg:grid">
+              <TurningMark client:media="(min-width: 1024px)" />
+            </div>
+          </div>
         </div>
-      </div>
-    </Container>
+      </Container>
+    </div>
   </div>
 
   {/*
-    The line that CLOSES the steps. Its twin at the top opens them, and between
-    the two rails the block is now a bounded box rather than something that
-    fades out downwards.
+    The line the band hangs off. The frame's own bottom rule closes the steps
+    while they are pinned; this one closes the track, and the band sits
+    straight on it.
   */}
   <Container width="content">
     <div class="section-rule"></div>
@@ -218,19 +253,52 @@ function segments(body: string) {
 </section>
 
 <style>
-  /* The section is ONE screen: the steps, the line that closes them, and the
-     band. The three numbers below are what splits that screen up.
-     ---------------------------------------------------------------------
-     `install-steps` is the only flexible part. It takes the height the band
-     and the two gaps leave over, and its padding is a FLOOR, not a fixed
-     amount — on a tall monitor the flex box is taller than its content and
-     `justify-center` spreads the surplus evenly above and below, which is the
-     "a little air top and bottom" the layout is meant to read as. On a short
-     laptop the floor is all there is, the section grows past 100svh, and the
-     page simply scrolls; `section-full-height` is a MINIMUM, so nothing gets
-     clipped when the content no longer fits. */
-  .install-steps {
-    padding-block: clamp(1.5rem, 2.6svh, 3rem);
+  /* --- The track and its one visible screen -------------------------------
+   *
+   * `--track` is the running length. The reader scrolls (track - viewport) of
+   * distance, and the four steps are spread over it: a quarter each, so every
+   * step gets its own stretch of scrolling and the section only lets go once
+   * the fourth has had it. Four and a half screens is what makes a step feel
+   * like a beat rather than a flicker, without the page seeming to have
+   * stopped working.
+   */
+  [data-track] {
+    --track: 400svh;
+
+    height: var(--track);
+  }
+
+  [data-viewport] {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    padding-block: var(--space-xl);
+    overflow: hidden;
+  }
+
+  /* --- The pinned frame --------------------------------------------------
+   * The section drawn as a box: the rails give the two sides, these two rules
+   * close it top and bottom, and the section marker walks that perimeter.
+   * `--rule`, not `--hairline` — this is the page's structure, the same line
+   * the rails and every `.section-rule` draw.
+   *
+   * Inset from the sticky viewport rather than flush with it: a closing line
+   * lying exactly on the bottom edge of the window is a line nobody sees.
+   *
+   * `min-height: 0` carries the flex chain on from the container. One missing
+   * link and the content leaves the bottom of the frame instead of the frame
+   * getting shorter — docs/layout.md says so, and it is the first thing to
+   * check if the steps ever run out through the bottom rule.
+   */
+  [data-frame] {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+    justify-content: center;
+    border-block: 1px solid var(--rule);
+    padding-block: var(--space-lg);
   }
 
   /* NOTHING above the band: it hangs off the rule that closes the steps, the
@@ -325,6 +393,48 @@ function segments(body: string) {
     min-height: 0;
   }
 
+  /* --- Where the pin is off ----------------------------------------------
+   * Three cases drop out of the sticky layout into an ordinary block, and each
+   * one is the same judgement: pinning is only worth it where the whole frame
+   * actually fits on the screen with room to read it.
+   *
+   *   narrow    under 1280px the steps column is narrow enough that the four
+   *             bodies wrap to five and six lines, and the frame is taller
+   *             than any window
+   *   short     measured, not assumed: the frame's natural height runs 950px
+   *             at 1280 wide to 972px at 2560 (the root scale grows with the
+   *             viewport), plus 64px of padding on the sticky child — so the
+   *             pin needs about 1040px of window and gives up below it. Under
+   *             that the frame would be shorter than its content, and the
+   *             sticky child clips what will not fit
+   *   calm      prefers-reduced-motion. A section that holds the page still
+   *             is exactly what that setting is asking not to happen
+   *
+   * The script reads the same query, spelled identically, so the CSS and the
+   * JS cannot disagree about which mode the section is in — a mismatch leaves
+   * a scrub driving a section that no longer has a track.
+   */
+  @media (max-width: 1279px), (max-height: 1039px), (prefers-reduced-motion: reduce) {
+    [data-track] {
+      height: auto;
+    }
+
+    [data-viewport] {
+      position: static;
+      height: auto;
+      padding-block: var(--space-xxl);
+      overflow: visible;
+    }
+
+    /* Nothing is pinned, so there is no box for a perimeter to be the
+       perimeter of. The section keeps the rule at its top and the one the band
+       hangs from, like every other section on the page. */
+    [data-frame] {
+      border-block: 0;
+      padding-block: 0;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     [data-focus] .step {
       transition: none;
@@ -334,23 +444,48 @@ function segments(body: string) {
 
 <script>
   /**
-   * The focus behaviour. The install box owns its own script.
+   * Which step is active, and where that answer comes from.
    *
-   * The observer is only a trigger. Which step is active is decided by
-   * measuring, because a 10% band in the middle of the screen can hold two
-   * steps at once or none at all, and "closest to the middle" is the rule the
-   * spec actually states.
+   * WHILE THE SECTION IS PINNED NOTHING MOVES, so the rule this used to run on
+   * — whichever step's centre is closest to the middle of the window — returns
+   * the same step on every frame of the pin. The answer comes from the TRACK
+   * instead: how far the reader is through it, split four ways in order, so
+   * each step owns a quarter of the scrolling and the section only lets go
+   * once the fourth has had its share.
+   *
+   * `spanProgress` is the same function the section marker and the voice wipe
+   * measure with. Three things draw this page's scroll position and one
+   * formula decides it, or they drift apart in the way a reader actually
+   * notices: the last step lighting up before the marker reaches the corner.
+   *
+   * WHERE THE PIN IS OFF the old rule is still the right one, because the
+   * steps are ordinary blocks moving up the screen again. The media query is
+   * the stylesheet's, spelled identically — the CSS decides the geometry and
+   * this decides where the value comes from, and a mismatch leaves a scrub
+   * driving a section that no longer has a track.
+   *
+   * Every read is inside a requestAnimationFrame. `getBoundingClientRect`
+   * forces layout, and doing that in the scroll handler ties the page's frame
+   * rate to the wheel.
    */
-  const list = document.querySelector<HTMLElement>("[data-steps]");
+  import { spanProgress } from "@/lib/scrollSpan";
 
-  if (list) {
+  const section = document.querySelector<HTMLElement>("#install");
+  const list = section?.querySelector<HTMLElement>("[data-steps]");
+  const track = section?.querySelector<HTMLElement>("[data-track]");
+
+  if (section && list && track) {
     const items = Array.from(list.querySelectorAll<HTMLElement>("[data-step]"));
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const loose = window.matchMedia(
+      "(max-width: 1279px), (max-height: 1039px), (prefers-reduced-motion: reduce)",
+    );
 
     if (!reduce.matches && items.length > 0) {
       list.dataset.focus = "";
 
       let active = -1;
+      let frame = 0;
 
       const apply = (next: number) => {
         if (next === active) return;
@@ -361,7 +496,15 @@ function segments(body: string) {
         });
       };
 
-      const measure = () => {
+      /* A quarter of the track each. `Math.min` rather than a clamp because
+         the only value that overruns is a progress of exactly 1, at the last
+         pixel of the pin, and it belongs to the last step. */
+      const fromTrack = () => {
+        const progress = spanProgress(track.getBoundingClientRect(), window.innerHeight);
+        return Math.min(items.length - 1, Math.floor(progress * items.length));
+      };
+
+      const fromCentre = () => {
         const middle = window.innerHeight / 2;
         let best = 0;
         let bestDistance = Infinity;
@@ -375,18 +518,22 @@ function segments(body: string) {
           }
         });
 
-        apply(best);
+        return best;
       };
 
-      const observer = new IntersectionObserver(measure, {
-        rootMargin: "-45% 0px -45% 0px",
-        threshold: [0, 1],
-      });
-      items.forEach((item) => observer.observe(item));
+      const measure = () => {
+        frame = 0;
+        apply(loose.matches ? fromCentre() : fromTrack());
+      };
 
-      /* The observer fires on crossings; scroll keeps it honest in between. */
-      window.addEventListener("scroll", measure, { passive: true });
-      window.addEventListener("resize", measure);
+      const schedule = () => {
+        if (frame) return;
+        frame = requestAnimationFrame(measure);
+      };
+
+      window.addEventListener("scroll", schedule, { passive: true });
+      window.addEventListener("resize", schedule);
+      loose.addEventListener("change", schedule);
       measure();
     }
   }
