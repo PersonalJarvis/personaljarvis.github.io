@@ -14,8 +14,10 @@
  * the scrolling, and the section lets go once the fourth has had its share
  * (maintainer, 2026-08-29). This file forbade exactly that until then, and the
  * reason it did — sticky variants break on a phone and feel sluggish — is
- * still true, which is why the pin is off below 1280px, below 1020px of window
- * height, and under `prefers-reduced-motion`.
+ * still true, which is why the pin is off below 1280px, below 1136px of window
+ * height, and under `prefers-reduced-motion` — and why a script measures the
+ * screen on top of that and drops the pin wherever the four steps and the band
+ * do not actually fit.
  *
  * The dimming is opt-in, applied by the script through `data-focus` on the
  * list. Without JavaScript, and under `prefers-reduced-motion`, the attribute
@@ -136,11 +138,11 @@ function segments(body: string) {
           <p class="eyebrow uppercase text-muted">Getting started</p>
           <h2 class="headline mt-4 text-balance">How to install Jarvis</h2>
 
-          <div class="mt-8 grid gap-12 lg:grid-cols-12">
-            <ol class="relative lg:col-span-6" data-steps>
+          <div class="steps-row grid gap-12 lg:grid-cols-12">
+            <ol class="relative lg:col-span-7" data-steps>
               {
                 steps.map((step, i) => (
-                  <li class="step relative [&:not(:last-child)]:mb-8" data-step>
+                  <li class="step relative" data-step>
                     {/*
                       The connecting hairline, drawn as one segment PER GAP rather
                       than as a single line down the list. A single line is spanned
@@ -148,9 +150,11 @@ function segments(body: string) {
                       step's body — several lines below the last badge — so it ran
                       on past the final number into empty space. A segment knows
                       where it has to stop: it starts at its own badge's bottom
-                      edge and reaches exactly one step gap down (`-bottom-8`
-                      against `mb-8`), to the top of the next badge. The last step has no gap under it and therefore
-                      draws nothing.
+                      edge and reaches exactly one step gap down — its `bottom`
+                      is the negative of the same `--pin-air` the gap is, so it
+                      follows the gap as the gap gives way on a short window —
+                      to the top of the next badge. The last step has no gap
+                      under it and therefore draws nothing.
 
                       Its own left offset is not written here. Everything that
                       has to line up with the badge column — this segment, the
@@ -158,7 +162,7 @@ function segments(body: string) {
                       numbers in the style block below.
                     */}
                     {i < steps.length - 1 && (
-                      <span aria-hidden="true" class="step-line absolute -bottom-8 w-px bg-hairline" />
+                      <span aria-hidden="true" class="step-line absolute w-px bg-hairline" />
                     )}
 
                     <span class="badge absolute top-0 grid place-items-center rounded-[var(--radius-xs)] border border-hairline bg-canvas font-mono text-muted">
@@ -184,6 +188,14 @@ function segments(body: string) {
             </ol>
 
             {/*
+              SEVEN COLUMNS OF TEXT AND FIVE OF MARK, not six and six, and the
+              reason is the height of the screen rather than the look of the
+              row. At six columns the four bodies wrap to 4/3/4/3 lines; the
+              extra column takes two of those away and the list comes out 46px
+              shorter, which is 46px the pinned screen no longer has to find.
+              The mark does not lose anything for it: it draws as large as its
+              box allows and was never as wide as its half of the row.
+
               Decorative, and gone below 1024px rather than shrunk. `client:media`
               means the WebGL bundle is never even fetched on a phone.
 
@@ -193,7 +205,7 @@ function segments(body: string) {
               renders a few pixels wide. A grid item is blockified whatever its own
               display says, which makes the island fill the frame.
             */}
-            <div class="mark-frame hidden lg:col-span-6 lg:grid">
+            <div class="mark-frame hidden lg:col-span-5 lg:grid">
               <TurningMark client:media="(min-width: 1024px)" />
             </div>
           </div>
@@ -217,7 +229,7 @@ function segments(body: string) {
           its type is the page floor, 18.5:1, well past AA.
         */}
         <div
-          class="cta flex shrink-0 flex-col justify-between gap-6 rounded-none bg-ink p-8 text-on-ink md:min-h-[200px] md:flex-row md:items-center md:p-8"
+          class="cta flex shrink-0 flex-col justify-between gap-6 rounded-none bg-ink px-8 text-on-ink md:min-h-[200px] md:flex-row md:items-center"
         >
           <div>
             <h2 class="headline text-balance leading-tight">
@@ -255,17 +267,53 @@ function segments(body: string) {
   [data-track] {
     --track: 400svh;
 
+    /* THE AIR IN THIS SCREEN IS MEASURED AGAINST THE WINDOW'S HEIGHT, and it
+     * is the only place on the site where a gap is. Everywhere else air is a
+     * `--space-*` token in rem, which grows with the ROOT scale — and the root
+     * scale grows with the viewport's WIDTH. That is right for a page that
+     * scrolls: a wide screen gets a bigger page. It is wrong for the one
+     * screen that has to hold four steps, an install box and a band at once,
+     * because a 2560px-wide window is 19% taller in content than a 1280px one
+     * while being no taller in pixels. It is why this section needed 1213px of
+     * window at 2560 and 994px at 1280 for the same four steps.
+     *
+     * `2rem` is the ceiling, which is `mb-8` — what the steps, the row above
+     * them and the band's block padding all used to be written as, and what
+     * they still come out at on a tall window. Below that the three of them
+     * give way together, down to a 1rem floor. At 2560x1305 that is 22px
+     * rather than 38 and hands back 94px of screen: 47 across the three step
+     * gaps, 16 above the row, 31 inside the band.
+     *
+     * ONE NUMBER FOR ALL THREE, because they fail together — a screen that is
+     * 40px short is not short in one place. Spend it through this variable,
+     * never as a `space-*` utility, or the next window height that does not
+     * fit is back to being a hand-measured threshold. */
+    --pin-air: clamp(1rem, 1.7svh, 2rem);
+
     height: var(--track);
   }
 
   [data-viewport] {
     position: sticky;
-    /* Under the nav, in a box `2 x --nav-height` shorter than the window — the
-     * same two figures every pinned section on this page uses, so this
-     * section's opening rule lands where an ordinary section's does. See
-     * layout.css § "Section heights". */
+    /* Under the nav — the same clearance every pinned section takes, so this
+     * section's opening rule lands where an ordinary section's band does.
+     *
+     * ONE NAV OFF THE HEIGHT, NOT TWO, and it is the same asymmetry the
+     * padding below states. `--section-height` subtracts the nav twice because
+     * a section that fills a screen has a closing RULE at its bottom edge, and
+     * that rule needs the same air above the next section's opening one. This
+     * screen has no closing rule: what sits at its bottom is the CTA band, the
+     * last block on the page, and under it is the footer. There is no joint
+     * there to keep clear, so the second subtraction buys nothing — it only
+     * takes 76px out of a screen that is already the tightest on the site.
+     *
+     * That is not a rounding difference. At 2560x1305 the screen needs 1269px
+     * and `--section-height` offers 1153, so the guard below measured the
+     * overflow and switched the pin off — the maintainer reported the section
+     * scrolling straight past on 2026-08-29, hours after the pin was built.
+     * This gives 76 of the missing 116 back and `--pin-air` gives the rest. */
     top: var(--nav-height);
-    height: var(--section-height);
+    height: calc(100svh - var(--nav-height));
     /* ASYMMETRIC, AND EACH END FOR ITS OWN REASON.
      *
      * The TOP is this section's inset — the air between its own edge and the
@@ -360,13 +408,29 @@ function segments(body: string) {
     --badge-gap: 1rem;
   }
 
+  /* The three places the screen's air is spent. They are here rather than as
+     `mt-8`/`mb-8`/`p-8` utilities because a fixed rem does not know how tall
+     the window is — see `--pin-air` above. */
+  .steps-row {
+    margin-top: var(--pin-air);
+  }
+
   .step {
     padding-left: calc(var(--badge-inset) + var(--badge-size) + var(--badge-gap));
+  }
+
+  .step:not(:last-child) {
+    margin-bottom: var(--pin-air);
+  }
+
+  .cta {
+    padding-block: var(--pin-air);
   }
 
   .step-line {
     left: calc(var(--badge-inset) + var(--badge-size) / 2);
     top: var(--badge-size);
+    bottom: calc(-1 * var(--pin-air));
   }
 
   .step-title {
@@ -458,11 +522,19 @@ function segments(body: string) {
    * content and sets `data-unpinned` when it cannot, and the rules below carry
    * that attribute as well as the query.
    *
-   * The 1060px in the query is a floor for a reader with no JavaScript, not
+   * The 1136px in the query is a floor for a reader with no JavaScript, not
    * the real threshold: below it the pin cannot be right at any width, and
-   * above it the measurement decides.
+   * above it the measurement decides. It is the 1060px this was measured at
+   * against the pinned BOX, plus the one `--nav-height` the box is shorter
+   * than the window it stands in.
+   *
+   * SPELLED THE SAME IN THE SCRIPT, and for one afternoon it was not: the
+   * stylesheet's figure moved with a layout change and the script's stayed,
+   * which is the exact mismatch docs/layout.md § "A section that is one
+   * viewport and still scrolls" warns about — a scrub driving a section that
+   * no longer has a track.
    */
-  @media (max-width: 1279px), (max-height: 1211px), (prefers-reduced-motion: reduce) {
+  @media (max-width: 1279px), (max-height: 1135px), (prefers-reduced-motion: reduce) {
     [data-track] {
       height: auto;
     }
@@ -547,7 +619,7 @@ function segments(body: string) {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     const frameBox = section.querySelector<HTMLElement>("[data-frame]");
     const loose = window.matchMedia(
-      "(max-width: 1279px), (max-height: 1059px), (prefers-reduced-motion: reduce)",
+      "(max-width: 1279px), (max-height: 1135px), (prefers-reduced-motion: reduce)",
     );
 
     if (!reduce.matches && items.length > 0) {

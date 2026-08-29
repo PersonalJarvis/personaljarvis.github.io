@@ -9,8 +9,8 @@
 
 ## Reference
 
-Layout model: <https://www.meuze.ai> — the "Forward deployed" section and the
-band beneath it.
+Layout model: the design reference the maintainer supplied — its steps
+section and the band beneath it.
 
 The reference governs layout, proportion and the focus behaviour. Not copy, not
 colour, not content.
@@ -25,7 +25,7 @@ to squint at it again:
 |---|---|---|
 | Block A's boundary | a rule above **and** below, between the two rails | the same |
 | Space between the blocks | one gap, not a join | **none** — the band hangs off the rule (maintainer, 2026-08-29) |
-| Seconds per revolution | 15 (its own bundle: `-(2π)/(1000 · secondsPerRevolution)`, default 15, never overridden) | 14 |
+| Seconds per revolution | about 15 | 14 |
 
 ---
 
@@ -57,8 +57,8 @@ naming what proves it.
 | Block A's height | whatever the band and the gaps leave over (`flex: 1`) |
 | Block A's padding | `clamp(1.5rem, 2.6svh, 3rem)`, a floor rather than a fixed amount |
 | Width | step `content` |
-| Columns | **6/12 steps left, 6/12 artwork right** |
-| Step spacing | 32px between blocks |
+| Columns | **7/12 steps left, 5/12 artwork right** — the extra column takes two wrapped lines out of the four bodies and 46px out of the screen; the mark was never as wide as its half of the row |
+| Step spacing | `--pin-air` — 32px on a tall window, less on a short one |
 | Number badge | `1.5rem` square, radius 4px, `--font-mono`, held `0.75rem` clear of the left rule |
 | Install box | step `content`'s left column, ~105px tall — header 33px, two command lines |
 | Connecting line | 1px, `--hairline`, one segment per gap, down the badge's centre |
@@ -94,8 +94,9 @@ proportioned first and lands near a screen second.
 ### The connecting line stops at the last badge
 
 One segment per **gap**, on each step but the last: from that step's badge
-bottom edge down through the step gap to the next badge's top (`bottom: -8`
-against the list's `mb-8`).
+bottom edge down through the step gap to the next badge's top (`bottom` is the
+negative of the same `--pin-air` the gap is, so it follows the gap as the gap
+gives way on a short window).
 
 Not one line spanned against the `<ol>`. The list's box ends at the bottom of
 the last step's *body*, several lines below the last badge, so a single line
@@ -148,7 +149,7 @@ once the fourth has had its share does the section let go (maintainer,
 This file forbade exactly that until then, in as many words — *"no scroll
 hijacking, no sticky pinning; sticky variants break on mobile and feel
 sluggish"*. The reason was sound and is why the pin is **conditional**, not
-why it is absent: it is off below 1280px, below 1040px of window height, and
+why it is absent: it is off below 1280px, below 1136px of window height, and
 under `prefers-reduced-motion`. Where it is off, the section is an ordinary
 block and the old rule decides — whichever step's centre sits closest to the
 middle of the window.
@@ -160,7 +161,7 @@ sticky child, and `track - viewport` of scrolling as the running length.
 | Element | Value |
 |---|---|
 | Track | `400svh` — three screens of pinned scrolling, 75svh per step |
-| Sticky child | `100svh`, `var(--space-lg)` padding, `overflow: hidden`. It carries the frame AND the band |
+| Sticky child | `top: var(--nav-height)`, `height: calc(100svh - var(--nav-height))`, `--section-inset` of padding above and `--space-lg` below, `overflow: hidden`. It carries the frame AND the band |
 | Frame | `border-block: 1px solid var(--rule)`, `var(--space-base)` padding, content centred |
 | Pin drops out at | narrow, calm, or **measured not to fit** — see below |
 
@@ -204,7 +205,7 @@ Two things that look like the obvious test and are not:
   be is circular. The list is neither centred nor circular: it is text, and its
   height depends only on the column it wraps in.
 
-The query that remains — `(max-width: 1279px), (max-height: 1059px),
+The query that remains — `(max-width: 1279px), (max-height: 1135px),
 (prefers-reduced-motion: reduce)` — covers the structural cases and acts as a
 floor for a reader with no JavaScript. Above it the measurement decides.
 
@@ -223,10 +224,40 @@ viewport, and the scroll handler applies it when it gets there. A mode one
 resize out of date costs nobody anything; a page that jumps under a reader's
 hands costs them their place.
 
-For reference rather than as a contract, at the time of writing the pinned
-screen needs about 1269px of window at 2560 wide, 1080px at 1920 and 1160px at
-1280. The `--section-inset` at the top of the sticky child is 56px of that, and
-it is spent on the joint between this section and the one above it.
+For reference rather than as a contract: measured at 2560×1305 the pinned
+screen holds its content with **52px to spare** between the last step and the
+line that closes the frame. That is the figure to re-read after touching a
+step's copy, a padding or the band — it is what the measurement above is
+spending, and a step body that grows by three lines takes all of it.
+
+### One nav off the height, not two, and air that knows the window
+
+Two things had to give the screen room before it could pin at all, and both
+were found the same way: at 2560×1305 the screen wanted 1269px and was being
+offered 1153, so the measurement dropped the pin and the section scrolled
+straight past — which is what the maintainer reported hours after the pin was
+built.
+
+- **`height: calc(100svh - var(--nav-height))`.** Every other one-screen
+  section is `--section-height`, the window less *twice* the nav, because it
+  has a closing rule at its bottom edge that needs air above the next section's
+  opening one. This screen has no closing rule: the CTA band is at its bottom
+  and the footer is under that, so there is no joint to keep clear and the
+  second subtraction bought nothing. It is the same asymmetry the child's
+  padding already states — `--section-inset` at the top because that end *is* a
+  section edge, `--space-lg` at the bottom because that end is not. Worth 76px.
+- **`--pin-air`**, one variable for the three step gaps, the row above them and
+  the band's block padding. Air everywhere else on the site is a `--space-*`
+  token in rem, which grows with the root scale — and the root scale grows with
+  the viewport's **width**. Right for a page that scrolls; wrong for the one
+  screen that must hold four steps, an install box and a band at once, because
+  a 2560px-wide window is 19% taller in content than a 1280px one and no taller
+  in pixels. `clamp(1rem, 1.7svh, 2rem)` keeps the old `mb-8` on a tall window
+  and gives way on a short one. Worth 94px at 1305.
+
+Spend the screen's air through that variable, never as a `space-*` utility, or
+the next window height that does not fit is back to being a hand-measured
+threshold.
 
 **The progress comes from `spanProgress`** in `src/lib/scrollSpan.ts` — the
 same function the section marker and the voice wipe measure with. Three things
