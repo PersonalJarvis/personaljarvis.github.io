@@ -140,9 +140,8 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
   {/*
     The section rule sits in the same container the rails stand on, so it
     starts and ends exactly on them — see docs/layout.md § "Horizontal rules".
-    It is a child of the section rather than of the centred block, because the
-    line marks where the section begins and the block floats in the leftover
-    height.
+    It is a child of the block below rather than of it, because the line marks
+    where the section begins while the block only carries the content.
   */}
   <SectionTrack />
 
@@ -150,7 +149,19 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
     <div class="section-rule"></div>
   </Container>
 
-  <div class="flex flex-1 flex-col justify-center py-8">
+  {/*
+    The content HANGS FROM THE RULE; it is not centred in the section.
+    `min-h-svh` guarantees one screen, but this section's height is decided by
+    its card, and the card cannot grow past 68% of the content column — so on
+    a window taller than roughly 1100px there is height left over that nothing
+    can fill. Centring split that surplus in two and parked half of it between
+    the rule and the headline, where it reads as the line having come loose
+    from the section it opens. Top-aligned, the leftover collects at the
+    bottom instead, where it is the gap before the next rule and reads as
+    pacing. `py-8` above the headline is then a deliberate distance rather
+    than a remainder.
+  */}
+  <div class="flex flex-1 flex-col py-8">
     <Container width="content">
       {/*
         Headline and standfirst sit on `content`, not on the `prose` column.
