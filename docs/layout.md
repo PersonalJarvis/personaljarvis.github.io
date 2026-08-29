@@ -264,91 +264,80 @@ four steps, a quarter of the track each. Its numbers are in
 
 ---
 
-## The scroll rests on a section boundary
+## The scroll goes where the reader puts it
 
-The page snaps. Let go of the wheel near a boundary and it settles with that
-section's top edge on the top of the window — a beat of a pause, so a section
-is read whole instead of being crossed halfway. Three declarations, all in
-`src/styles/layout.css`, and nothing per section:
+**The page does not snap.** It did until 2026-08-29, and the intent was right —
+let go of the wheel near a boundary and the page settles with that section's
+top on the top of the window, a beat of a pause. What it actually did was throw
+the reader past what they were reading, and the maintainer reported it as
+sections being "typed past", with nothing smooth about scrolling through.
+
+**Why proximity could not be tuned into behaving.** `proximity` is not a hint
+the browser weighs; it is a radius, and Chrome's is about 30% of the viewport —
+391px in a 1305px window. Every boundary therefore carried a magnet roughly
+400px deep on each side, and the one-screen sections are 1153px apart, so about
+**800 of every 1153px of this page was a position the reader could not stop
+at**. Asked to come to rest at each of these, the page went:
+
+| asked to rest at | landed at | |
+|---|---|---|
+| 11100 | 11100 | free |
+| 11300 | 11596 | **+296** |
+| 11500 | 11596 | +96 |
+| 11900 | 11596 | **−304** |
+| 12100 | 12100 | free |
+| 12400 | 12749 | **+349** |
+
+The forward yanks are the ones that hurt. Stop two thirds of the way down a
+section and the page throws you 300–400px on into the next one: the bottom of
+what you were reading is never seen. CSS exposes no threshold for `proximity`,
+so the only lever is which elements are snap targets — and every remaining
+target keeps its full 400px magnet, which buys inconsistency and no smoothness.
+
+**Nothing was lost with it, because the snap was never what holds the reader
+still.** The three places this page deliberately pauses — the voice section,
+the stargazer globe, the install steps — hold with a tall `[data-track]` and a
+`position: sticky` child (see "A section that is one viewport and still
+scrolls"). That mechanism is untouched: the reader is held for as long as the
+track is long and let go at the end of it. Only the magnet between ordinary
+sections went away.
+
+**Do not put it back without measuring again.** The table above is the test:
+ask the page to come to rest at a dozen positions across two boundaries, and
+every one of them has to come back unchanged.
+
+What stays, and neither is snap's:
 
 ```css
-html                   { scroll-snap-type: y proximity; }
-body > section         { position: relative; }
-body > section::before { scroll-snap-align: start; }  /* 1px, invisible, top edge */
+html           { scroll-padding-block-start: var(--nav-height); scroll-behavior: smooth; }
+body > section { position: relative; }
 ```
 
-**The snap point is a 1px marker at the section's top, not the section box.**
-A snap area *taller than the window* is its own case in the spec: every scroll
-position at which the area covers the window counts as a valid snap position,
-and the browser holds the reader inside that range. The voice section's
-covering range runs from its top to two screens further down, and the far end
-of it is exactly where the pinned picture has finished — so a reader who
-scrolls in short bursts and lets go anywhere in that section's last screen is
-pulled straight back to that end. The gesture nets zero, the picture re-pins,
-and the only way out is one gesture long enough to clear the whole magnet.
-Measured in Chrome on 2026-08-29 at a 1249px window: three wheel notches from
-the end of the pin travelled 1064px and landed back where they started, and the
-same gesture with `scroll-snap-type: none` kept all 1064. A 1px pseudo-element
-cannot be taller than the window, so it has one snap position and no covering
-range, and its top edge *is* the section's top edge — the same boundary the
-section box was offering, without the trap. It draws nothing and is out of
-flow, so it is not a flex or grid item and no section's layout can see it. The
-`position: relative` is what keeps it positioned against its own section rather
-than escaping to the top of the document.
-
-**`proximity`, never `mandatory`.** `mandatory` means the scroll position must
-always be on a snap point. Three sections here are taller than the window — the
-pinned voice section is three screens, stargazers nearly two, install just over
-one — and the only snap point any of them has is its own top edge, so
-`mandatory` drags the reader back to that edge every time they scroll *inside*
-one and the rest of the section cannot be reached. It is not a value to tune
-down; it is unusable on a page whose sections are not all one screen tall.
-
-**No `scroll-snap-stop: always`.** It turns every boundary into a wall a single
-gesture cannot cross. That is a full-page slideshow, which is a different thing
-from a page read at the reader's own pace.
-
-**One selector, not a class per section.** The snap points are the section
-boundaries — a fact about the page's structure, not a decision each section
-makes. A class is a hand-maintained copy of that fact, and the section that
-forgets it is the one boundary the page runs past. The same argument rules out
-marking the tall sections by hand to keep them out of the trap above: "taller
-than the window" is a fact about a rendered page at one window size, not
-something a section can declare.
-
-**The footer is not a snap point**, and gets none because it is not a
-`<section>`. It is a quarter-screen at the very bottom, so its top edge lies
-past the document's last scroll position; a snap point there could only pull
-the reader back off the end of the page.
-
 **`scroll-padding-block-start: var(--nav-height)`, and it is not optional.**
-This paragraph used to say the opposite and end with the condition that has now
-happened: the nav left the hero on 2026-08-29 and is fixed over the whole
-document. A snap point *is* the top of the window, so without this every
-boundary the page rests on — and every heading a nav link sends the reader to —
-arrives underneath the nav, the section's own opening rule included.
+The nav is fixed over the whole document, so without it every heading a nav
+link sends the reader to arrives underneath the nav, the section's own opening
+rule included.
 
 **It is `var(--nav-height)`, never a second `4rem` written out here.** The nav
 is laid out at that variable and the variable is `round(4rem, 1px)` against a
-root size that scales with the viewport, so a hand-written `4rem` in the
-scroll padding is not the same number as the nav's height on any screen where
-the root size has grown — it is off by the fraction `round()` takes away, and it
-drifts further the wider the window gets. Two spellings of one height is the
-kind of drift nothing reports: the page simply lands every clicked heading a
-few pixels under the lettering.
+root size that scales with the viewport, so a hand-written `4rem` is not the
+same number as the nav's height on any screen where the root size has grown —
+it is off by the fraction `round()` takes away, and it drifts further the wider
+the window gets. Two spellings of one height is the kind of drift nothing
+reports: the page simply lands every clicked heading a few pixels under the
+lettering.
 
-**`scroll-behavior: smooth` lives here too, on `html` and not on the nav.** A
-fragment jump is the browser scrolling the *document*, so the document is what
-decides whether that scroll is instant or travelled; putting the declaration on
-the thing that happens to hold the links would leave every other anchor on the
-page jumping. Reduced motion turns it off along with the snap — a reader who
-asked not to be moved did not exclude the one movement they started themselves,
-but a page that vaults four screens in one animation is exactly what that
-setting is about.
+**`scroll-behavior: smooth` lives on `html`, not on the nav.** A fragment jump
+is the browser scrolling the *document*, so the document is what decides
+whether that scroll is instant or travelled; putting the declaration on the
+thing that happens to hold the links would leave every other anchor on the page
+jumping. It has no bearing on a wheel gesture. `prefers-reduced-motion: reduce`
+turns it off — a page that vaults four screens in one animation is exactly what
+that setting is about.
 
-`prefers-reduced-motion: reduce` turns the snap off altogether: that reader has
-asked for exactly this — the page does not move on its own once their gesture
-has finished.
+**`position: relative` on the section** is no longer the snap marker's; that
+element is gone. It stays so that anything drawn against a section's own box
+has a containing block to measure from.
 
 ---
 

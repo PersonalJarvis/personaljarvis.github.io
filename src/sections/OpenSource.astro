@@ -35,8 +35,7 @@
  * traps — the stargazer globe holds the reader for 0.8 of a screen, the install
  * steps for four — and a third pinned section between them would leave the page
  * unable to be scrolled past without three separate stops. This is an ordinary
- * block: one screen, one snap point, and the reader carries on. `body > section`
- * in layout.css gives it that snap point without a class, and `SectionTrack`
+ * block: one screen, scrolled past at the reader's own pace. `SectionTrack`
  * derives its rail from document order, so inserting this section re-points the
  * marker for every section below it with nothing to update by hand.
  *
