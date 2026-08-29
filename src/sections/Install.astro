@@ -606,11 +606,34 @@ function segments(body: string) {
        * ordinary block where everything always fits, and the state would latch
        * for good.
        */
+      let deferred = false;
+
       const checkFit = () => {
         if (!frameBox) return;
+
+        /* NEVER WHILE THE READER IS HERE. Switching modes changes the track
+           from four screens to one, which takes ~3,700px out of the document
+           in a single frame — the browser clamps the scroll position and the
+           reader is thrown to the bottom of the page from wherever they were.
+           That is the bug this guard caused on the day it was written: frozen
+           at step 2, then suddenly at step 4 with nothing below.
+
+           So a change waits until the section is out of the way, and the
+           scroll handler picks the deferred check up when it gets there. A
+           mode that is one resize out of date is worth nothing to anybody;
+           a page that jumps under a reader's hands costs them their place. */
+        const box = section.getBoundingClientRect();
+        if (box.bottom > -200 && box.top < window.innerHeight + 200) {
+          deferred = true;
+          return;
+        }
+        deferred = false;
+
         section.removeAttribute("data-unpinned");
         if (loose.matches) return;
 
+        /* Measured with the attribute off, or the section would be an ordinary
+           block where everything fits and the state would latch for good. */
         const frameRect = frameBox.getBoundingClientRect();
         const room = parseFloat(getComputedStyle(frameBox).paddingBottom) || 0;
         if (list.getBoundingClientRect().bottom > frameRect.bottom - room + 1) {
@@ -622,6 +645,7 @@ function segments(body: string) {
 
       const measure = () => {
         frame = 0;
+        if (deferred) checkFit();
         apply(unpinned() ? fromCentre() : fromTrack());
       };
 

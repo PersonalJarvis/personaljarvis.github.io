@@ -208,6 +208,21 @@ The query that remains — `(max-width: 1279px), (max-height: 1059px),
 (prefers-reduced-motion: reduce)` — covers the structural cases and acts as a
 floor for a reader with no JavaScript. Above it the measurement decides.
 
+**And the decision never changes while the reader is in the section.** Switching
+modes takes the track from four screens to one, which removes about 3,700px
+from the document in a single frame: the browser clamps the scroll position and
+the reader is thrown to the bottom of the page from wherever they were. That is
+not a theory — it is the bug the guard shipped with, reported the same hour:
+*frozen from step 2, then suddenly at step 4 with nothing below*. The trigger
+is ordinary, which is what makes it nasty: `load` fires late on this page (a
+WebGL island, video thumbnails), by which time a reader is somewhere around
+step 2.
+
+So a pending change waits until the section is more than 200px clear of the
+viewport, and the scroll handler applies it when it gets there. A mode one
+resize out of date costs nobody anything; a page that jumps under a reader's
+hands costs them their place.
+
 For reference rather than as a contract, at the time of writing the pinned
 screen needs about 1269px of window at 2560 wide, 1080px at 1920 and 1160px at
 1280. The `--section-inset` at the top of the sticky child is 56px of that, and
