@@ -1,0 +1,86 @@
+# Build the site and publish it to GitHub Pages.
+#
+# ## Why this exists at all
+#
+# The two data workflows in this folder keep the numbers and the globe's
+# markers current, but all they do is commit a JSON file. A committed file is
+# not a published page: something has to rebuild the site afterwards, and that
+# is this.
+#
+# ## Why it does not simply listen for a push
+#
+# It does listen for one — for a person's push. But a push made by a workflow
+# using the built-in GITHUB_TOKEN deliberately raises NO `push` event. That is
+# GitHub's guard against a workflow that commits, re-triggers itself, and
+# commits again forever. It also means the six-hourly marker refresh would sit
+# in the repository and never reach the page, which is exactly the failure this
+# whole arrangement exists to prevent.
+#
+# `workflow_run` is the supported way past that guard: it fires when a NAMED
+# workflow finishes, whatever token did the work. The cost is that it also
+# fires on a run that changed nothing — four wasted rebuilds a day. Actions
+# minutes are free on a public repository; a globe that is a week stale is not.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_run:
+    workflows: [stargazers, social-counts]
+    types: [completed]
+  workflow_dispatch:
+
+# Least privilege, and the three that Pages actually needs: read the code,
+# write a deployment, and mint the OIDC token that proves to Pages this run is
+# the one it thinks it is.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One publish at a time, and never cancel one halfway. A cancelled deployment
+# can leave Pages serving a site whose assets are half-swapped.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # A data workflow that failed has nothing new to publish. On every other
+    # trigger this is simply true.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `ci`, not `install`: the lockfile is the build, and a resolution that
+      # drifts between here and a local build is a difference nobody sees until
+      # the page is wrong.
+      - run: npm ci
+
+      # The project's own build script, not `astro build` spelled out here.
+      # If that script is ever replaced, this line stays correct.
+      - run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
