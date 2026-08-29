@@ -190,27 +190,62 @@ async function collectByRest(auth, owner, name) {
 }
 
 /**
- * GraphQL where the token is allowed to use it, REST where it is not.
+ * The one rejection that means "this token is the wrong kind", not "this
+ * request was wrong".
  *
- * A workflow's built-in GITHUB_TOKEN is scoped to the repository it runs in.
- * It reads another PUBLIC repository over REST without complaint, but GraphQL
- * rejects it outright — "Resource not accessible by integration", measured on
- * this workflow's first real run. The globe is built in the website's
- * repository while the stars belong to the app's, so in CI that is the
- * ordinary case rather than an edge one.
+ * Only it may fall through to another route. A network failure, an expired
+ * token or a repository that does not exist has to keep failing loudly:
+ * quietly spending several hundred requests to work around a typo is worse
+ * than stopping.
+ */
+function closedToToken(err) {
+  return /not accessible by integration/i.test(String(err?.message));
+}
+
+/**
+ * GraphQL where the token may use it, REST where it may not, and a plain
+ * answer where neither works.
  *
- * ONLY that one rejection falls through. A network failure, an expired token
- * or a repository that does not exist has to keep failing loudly: quietly
- * spending several hundred requests to work around a typo is worse than
- * stopping.
+ * The globe is built in the WEBSITE's repository while the stars belong to the
+ * APP's, and that one fact governs everything here. A workflow's built-in
+ * GITHUB_TOKEN is scoped to the repository it runs in, so against another
+ * repository it is not a weaker credential — it is the wrong one, and BOTH
+ * routes turn it away with "Resource not accessible by integration". Measured
+ * on this workflow's first real runs, not guessed.
+ *
+ * There is no anonymous way around it either. A repository's star COUNT is
+ * open to anyone, which is why the page can keep its own number live without a
+ * server — but the LIST of who starred it answers an unauthenticated caller
+ * with 401 "Requires authentication". That asymmetry is the whole reason this
+ * script exists and the reason it cannot be moved into the browser.
+ *
+ * So: a credential is required, and the only question is which route it opens.
+ *
+ *   1. GRAPHQL — a hundred people per request. A signed-in `gh` locally, or
+ *      STARGAZERS_TOKEN in CI.
+ *   2. REST — one request per person, for a token that GraphQL refuses.
+ *      Verified to produce byte-identical output.
+ *
+ * Anything else fails loudly and names the fix, because a globe that silently
+ * stops being refreshed looks exactly like a globe nobody is starring.
  */
 async function collect(auth, owner, name) {
   try {
     return await collectByGraphql(auth, owner, name);
   } catch (err) {
-    if (!/not accessible by integration/i.test(String(err?.message))) throw err;
-    console.log("stargazers: GraphQL is closed to this token — falling back to REST");
-    return collectByRest(auth, owner, name);
+    if (!closedToToken(err)) throw err;
+    console.log("stargazers: GraphQL is closed to this token — trying REST");
+  }
+
+  try {
+    return await collectByRest(auth, owner, name);
+  } catch (err) {
+    if (!closedToToken(err)) throw err;
+    throw new Error(
+      "this token may not read another repository's stargazers. A workflow's " +
+        "built-in GITHUB_TOKEN never can. Set STARGAZERS_TOKEN to a personal " +
+        "access token with public repository read access.",
+    );
   }
 }
 

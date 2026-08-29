@@ -35,22 +35,33 @@ jobs:
         with:
           node-version: 22
 
-      - name: Fetch stargazer locations
-        # The repository being read is a DIFFERENT one — the app, not this
-        # site — and that is what decides the token.
-        #
-        # The workflow's own GITHUB_TOKEN is scoped to this repository alone.
-        # It can read another public repository over REST, but GraphQL refuses
-        # it outright: "Resource not accessible by integration", measured on
-        # the first real run of this workflow. So the fetcher falls back to
-        # REST, which costs one request per stargazer and is fine at this size.
-        #
-        # STARGAZERS_TOKEN is OPTIONAL and the run is green without it. It buys
-        # the GraphQL path back — a hundred people per request instead of one —
-        # which starts to matter somewhere in the low hundreds of stars. A
-        # fine-grained token with public read access is enough.
+      # One line of English instead of a stack trace. Without the token this
+      # job cannot do its work at all, and the person reading a red run should
+      # learn why from the first thing they see.
+      - name: Check the token this job cannot work without
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STARGAZERS_TOKEN: ${{ secrets.STARGAZERS_TOKEN }}
+        run: |
+          if [ -z "$STARGAZERS_TOKEN" ]; then
+            echo "::error::STARGAZERS_TOKEN is not set. The globe's markers need a personal access token with public repository read access — this workflow's own GITHUB_TOKEN may not read another repository's stargazers, and there is no anonymous route."
+            exit 1
+          fi
+
+      - name: Fetch stargazer locations
+        # STARGAZERS_TOKEN is REQUIRED, and the step above says so plainly
+        # rather than letting this one fail in a stack trace.
+        #
+        # The repository being read is a DIFFERENT one — the app, not this
+        # site — and that is what decides the token. A workflow's built-in
+        # GITHUB_TOKEN is scoped to the repository it runs in, so against the
+        # app's repository it is not weaker, it is wrong: GraphQL and REST both
+        # answer "Resource not accessible by integration". Nor is there an
+        # anonymous way round it — a repository's star COUNT is open to anyone,
+        # but the LIST of stargazers answers 401. All three measured here.
+        #
+        # A fine-grained token with public repository read access is enough.
+        # It reads what is already public; it can write nothing.
+        env:
           STARGAZERS_TOKEN: ${{ secrets.STARGAZERS_TOKEN }}
         run: node scripts/fetch-stargazers.mjs
 

@@ -26,7 +26,10 @@ on:
   push:
     branches: [main]
   workflow_run:
-    workflows: [stargazers, social-counts]
+    # Every workflow that commits to this branch belongs here, `lockfile`
+    # included — its commit changes what the next build installs, and a bot
+    # push raises no `push` event to notice it.
+    workflows: [stargazers, social-counts, lockfile]
     types: [completed]
   workflow_dispatch:
 
