@@ -63,10 +63,26 @@ jobs:
           node-version: 22
           cache: npm
 
-      # `ci`, not `install`: the lockfile is the build, and a resolution that
-      # drifts between here and a local build is a difference nobody sees until
-      # the page is wrong.
-      - run: npm ci
+      # `ci` first: the lockfile is the build, and a resolution that drifts
+      # between here and a local build is a difference nobody sees until the
+      # page is wrong.
+      #
+      # But it must not be able to stop a publish. Several agent sessions share
+      # this checkout on Windows, and any `npm install` there rewrites the
+      # lockfile without the entries a Linux build needs — after which `npm ci`
+      # refuses the tree and the site silently stops updating. That is a far
+      # worse failure than an unpinned install, and it happened twice on the
+      # day this was set up.
+      #
+      # So a broken lockfile degrades to `npm install` and says so loudly. The
+      # `lockfile` workflow repairs it in parallel; this step only makes sure
+      # the repair is not a prerequisite for the site being current.
+      - name: Install
+        run: |
+          if ! npm ci; then
+            echo "::warning::npm ci refused the lockfile — falling back to npm install. Run the lockfile workflow to resolve it on Linux."
+            npm install --no-audit --no-fund
+          fi
 
       # The project's own build script, not `astro build` spelled out here.
       # If that script is ever replaced, this line stays correct.

@@ -16,6 +16,17 @@
 name: lockfile
 
 on:
+  # Automatic, because the tree this repository is developed in is shared by
+  # several sessions on Windows and any of them running `npm install` puts the
+  # lockfile back in the broken state. Waiting for someone to notice a red
+  # deploy and remember this job exists is not a plan.
+  #
+  # Its own commit is made with GITHUB_TOKEN and so raises no push event: the
+  # job cannot re-trigger itself.
+  push:
+    paths:
+      - package.json
+      - package-lock.json
   workflow_dispatch:
 
 permissions:
