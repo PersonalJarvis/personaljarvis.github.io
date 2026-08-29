@@ -3,7 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "astro dev --background",
+    "dev:status": "astro dev status",
+    "dev:logs": "astro dev logs",
+    "dev:stop": "astro dev stop",
     "build": "node scripts/build-atomic.mjs",
     "preview": "astro preview",
     "check": "astro check",

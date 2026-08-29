@@ -9,6 +9,20 @@ export default defineConfig({
   // on 2026-08-28. Sitemap and canonical URLs need it set even before deploy.
   site: "https://personaljarvis.ai",
   integrations: [react(), sitemap()],
+
+  // ONE dev server for this site, at a fixed address: http://127.0.0.1:4399.
+  //
+  // Astro's default is to take the next free port when 4321 is busy, so a
+  // second start quietly moves the site somewhere else. That is how a desk ends
+  // up with a row of tabs on 4399, 4999, 4321+n, each frozen at whatever the
+  // source looked like when it was opened, and no way to tell which one is
+  // live. `strictPort` turns that silent move into a loud failure: the start
+  // refuses rather than lands somewhere nobody was told about.
+  //
+  // Start it as the background instance (`npm run dev`) and it is shared: a
+  // second start prints "already running" and exits. See CLAUDE.md.
+  server: { port: 4399, host: "127.0.0.1" },
+
   vite: {
     plugins: [tailwindcss(), pinDevReactRuntime()],
     // `three` reaches the browser through ONE island that is imported at
@@ -24,6 +38,8 @@ export default defineConfig({
     // costs one cold start instead of a broken island. A production build is
     // unaffected: it walks the full import graph either way.
     optimizeDeps: { include: ["three"] },
+    // Fail loudly instead of relocating the site (see `server` above).
+    server: { strictPort: true },
   },
 });
 

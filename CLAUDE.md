@@ -22,6 +22,38 @@ checkout as `website/` so one folder holds both projects.
 - Read the app's source freely for reference — it is one level up — but never
   edit, stage, or commit anything outside this folder from here.
 
+## The dev server
+
+There is exactly **one** dev server for this site, and it lives at a fixed
+address:
+
+**http://127.0.0.1:4399**
+
+- Start it with `npm run dev`. That runs Astro's background instance, so it is
+  shared rather than owned: a second `npm run dev` prints "already running" and
+  exits. The port is pinned in `astro.config.mjs` with `strictPort`, so it
+  cannot quietly relocate to the next free port.
+- `npm run dev:status` reports whether it is up, `npm run dev:logs` shows its
+  output, `npm run dev:stop` ends it. There is no restart command: stop, then
+  start.
+- **Never stand up a second server for this site.** Not `astro dev` on another
+  port, not `astro preview`, not `python -m http.server` or `npx http-server`
+  over `dist/`. Each one becomes a tab frozen at the build it was born with,
+  and someone will later read it as the live site.
+- **Only this address is ever named.** Every link handed to the maintainer — in
+  a message, a commit, a note — is this one. Hot reload is on, so it always
+  shows current source without a build.
+
+**The one exception: a throwaway server for a check.** A browser pass or a
+side-by-side comparison may need its own clean build on its own port. That is
+allowed under two conditions — it runs from a private worktree or a scratch
+directory, never from this folder, and it is **stopped when the check ends**,
+on success or failure. It is never presented as "the site".
+
+**Why:** a stale copy is worse than no copy. It answers, it looks right, and it
+reports work that no longer exists — so a fix gets done twice, or a bug gets
+hunted that was gone an hour ago.
+
 ## Layout is binding
 
 **`docs/layout.md` governs every section of this site.** Read it before writing
