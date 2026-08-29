@@ -1,0 +1,728 @@
+---
+/**
+ * Section — Open source: the repository itself.
+ *
+ * It sits directly under "Built in public" and finishes the argument that
+ * section opens. That one says development happens on camera and the code
+ * lands somewhere public; this one hands over the repository, says what is in
+ * it, and gives the two lines a developer needs to have it locally.
+ *
+ * WHY IT IS NOT A SECOND STAR COUNT. Two sections above already carry the
+ * figure — the globe's headline number and the stat row's "31 stars" — and a
+ * third printing of it would read as the page having nothing else to say about
+ * being open. Nothing here is a number at all: what a reader who got this far
+ * is missing is the repository's SHAPE, which is the one thing neither of the
+ * other two shows.
+ *
+ * NOTHING HERE IS INVENTED, the same rule the rest of the page runs under.
+ * Every line traces to a file in the app repository, and the comment above it
+ * names which one — README's own repository tree for the four entries in the
+ * card, NOTICE for the licence sentence, CONTRIBUTING for the two links under
+ * the button. A directory that is renamed in the app makes this card wrong, so
+ * the entries are the stable top-level ones rather than a deep path that moves
+ * with a refactor.
+ *
+ * IT ADDS NO SCROLL BEHAVIOUR, and that is deliberate. Its two neighbours are
+ * both scroll traps — the stargazer globe holds the reader for 0.8 of a screen,
+ * the install steps for four — and a third pinned section between them would
+ * leave the page unable to be scrolled past without three separate stops. This
+ * is an ordinary block: one screen tall, one snap point, and the reader carries
+ * on. `body > section` in layout.css gives it that snap point without a class,
+ * and `SectionTrack` derives its rail from document order, so inserting this
+ * section re-points the marker for everything below it with nothing to update
+ * by hand.
+ *
+ * THE SHAPE ALTERNATES WITH ITS NEIGHBOUR ON PURPOSE. "Built in public" is
+ * stacked — headline over one wide card — so this one is a two-column split.
+ * The two read as different sections at a glance rather than as one long block
+ * with a line through it, which is the same reason the run of feature sections
+ * further up shares a divider instead of a frame each.
+ *
+ * Widths come from the one Container; no max-width is named here.
+ * See docs/layout.md and docs/design.md.
+ */
+import Container from "@/components/Container.astro";
+import SectionTrack from "@/components/SectionTrack.astro";
+import { GitHubMark } from "@/components/logos/GitHubMark";
+import { REPO } from "@/lib/install";
+
+/** The clone line, built from the one repository constant rather than typed. */
+const CLONE = `git clone ${REPO}.git`;
+
+/**
+ * The card's listing — four top-level entries of the app repository, taken
+ * from README.md's own repository tree so the site and the readme cannot drift
+ * apart. Four and not the whole tree: the card is a way in, not a map, and the
+ * fifteen-entry version does not fit one screen beside the copy.
+ *
+ * Order is the reader's, not the tree's: what the thing IS, what the installer
+ * runs, what has to pass before a change lands, and where the reasoning lives.
+ */
+const ENTRIES = [
+  // README § repository tree: `jarvis/` — the layered application package.
+  { path: "jarvis/", note: "The assistant itself — voice, brain, safety, tools" },
+  // README § repository tree: `install/` — one-line installers + verification.
+  { path: "install/", note: "The one-liner you paste, in full" },
+  // README § repository tree: `tests/` — unit, integration, contract, e2e.
+  { path: "tests/", note: "Unit, integration, contract and end-to-end suites" },
+  // README § repository tree: `docs/` — architecture docs, ADRs, design specs.
+  { path: "docs/", note: "Architecture, decision records, the design specs" },
+  // README § repository tree: `.github/` — CI workflows + issue / PR templates.
+  { path: ".github/", note: "The checks a change has to pass before it lands" },
+];
+
+/**
+ * The two ways in under the button, both real files in the repository.
+ *
+ * CONTRIBUTING.md opens with "your first PR in five steps" and links the
+ * good-first-issue label itself; the query below is that link, verbatim, so a
+ * reader landing from here sees the same list a contributor is pointed at.
+ */
+const WAYS_IN = [
+  { label: "Contributing guide", href: `${REPO}/blob/main/CONTRIBUTING.md` },
+  { label: "Security policy", href: `${REPO}/blob/main/SECURITY.md` },
+  {
+    label: "Good first issues",
+    href: `${REPO}/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22`,
+  },
+];
+---
+
+<!--
+  A BOUNDED SECTION, the shape every section on this page uses: the band's two
+  hairlines are this section's boundary rules, held `--section-inset` inside its
+  own top and bottom edges. No `.section-rule` anywhere in here — opening with
+  one on top of a framed body is what drew two and three lines at a joint before
+  the shell was unified. See docs/layout.md § "One boundary, one shape".
+-->
+<section
+  id="open-source"
+  aria-labelledby="oss-heading"
+  class="flex min-h-svh flex-col"
+>
+  <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
+    {/*
+      The band. `--fill` makes it take the leftover height so the closing rule
+      stands an inset above the section's bottom edge rather than stopping where
+      the text stops; `justify-center` splits the surplus evenly, because a
+      frame closed at both ends reads as a band only when its content sits in
+      the middle of it.
+
+      `SectionTrack` lives in HERE and not on the <section>: it measures the
+      positioned box it is dropped into, and the box the reader sees as the
+      section is this one. `nested`, because this block already sits on the
+      content column — a second `content` Container would apply its gutter and
+      its max-width again and ride the marker 32px inside the rail.
+    */}
+    <div
+      class="section-bounds section-bounds--fill oss-band flex flex-col justify-center"
+    >
+      <SectionTrack nested />
+
+      <div class="oss-grid">
+        <div class="oss-lede">
+          {/* The register every section opens in. "Open source" and not "In
+              the open" — that is the stargazer section's eyebrow two screens
+              up, and two sections should not answer to the same label. */}
+          <p class="oss-eyebrow">Open source</p>
+
+          {/*
+            Two block spans, not a `<br />`: the break lands at the sentence
+            boundary at every width, and a block boundary contributes a
+            separator to the accessible name where a `<br />` contributes none.
+
+            The claim carries `--ink`, the invitation `--body` — the same
+            two-weight head as the section above it, which is what makes the
+            pair read as one argument continued rather than as two openings.
+          */}
+          <h2 id="oss-heading" class="oss-headline">
+            <span class="oss-headline__claim">Read it before you run it.</span>
+            <span class="oss-headline__invite">Every line is on GitHub.</span>
+          </h2>
+
+          {/*
+            NOTICE and README § License: Apache 2.0 with an explicit patent
+            grant from every contributor. The second sentence is a fact about
+            the install line printed one section below — it fetches from
+            raw.githubusercontent.com on this repository's main branch, which
+            src/lib/install.ts holds as its one RAW constant.
+          */}
+          <p class="oss-standfirst">
+            Apache 2.0, with a patent grant from every contributor. The command
+            the installer runs comes out of this repository, and so does
+            everything that has to pass before a change reaches it.
+          </p>
+
+          <div class="oss-actions">
+            <a class="oss-cta" href={REPO} target="_blank" rel="noopener">
+              Open the repository
+            </a>
+
+            <ul class="oss-ways">
+              {
+                WAYS_IN.map((way) => (
+                  <li>
+                    <a href={way.href} target="_blank" rel="noopener">
+                      {way.label}
+                    </a>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+        </div>
+
+        {/*
+          The repository card — a code surface, which is what this system uses
+          where another would use a screenshot. Three regions divided by the
+          quieter hairline: who it is, what is in it, and how to have it.
+
+          `--hairline`, not `--rule`, for the card's own edge: unlike the video
+          card above it this one does not span the content column, so its
+          vertical edges stand well inside the rails and a rule-weight border
+          would read as a second pair of rails.
+        */}
+        <div class="oss-card">
+          <div class="oss-cardhead">
+            {/*
+              THE MARK IS WRAPPED, AND THE WRAPPER IS WHAT CARRIES THE SIZE.
+              Astro scopes a style block by stamping its own attribute on the
+              elements of THIS template, and a framework component's markup
+              never gets one — so a scoped rule on the class handed to
+              `GitHubMark` matches nothing, the <svg> falls back to the 300x150
+              CSS default, and the card fills with a logo. The span below is a
+              real element of this template, so it is scoped normally, and the
+              one rule that has to cross into the component is marked
+              `:global()` deliberately rather than the whole block being global.
+            */}
+            <span class="oss-cardmark">
+              <GitHubMark />
+            </span>
+            <p class="oss-cardpath">
+              <span class="oss-owner">PersonalJarvis</span>/<span
+                class="oss-name">PersonalJarvis</span
+              >
+            </p>
+            {/* The badge states the licence the LICENSE file actually carries,
+                spelled the way GitHub spells it, so a reader comparing the two
+                sees the same string. */}
+            <span class="oss-badge">Apache-2.0</span>
+          </div>
+
+          {/* README's own subtitle, verbatim — the sentence the repository
+              introduces itself with, so a reader arriving on GitHub from this
+              card meets the same line rather than a second description written
+              for the website. */}
+          <p class="oss-cardabout">
+            Your personal AI ecosystem, controlled entirely by voice.
+          </p>
+
+          <ul class="oss-tree">
+            {
+              ENTRIES.map((entry) => (
+                <li>
+                  <code class="oss-path">{entry.path}</code>
+                  <span class="oss-note">{entry.note}</span>
+                </li>
+              ))
+            }
+          </ul>
+
+          {/*
+            The clone line, printed rather than hidden behind a button — the
+            same rule the install box downstairs is built on: a line a visitor
+            is meant to paste into a shell is a line they get to read first.
+            The copy button starts `hidden` and is revealed by the script, so
+            without JavaScript there is no dead control, only a line to select.
+
+            What lands in the clipboard is the module-built string, never the
+            DOM's text: the `$` in front of it is decoration and must not be
+            able to travel with a copy.
+          */}
+          <div class="oss-clone" data-clone>
+            <p class="oss-cloneline">
+              <span class="oss-prompt" aria-hidden="true">$</span>
+              <code>{CLONE}</code>
+            </p>
+
+            <button
+              class="oss-copy"
+              type="button"
+              data-copy
+              data-command={CLONE}
+              hidden
+              aria-label="Copy the clone command"
+            >
+              <svg
+                class="oss-icon-copy"
+                viewBox="0 0 16 16"
+                width="14"
+                height="14"
+                aria-hidden="true"
+              >
+                <rect
+                  x="5.75"
+                  y="1.75"
+                  width="8.5"
+                  height="10.5"
+                  rx="1.75"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.4"></rect>
+                <path
+                  d="M10.25 14.25H3.75a1.5 1.5 0 0 1-1.5-1.5V4.75"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                  stroke-linecap="round"></path>
+              </svg>
+              <svg
+                class="oss-icon-done"
+                viewBox="0 0 16 16"
+                width="14"
+                height="14"
+                aria-hidden="true"
+              >
+                <path
+                  d="M3 8.5 6.5 12 13 4.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/*
+        One line under the split, the width of the whole band.
+
+        README § "Where a human beats the agents" says this in as many words,
+        and it belongs on an open-source section more than anywhere else: a
+        visitor deciding whether to spend an evening here is owed the fact that
+        most of the commits were written with an agent, and the useful half of
+        it — that this is exactly why some work is wide open — is the invitation
+        the section closes on.
+      */}
+      <div class="oss-foot">
+        <p>
+          Most commits here are written with AI assistance, which is why the
+          work a person does better is wide open: real hardware, providers we
+          have no key for, and your language.
+        </p>
+      </div>
+    </div>
+  </Container>
+</section>
+
+<style>
+  /* --- The split ---------------------------------------------------------
+   *
+   * Copy left, card right, on the same twelve columns the rest of the page
+   * splits on. One column of the gap is deliberate air between the two: the
+   * card is a surface and the copy is not, and without it the paragraph reads
+   * as a caption attached to the box.
+   *
+   * It stacks below the desktop step rather than at a hand-picked width — the
+   * card's listing needs its full measure before the note wraps under the path,
+   * and that is the same point the rest of the page changes shape at.
+   */
+  .oss-grid {
+    display: grid;
+    gap: var(--space-xxl);
+  }
+
+  @media (min-width: 64rem) {
+    .oss-grid {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: var(--space-xl);
+      align-items: center;
+    }
+
+    .oss-lede {
+      grid-column: span 5;
+    }
+
+    .oss-card {
+      grid-column: span 7;
+    }
+  }
+
+  /* --- The head ----------------------------------------------------------
+   * The same register the other sections open in, sized from the tokens rather
+   * than from Tailwind's rem utilities: the root font size grows with the
+   * viewport, so a `text-4xl` here would climb past the display token and this
+   * headline would outgrow every other section head on the page.
+   */
+  .oss-eyebrow {
+    color: var(--muted);
+    font-size: var(--text-caption-upper);
+    font-weight: 600;
+    letter-spacing: var(--tracking-caption-upper);
+    text-transform: uppercase;
+  }
+
+  .oss-headline {
+    margin-top: var(--space-sm);
+    font-size: var(--text-display-lg);
+    letter-spacing: var(--tracking-display-lg);
+    line-height: 1.2;
+  }
+
+  .oss-headline__claim,
+  .oss-headline__invite {
+    display: block;
+    text-wrap: balance;
+  }
+
+  .oss-headline__claim {
+    color: var(--ink);
+  }
+
+  .oss-headline__invite {
+    color: var(--body);
+  }
+
+  .oss-standfirst {
+    margin-top: var(--space-base);
+    /* The prose MEASURE without the prose COLUMN — this section's left half is
+       narrower than `prose` anyway, so the limit only ever binds where the grid
+       is stacked. A `ch` limit stays a measure as the type scales; a pixel one
+       would not. */
+    max-inline-size: 54ch;
+    color: var(--body);
+    font-size: var(--text-body);
+    line-height: 1.6;
+  }
+
+  /* --- The two actions ---------------------------------------------------
+   * One button and two text links. The button is paper on ink — this system's
+   * primary action, and the reason it needs no borrowed accent hue — shaped
+   * like the hero's pair so the page has one CTA and not two.
+   */
+  .oss-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-lg);
+    margin-top: var(--space-lg);
+  }
+
+  .oss-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* 44px, the AAA touch target — the same height the hero's CTAs stand at. */
+    min-height: 44px;
+    padding-inline: var(--space-lg);
+    border-radius: var(--radius-pill);
+    background: var(--ink);
+    color: var(--on-ink);
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+    transition: background-color 150ms ease;
+  }
+
+  .oss-cta:hover {
+    background: var(--ink-active);
+  }
+
+  .oss-cta:focus-visible,
+  .oss-ways a:focus-visible,
+  .oss-copy:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  .oss-ways {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-base);
+  }
+
+  .oss-ways a {
+    color: var(--muted);
+    font-size: var(--text-body-sm);
+    text-decoration: underline;
+    /* The offset is what keeps the underline off the descenders; without it a
+       muted link at this size reads as struck through rather than underlined. */
+    text-underline-offset: 3px;
+    text-decoration-color: var(--hairline-strong);
+    transition:
+      color 150ms ease,
+      text-decoration-color 150ms ease;
+  }
+
+  .oss-ways a:hover {
+    color: var(--ink);
+    text-decoration-color: var(--ink);
+  }
+
+  /* --- The repository card ----------------------------------------------- */
+  /* `--rule`, not `--hairline`, and for the reason the video card above states:
+     this card's right edge lands exactly on the right rail, because the grid's
+     last column ends on the container's content edge and that is where the rail
+     stands. A hairline drawn there is a dark 1px line laid over a bright one,
+     so the rail stops dead for the height of the card. At `--rule` the two are
+     the same line and the rail runs on through. The left edge pays for it by
+     being a rule-weight border in open space, which is what the video card and
+     the install frame already look like. */
+  .oss-card {
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-lg);
+    background: var(--surface-card);
+    overflow: hidden;
+  }
+
+  .oss-cardhead {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-base);
+  }
+
+  /* No seam between the path and the description: they are one region, the
+     card saying who it is. The first hairline in the card lies under the pair,
+     where the listing starts. */
+  .oss-cardabout {
+    padding: 0 var(--space-base) var(--space-sm);
+    border-bottom: 1px solid var(--hairline-soft);
+    color: var(--body);
+    font-size: var(--text-body-sm);
+    line-height: 1.5;
+  }
+
+  .oss-cardmark {
+    flex: none;
+    display: block;
+    width: 18px;
+    height: 18px;
+    color: var(--muted);
+  }
+
+  /* The one rule that has to reach inside the React component — see the note
+     in the markup. Nothing else here is global. */
+  .oss-cardmark :global(svg) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .oss-cardpath {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-code);
+    color: var(--muted);
+    /* The path is one string; only the repository name is the thing being
+       named, so the owner stays quiet and the name takes the ink. Two colours
+       on one line is the whole treatment — no second size, no weight change. */
+    overflow-wrap: anywhere;
+  }
+
+  .oss-name {
+    color: var(--ink);
+  }
+
+  /* The badge of docs/design.md § Components: surface-strong, pill, uppercase
+     caption. It states a licence, so it never takes a colour of its own — a
+     green or an orange here would be a status the licence does not have. */
+  .oss-badge {
+    flex: none;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-strong);
+    color: var(--body);
+    font-size: var(--text-caption-upper);
+    font-weight: 600;
+    letter-spacing: var(--tracking-caption-upper);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* --- The listing -------------------------------------------------------
+   * Rows divided by the quiet hairline, never boxed: each line already reads as
+   * a row because the path is mono and the note is not, and a border per entry
+   * would turn the card into a table.
+   *
+   * The seam lies BETWEEN two rows and never across content — that is the
+   * distinction that makes a divider safe in this repo, and the one the
+   * connection strip broke when it struck a line through the marks.
+   */
+  .oss-tree {
+    padding: var(--space-xs) var(--space-base);
+  }
+
+  .oss-tree li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-xs) var(--space-base);
+    padding-block: var(--space-base);
+  }
+
+  .oss-tree li + li {
+    border-top: 1px solid var(--hairline-soft);
+  }
+
+  .oss-path {
+    flex: none;
+    /* A column, so the four notes start on one edge instead of stepping in and
+       out with the length of the path in front of them. `ch` in the mono face
+       is an exact character count: `install/` is the longest of the four at
+       eight, and the extra one is the gap that keeps them apart when a note
+       ever grows long enough to sit tight against it. */
+    min-width: 9ch;
+    color: var(--ink);
+    font-size: var(--text-code);
+  }
+
+  .oss-note {
+    flex: 1;
+    min-width: 0;
+    color: var(--body);
+    font-size: var(--text-body-sm);
+    line-height: 1.5;
+  }
+
+  /* --- The clone line ----------------------------------------------------- */
+  .oss-clone {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-xs);
+    padding: var(--space-sm) 6px var(--space-sm) var(--space-base);
+    border-top: 1px solid var(--hairline-soft);
+  }
+
+  .oss-cloneline {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    gap: var(--space-xs);
+    font-family: var(--font-mono);
+    font-size: var(--text-code);
+    line-height: 1.45;
+  }
+
+  .oss-prompt {
+    flex: none;
+    color: var(--muted-soft);
+    user-select: none;
+  }
+
+  /* `break-all` rather than `anywhere`, the same choice InstallCommand makes
+     and for the same reason: `anywhere` still prefers the real spaces, so
+     `git clone` was left alone on the first line with the URL below it. This
+     fills each line to the edge, which is also how a terminal wraps it. */
+  .oss-cloneline code {
+    flex: 1;
+    min-width: 0;
+    color: var(--ink);
+    word-break: break-all;
+    /* `inherit`, or global.css's unlayered rule on bare `code` overrides the
+       size set here — unlayered beats layered whatever the specificity. */
+    font-size: inherit;
+  }
+
+  .oss-copy {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    cursor: pointer;
+    transition:
+      color 150ms ease,
+      background-color 150ms ease;
+  }
+
+  .oss-copy:hover {
+    background: var(--surface-strong);
+    color: var(--ink);
+  }
+
+  .oss-icon-done,
+  .oss-clone[data-copied] .oss-icon-copy {
+    display: none;
+  }
+
+  .oss-clone[data-copied] .oss-icon-done {
+    display: block;
+    color: var(--success);
+  }
+
+  /* --- The closing line ---------------------------------------------------
+   * Set apart from the split by a rule the width of the band, not by spacing
+   * alone: it is an aside about the whole section rather than a fourth
+   * paragraph of the left column, and at this width a gap on its own would
+   * read as the paragraph having drifted.
+   */
+  .oss-foot {
+    margin-top: var(--space-xxl);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--hairline);
+  }
+
+  /* The RULE spans the band and the TEXT does not. Capping the measure on the
+     bordered element itself cut the line off partway across the column, which
+     reads as a rendering fault rather than as a divider — the same reason
+     docs/layout.md puts a horizontal rule on the element that spans the column
+     and never on the one that happens to hold the words. */
+  .oss-foot p {
+    max-inline-size: 76ch;
+    color: var(--muted);
+    font-size: var(--text-body-sm);
+    line-height: 1.6;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .oss-cta,
+    .oss-ways a,
+    .oss-copy {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * Copy the clone line.
+   *
+   * The command comes off the button's own `data-command`, which the server
+   * wrote from the one repository constant — so what lands in a clipboard is
+   * the string the module built and never the DOM's text, prompt character
+   * included.
+   *
+   * The button is revealed here rather than in the markup: without JavaScript
+   * there is no clipboard to write to, and a control that does nothing is worse
+   * than no control beside a line that can simply be selected.
+   */
+  const clone = document.querySelector<HTMLElement>("[data-clone]");
+  const copy = clone?.querySelector<HTMLButtonElement>("[data-copy]");
+
+  if (clone && copy) {
+    copy.hidden = false;
+
+    let restore = 0;
+
+    copy.addEventListener("click", async () => {
+      const command = copy.dataset.command ?? "";
+      try {
+        await navigator.clipboard.writeText(command);
+        clone.setAttribute("data-copied", "");
+      } catch {
+        /* Clipboard access can be refused outright — by a permission policy, by
+         * an extension, or on an insecure origin. The line is on screen and can
+         * be selected by hand, so the honest response is to leave the button
+         * showing its idle icon rather than claim a copy that did not happen. */
+        return;
+      }
+      window.clearTimeout(restore);
+      restore = window.setTimeout(() => clone.removeAttribute("data-copied"), 2600);
+    });
+  }
+</script>
