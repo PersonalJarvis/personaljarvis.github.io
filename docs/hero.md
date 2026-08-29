@@ -185,7 +185,7 @@ behind the window.
 
 | Piece | Size |
 |---|---|
-| Window | 80% of stage width, centred, equal air above and below |
+| Window | 90% of stage width, centred (maintainer sized it, 2026-08-29) |
 | Sidebar | 244 design px, the switch at its top |
 | Reading column | 700 design px, centred in the stage area |
 

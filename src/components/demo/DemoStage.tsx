@@ -72,11 +72,19 @@ const BODY_H = 596;
  * The stage paints NOTHING. The window is the only opaque thing here, so
  * whatever the hero puts behind the demo — today a backdrop image — shows
  * through the air around it.
+ *
+ * The air is the only thing that decides how big the window comes out, because
+ * the scale fits the whole stage into the frame: less air, bigger window. It
+ * was 144/90, which put the window at 80% of the frame's width; the maintainer
+ * marked up the size they wanted on 2026-08-29 and it measures ~90%, so the
+ * air is 64/48 now. Keep the two numbers close to that ratio — the stage has
+ * to stay a touch wider than the frame it lands in, or the fit switches to the
+ * height axis and the window stops growing with the page.
  */
 const WINDOW_W = 1152;
 const WINDOW_H = CHROME_H + BODY_H;
-const WINDOW_X = 144;
-const WINDOW_Y = 90;
+const WINDOW_X = 64;
+const WINDOW_Y = 48;
 const STAGE_W = WINDOW_X * 2 + WINDOW_W;
 const STAGE_H = WINDOW_Y * 2 + WINDOW_H;
 const SIDEBAR_W = 244;
