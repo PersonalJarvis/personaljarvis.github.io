@@ -659,6 +659,36 @@ body > section {
   font-weight: 500;
 }
 
+/*
+ * THE GAP STEPS DOWN BEFORE THE ROW RUNS OUT OF ROOM.
+ *
+ * The row is a flex line that cannot say it is full: the wordmark, the links
+ * and the Download button are pushed apart by `space-between` until the links
+ * no longer fit, and then the box shrinks under them while every label inside
+ * is `nowrap` — so the failure is not a wrap or a scrollbar, it is labels
+ * running out through the Download button. Nothing warns about it. It is only
+ * visible at the one width where it starts.
+ *
+ * Two section links were added to `nav.ts` on 2026-08-29 (Stars, Built in
+ * public) and they cost the row 180px: measured with the root font on its 16px
+ * floor — which is every viewport under 1714px, so it is the figure that
+ * matters — the row needed 797px before them and needs 977px with them.
+ * Seven gaps at `--space-lg` are 168px of the row spent on nothing but air, and
+ * eight labels still read as separate items at `--space-base`, which buys 56px
+ * of it back and brings the row to 921px. The rest is bought by the block at
+ * the foot of this file, which puts the links away at 1024px rather than at
+ * 768px.
+ *
+ * The step is at 1280px and not at the width things actually break, because the
+ * gap is the same decision at 1279px as at 1025px — one narrower row, not a
+ * value that chases the failure.
+ */
+@media (max-width: 1279px) {
+  .site-nav__links {
+    gap: var(--space-base);
+  }
+}
+
 .site-nav__link {
   display: inline-flex;
   align-items: center;
@@ -729,18 +759,38 @@ body > section {
 }
 
 /*
- * Below the container's breakpoint the section links go and the wordmark and
- * the download button stay — the same width at which the rails disappear,
- * spelled the same way (see the two blocks above).
+ * Below 1024px the section links go and the wordmark and the download button
+ * stay.
+ *
+ * IT USED TO BE 767px, THE SAME WIDTH AT WHICH THE RAILS DISAPPEAR, and the two
+ * numbers are no longer the same on purpose. The rails go at the container's
+ * breakpoint because that is where the page stops having margins to draw them
+ * in; the links go where they stop FITTING, and what they have to fit inside is
+ * not the window but what is left of the row once the wordmark and the Download
+ * button have taken theirs. With seven section links and Docs beside them that
+ * width is 921px measured (Chrome/Windows, root at its 16px floor, gap already
+ * stepped down by the block above), and it is measured on one machine with one
+ * set of fonts — the same row set in a wider face on a Mac or a Linux box is the
+ * failure again, on a screen nobody here is looking at. 1024px is the nearest
+ * breakpoint above it that leaves a real margin for that — 103px, where the
+ * six-link row that shipped this morning had 29px over its own 768px and was
+ * one label away from breaking. It is also a width readers' devices have.
+ *
+ * WHAT A TABLET LOSES, AND WHY THAT IS THE RIGHT TRADE. Between 768px and
+ * 1024px the section links are now gone where they used to render. They render
+ * there today only because the list was short; the alternative to putting them
+ * away is labels overlapping the Download button on exactly those devices,
+ * which is worse than a row that is honestly just a wordmark and a button. The
+ * links are also the only thing that goes: the page below is unchanged, every
+ * section is one scroll away, and the scroll-spy keeps running for the width at
+ * which the row comes back.
  *
  * There is no hamburger, and that is a decision rather than an omission: a menu
  * button opens a panel, a panel needs a ground, and a ground is the one thing
- * this nav is built not to have. The sections it lists are five scroll gestures
- * apart on a phone, which is a shorter journey than opening a menu to pick one.
- * `docs/design.md` still called for a hamburger below 768px and has been
- * corrected.
+ * this nav is built not to have. `docs/design.md` still called for a hamburger
+ * below 768px and has been corrected.
  */
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .site-nav__links {
     display: none;
   }

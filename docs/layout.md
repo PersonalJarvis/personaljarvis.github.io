@@ -846,12 +846,21 @@ an option: [`design.md`](design.md) is hairlines only, and
 transparent 4rem strip across the window still swallows every click that lands
 in it, and the hero's stage frame reaches within a hair of it on a short screen.
 
-**Wordmark left, section links centre, one CTA right.** The links are the six
-places a reader might actually want to be sent to — Plugins, Skills, CLIs, What
-changes, Open source, plus Docs — and not all eleven sections: a nav that lists
-every band is a table of contents, and a table of contents in a 4rem row is
-unreadable at any width. The logo strip, the stargazer count and the gallery are
-things the reader passes *through*.
+**Wordmark left, section links centre, one CTA right.** The links are every
+section a reader might want to be sent to, in page order — Plugins, Skills,
+CLIs, What changes, Stars, Built in public, Open source — plus Docs, which is
+not a section of this page at all. Four sections are deliberately not in the
+row: the hero, which the wordmark already goes to; the logo strip, which is a
+band the reader passes *through*; the install steps, which have the whole
+Download button to themselves; and the legal foot, which is one End key away.
+
+**Stars and Built in public were missing until 2026-08-29 and had to be added
+back.** The nav shipped that afternoon listing five sections, on the reasoning
+that nobody navigates to social proof — while three sections were being added to
+the page over the same few hours. The maintainer's answer on seeing it was that
+they belong in the nav. **A section added to `index.astro` is added to
+`nav.ts` in the same change** unless one of the four reasons above covers it.
+The cost of doing it late is not the link; it is the width, below.
 
 **The list lives in `src/lib/nav.ts`, and its order is load-bearing.** The nav
 renders from it and the scroll-spy resolves against it, so a second hand-written
@@ -910,16 +919,36 @@ on the hero covers the case a scroll listener cannot see: the page grows as
 islands hydrate and images land, which moves the hero's floor without a scroll
 ever happening.
 
-### Below 768px
+### Below 1024px
 
 **The section links are hidden; the wordmark and the Download button stay.**
-Same breakpoint as the rails, spelled the same way.
+
+**It is not the rails' breakpoint any more, and that is the point.** The rails
+go at 768px because that is where the page stops having margins to draw them in.
+The links go where they stop *fitting*, and what they have to fit inside is not
+the window but what is left of the row once the wordmark and the Download button
+have taken theirs. That width is **921px** with the seven section links and Docs
+— measured in Chrome on Windows with the root font on its 16px floor, which is
+every viewport under 1714px, and with the gap already stepped down. 1024px is
+the nearest breakpoint above it, and the ~100px it leaves over is the margin for
+the same row set in a wider face on a Mac or a Linux box.
+
+**It was 768px until 2026-08-29, and that row had 29px of margin** — 797px of
+content in 768px of window, which is to say it was already over, and one label
+away from being obviously over. Two links were added that afternoon and the
+figure went to 977px. See the two blocks in `layout.css` § the nav for the
+arithmetic and for the gap step at 1280px that buys 56px of it back.
+
+**What a tablet loses.** Between 768px and 1024px the section links are gone
+where they used to render. The alternative is labels running through the
+Download button on exactly those devices; the page below is untouched, every
+section is one scroll away, and the spy keeps running for the width at which the
+row comes back.
 
 **There is no hamburger, and that is a decision rather than an omission.** A
 menu button opens a panel, a panel needs a ground, and a ground is the one thing
-this nav is built not to have. The five sections it lists are five scroll
-gestures apart on a phone, which is a shorter journey than opening a menu to
-pick one.
+this nav is built not to have. The sections it lists are a few scroll gestures
+apart on a phone, which is a shorter journey than opening a menu to pick one.
 
 ---
 

@@ -260,11 +260,14 @@ is not available here, and should not be: this system has no shadows at all (see
 "Don't", below, and `scripts/check-style.mjs` § no-shadow, which fails the build
 over one).
 
-**Below 768px the section links are hidden** and the wordmark and the CTA stay.
-**There is no hamburger, deliberately** — a menu button opens a panel, a panel
-needs a ground, and a ground is the one thing this nav is built not to have. The
-sections it lists are a few scroll gestures apart on a phone, which is a shorter
-journey than opening a menu to pick one. The layout, the veil's two timings and
+**Below 1024px the section links are hidden** and the wordmark and the CTA stay.
+It was 768px until 2026-08-29, when the list grew from five section links to
+seven: the row needs 921px for them and the old figure left it overlapping the
+Download button on every screen between. **There is no hamburger, deliberately**
+— a menu button opens a panel, a panel needs a ground, and a ground is the one
+thing this nav is built not to have. The sections it lists are a few scroll
+gestures apart on a phone, which is a shorter journey than opening a menu to
+pick one. The layout, the veil's two timings and
 the current-section rule are in [`layout.md`](layout.md) § "The nav".
 
 **Primary CTA** — ink background, dark text, 14px/500, 12×20px padding, 44px
@@ -331,9 +334,9 @@ inverts to ink — a pale panel — instead of wearing a coloured ribbon.
 
 | Name | Width | Changes |
 |---|---|---|
-| Mobile | `< 640px` | Hero h1 → 32px; mockup collapses to one pane; grids 1-up; the nav's section links are gone by 768px and there is no hamburger in their place |
-| Tablet | `640–1024px` | Hero h1 56px; mockup compresses; grids 2-up |
-| Desktop | `1024–1280px` | Hero h1 72px; full multi-pane mockup; grids 3-up |
+| Mobile | `< 640px` | Hero h1 → 32px; mockup collapses to one pane; grids 1-up; no nav section links and no hamburger in their place |
+| Tablet | `640–1024px` | Hero h1 56px; mockup compresses; grids 2-up; still no nav section links — they come back at 1024px, where the row is wide enough to hold all seven |
+| Desktop | `1024–1280px` | Hero h1 72px; full multi-pane mockup; grids 3-up; the nav's section links are back, at the tighter `--space-base` gap |
 | Wide | `> 1280px` | Content caps at 1280px (`layout.md`), margins become visible |
 
 **Touch targets:** primary CTA 44px, secondary 40px minimum.
