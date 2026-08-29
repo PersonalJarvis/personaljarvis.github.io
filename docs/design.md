@@ -118,6 +118,7 @@ a px token here would freeze while the rem utilities around it grew.
 | Role | Size | Weight | Line height | Tracking | Use |
 |---|---|---|---|---|---|
 | display-mega | 4.5rem (72px) | 400 | 1.1 | -2.16px | Hero h1 |
+| display-xl | 3.25rem (52px) | 400 | 1.1 | -1.3px | A section head that carries the argument |
 | display-lg | 2.25rem (36px) | 400 | 1.2 | -0.72px | Section heads |
 | display-md | 1.625rem (26px) | 400 | 1.25 | -0.325px | Sub-section heads |
 | display-sm | 1.375rem (22px) | 400 | 1.3 | -0.11px | Card group titles |
@@ -137,6 +138,12 @@ a px token here would freeze while the rem utilities around it grew.
   this look.
 - Negative tracking on display only, never on body.
 - Mono on every code surface, inline and block.
+- **`display-lg` is the section head; `display-xl` is the exception.** It is for
+  a section whose headline carries the argument on its own — set beside its
+  standfirst rather than above it, where `display-lg` reads as a caption next to
+  the picture below. It is half a step down from the hero, so the page still has
+  exactly one largest line. Two sections at `display-xl` means one of them
+  should not be. Currently: `VoiceSwitch.astro` only.
 
 ---
 

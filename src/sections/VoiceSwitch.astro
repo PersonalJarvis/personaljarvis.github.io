@@ -2,28 +2,34 @@
 /**
  * Section 3 — what changes when you stop typing.
  *
- * Two photographs of one desk, a minute apart, printed as a one-bit pixel
- * dither. In the first the screen is packed with windows and the person is
- * bent over the keyboard; in the second the screen is calm, both hands are
- * away from it, and the person is talking. The contrast IS the argument.
- * See docs/section-3-voice.md.
+ * Two photographs of one desk, printed as a one-bit dither, and the reader's
+ * own scroll drags the second one across the first. See docs/section-3-voice.md.
  *
- * The frames cross-fade on OPACITY and nothing else. A slide or a wipe says
- * "somewhere else"; the claim here is "the same place, a different state", and
- * the camera holding still is what makes it land — measured, not assumed: the
- * desk edge sits within 3px and the mug within 1px across the pair.
+ * THE ARGUMENT IS THE INVERSION. The first frame is the room in daylight,
+ * dithered as dark ink on paper; the second is the same room at night, the same
+ * dots inverted to paper on ink. The page floor is that second ground, so the
+ * wipe does not merely swap two pictures — it settles the section onto the
+ * colour the rest of the site already stands on. The state the product is
+ * selling is the one that stops fighting the page.
  *
- * The pictures carry the change; the words carry the product. Someone who only
- * looks at the two frames learns that hands come off the keyboard, which is not
- * the same as learning what Jarvis is. That is what the standfirst and the
- * per-state captions are for, and why they describe the app rather than the
- * photograph.
+ * THE SECTION IS EXACTLY ONE VIEWPORT, AND STILL SCROLLS. A tall track carries
+ * a `position: sticky` viewport-height child: the reader scrolls three screens
+ * of distance while seeing one screen of section, and that distance is what
+ * drives the wipe. Nothing about the composition is allowed to exceed the
+ * sticky box — every height between it and the picture is a flex chain with
+ * `min-height: 0`, so the picture is the one element that gives, and the
+ * headline, the caption and the figures are never pushed off the bottom.
  *
- * Widths come from the `.layout` grid in src/styles/layout.css: eyebrow,
- * headline and standfirst sit on the `prose` column, the tabs, the picture,
- * the caption and the figures on `content`. That grid is what lets one section
- * carry two width steps without naming a max-width of its own — which
- * docs/layout.md forbids and scripts/check-style.mjs enforces.
+ * THE EDGE IS A DITHER, NOT A LINE. A hard rectangular clip is what the
+ * reference does; here the boundary dissolves cell by cell on the same Bayer
+ * matrix the frames were printed with, so the change reads as the picture's own
+ * dots turning over rather than as one sheet sliding over another. See the
+ * script below.
+ *
+ * Widths: one `content` container, and the head is a two-column grid inside it
+ * — headline left, standfirst right. No width is named in this file;
+ * docs/layout.md reserves that for widths.ts and layout.css, and
+ * scripts/check-style.mjs enforces it.
  *
  * There is no scroll indicator in here. The reader's position through the PAGE
  * is PageChrome's marker on the left rail; a second one scoped to one section
@@ -32,9 +38,8 @@
 import Container from "@/components/Container.astro";
 
 /**
- * `?url` rather than astro:assets: these are 640x360 one-bit dither, and the
- * build's image pipeline would re-encode them. Every dot carries tone here, and
- * they are 10-12 kB as they stand — there is nothing left to optimise.
+ * `?url` rather than astro:assets: these are one-bit dither, and the build's
+ * image pipeline would re-encode them. Every dot carries tone here.
  *
  * Regenerate with `python scripts/dither-scene.py <manual-src> <jarvis-src>`.
  * The palette is baked in, so a token change means re-running that script.
@@ -44,7 +49,9 @@ import manualFrame from "@/assets/scene/manual.png?url";
 
 /**
  * One caption per state, under the picture. Each says what the app does, not
- * what the photograph shows.
+ * what the photograph shows — someone who only looks at the two frames learns
+ * that hands come off the keyboard, which is not the same as learning what
+ * Jarvis is.
  *
  * Everything here is in the app README: the wake word you choose, the tool
  * model that decides how much a request needs, the coding-agent worker running
@@ -54,11 +61,11 @@ import manualFrame from "@/assets/scene/manual.png?url";
 const captions = {
   manual: {
     lead: "Hands on the keyboard.",
-    rest: "Every answer starts with you finding the window, the tab and the right button, and ends with you reading the result yourself.",
+    rest: "You find the window, the tab and the right button, then read the result yourself.",
   },
   jarvis: {
     lead: "Hands nowhere near it.",
-    rest: "You say it out loud. It picks the tools, takes the mouse if it has to, hands real work to an agent in an isolated copy of your files, and answers in the language you used.",
+    rest: "You say it out loud. It picks the tools, takes the mouse if it has to, and answers in the language you used.",
   },
 };
 
@@ -85,168 +92,284 @@ const figures = [
 ];
 ---
 
-<section
-  id="voice"
-  aria-labelledby="voice-heading"
-  class="flex min-h-svh flex-col"
-  data-voice-switch
-  data-mode="manual"
->
+<section id="voice" aria-labelledby="voice-heading" data-voice-switch data-mode="manual">
   <!--
     The section rule, in the same container the rails stand on, so it starts
-    and ends exactly on them. It is a child of the section rather than of the
-    centred block below: the line marks where the section begins, and the
-    block is free to sit in the middle of the leftover height.
+    and ends exactly on them. It sits outside the track: the line marks where
+    the section begins, and the track begins where the line ends.
   -->
   <Container width="content">
     <div class="section-rule"></div>
   </Container>
 
-  <div class="flex flex-1 flex-col justify-center py-20">
-    <div class="layout">
-      <p class="text-center uppercase text-muted" data-voice-eyebrow>
-        What changes
-      </p>
+  <!--
+    The scroll track. Its only job is to be tall — the height IS the animation's
+    running length, and the sticky child inside it is what the reader sees.
 
-      <h2
-        id="voice-heading"
-        class="mt-4 text-balance text-center"
-        data-voice-headline
-      >
-        Most assistants talk back. This one does the thing.
-      </h2>
+    Below the desktop breakpoint the track collapses to `auto` (see the styles)
+    and the section becomes an ordinary block with two buttons. A three-screen
+    scroll trap on a phone is a worse experience than no animation.
+  -->
+  <div data-track>
+    <div data-viewport>
+      <Container width="content" class="flex h-full min-h-0 flex-col">
+        <p class="uppercase text-muted" data-eyebrow>What changes</p>
 
-      <p class="mt-5 text-balance text-center" data-voice-standfirst>
-        Personal Jarvis runs on your own machine and answers to a name you pick.
-        You speak; it works out what the request actually needs. Small things it
-        does itself — opens the app, changes the setting, takes the mouse. Real
-        work goes to a coding agent in an isolated copy of your files, gets
-        checked, and comes back as a finished file instead of an answer.
-      </p>
+        <div data-head>
+          <h2 id="voice-heading" class="text-balance" data-headline>
+            Most assistants talk back.<br />This one does the thing.
+          </h2>
 
-      <div
-        class="wide mt-8 flex justify-center gap-2"
-        role="tablist"
-        aria-label="Two ways of working at the same desk"
-      >
-        <button
-          type="button"
-          role="tab"
-          id="voice-tab-manual"
-          aria-controls="voice-panel"
-          aria-selected="true"
-          tabindex="0"
-          data-target="manual"
-        >
-          By hand
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id="voice-tab-jarvis"
-          aria-controls="voice-panel"
-          aria-selected="false"
-          tabindex="-1"
-          data-target="jarvis"
-        >
-          By voice
-        </button>
-      </div>
+          <p class="text-pretty" data-standfirst>
+            It runs on your own machine and answers to a name you pick. Small
+            things it does itself — opens the app, changes the setting, takes
+            the mouse. Real work goes to a coding agent in an isolated copy of
+            your files and comes back finished.
+          </p>
+        </div>
 
-      <!--
-        Both frames are stacked in the same box and only their opacity changes.
-        Both are in the markup from the first paint — a frame fetched on the
-        first switch flashes an empty box, which reads as a page bug rather
-        than a transition.
-      -->
-      <div
-        class="wide mt-8"
-        id="voice-panel"
-        role="tabpanel"
-        aria-labelledby="voice-tab-manual"
-        tabindex="0"
-        data-stage
-      >
-        <img
-          src={manualFrame}
-          width="640"
-          height="360"
-          loading="eager"
-          decoding="async"
-          alt="A home office printed as fine dots of light. A person sits bent over the desk, both hands on the keyboard and one on the mouse, head down. The monitor is packed edge to edge with small overlapping windows. A mug and loose papers sit at the left, a bright window behind."
-          data-frame="manual"
-          data-active="true"
-        />
-        <img
-          src={jarvisFrame}
-          width="640"
-          height="360"
-          loading="eager"
-          decoding="async"
-          alt="The same desk, the same room, the same mug and papers, a minute later. The person has sat back in the chair with both hands away from the keyboard and mouse, head up, speaking out loud. The monitor now shows one calm, almost empty window."
-          data-frame="jarvis"
-          data-active="false"
-        />
-      </div>
+        <!--
+          The picture is the one element allowed to give: `flex: 1` on a
+          `min-height: 0` chain, so a short window shrinks the photograph
+          instead of pushing the figures past the fold.
+        -->
+        <figure data-figure>
+          <div
+            data-stage
+            id="voice-panel"
+            role="tabpanel"
+            aria-labelledby="voice-tab-manual"
+            tabindex="0"
+          >
+            <!--
+              Both frames are in the markup from the first paint: the canvas
+              draws from these elements, and a frame fetched on the first
+              switch would flash an empty box. They are hidden from layout, not
+              from the accessibility tree — the alt text is the picture for a
+              reader who cannot see the canvas, which is aria-hidden.
+            -->
+            <img
+              src={manualFrame}
+              width="640"
+              height="360"
+              loading="eager"
+              decoding="async"
+              alt="A home office in hard daylight, printed as fine dark dots on paper white. A person sits bent over the desk, both hands on the keyboard and one on the mouse, head down. The monitor is packed edge to edge with small overlapping windows. A mug, a plant and a slipped stack of papers sit at the left, a bright window behind."
+              data-source="manual"
+            />
+            <img
+              src={jarvisFrame}
+              width="640"
+              height="360"
+              loading="eager"
+              decoding="async"
+              alt="The same desk, the same room, the same mug and plant, at night. The dots have inverted to light on black. The person has sat back with both hands away from the keyboard and mouse, head up, speaking into a microphone on a boom arm. The monitor now shows one calm, almost empty window."
+              data-source="jarvis"
+            />
 
-      <p class="wide mt-6" data-caption>
-        {
-          (["manual", "jarvis"] as const).map((mode) => (
-            <span data-caption-for={mode} hidden={mode !== "manual"}>
-              <strong>{captions[mode].lead}</strong> {captions[mode].rest}
-            </span>
-          ))
-        }
-      </p>
+            <canvas aria-hidden="true" data-canvas></canvas>
 
-      <dl class="wide mt-10" data-figures>
-        {
-          figures.map(({ value, label, note }) => (
-            <div>
-              <dt>
-                <span data-figure-label>{label}</span>
-                <span data-figure-note>{note}</span>
-              </dt>
-              <dd>{value}</dd>
+            <!--
+              The two states, set into the picture's bottom-left corner rather
+              than given a row of their own: this section has exactly one
+              viewport to spend, and a row of buttons above the photograph is a
+              row the photograph does not get.
+
+              They are the whole control surface when the scroll scrub is off —
+              on a phone, and under prefers-reduced-motion.
+            -->
+            <div role="tablist" aria-label="Two ways of working at the same desk" data-switch>
+              <button
+                type="button"
+                role="tab"
+                id="voice-tab-manual"
+                aria-controls="voice-panel"
+                aria-selected="true"
+                tabindex="0"
+                data-target="manual"
+              >
+                By hand
+              </button>
+              <button
+                type="button"
+                role="tab"
+                id="voice-tab-jarvis"
+                aria-controls="voice-panel"
+                aria-selected="false"
+                tabindex="-1"
+                data-target="jarvis"
+              >
+                By voice
+              </button>
             </div>
-          ))
-        }
-      </dl>
+          </div>
+
+          <figcaption data-caption>
+            {
+              (["manual", "jarvis"] as const).map((mode) => (
+                <span data-caption-for={mode} hidden={mode !== "manual"}>
+                  <strong>{captions[mode].lead}</strong> {captions[mode].rest}
+                </span>
+              ))
+            }
+          </figcaption>
+        </figure>
+
+        <dl data-figures>
+          {
+            figures.map(({ value, label, note }) => (
+              <div>
+                <dt>
+                  <span data-figure-label>{label}</span>
+                  <span data-figure-note>{note}</span>
+                </dt>
+                <dd>{value}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </Container>
     </div>
   </div>
 </section>
 
 <style>
-  [data-voice-eyebrow] {
-    /* 14px from the token rather than Tailwind's `text-sm`: the tokens travel
-     * with the root scale, so the label and the headline grow together. */
+  /* --- The track and its one visible screen -------------------------------
+   *
+   * `--track` is the animation's running length. The reader scrolls
+   * (track - viewport) of distance; everything the script does is a fraction of
+   * that. Three screens is enough for the wipe to feel deliberate and short
+   * enough that nobody thinks the page has stopped.
+   */
+  [data-track] {
+    --track: 300svh;
+
+    height: var(--track);
+  }
+
+  [data-viewport] {
+    position: sticky;
+    top: 0;
+    /* One viewport, minus the sticky nav band, which is 4rem and opaque. The
+     * section owns everything under it and nothing behind it. */
+    height: 100svh;
+    padding-top: 4rem;
+    padding-bottom: var(--space-xl);
+    overflow: hidden;
+  }
+
+  /* --- The head ----------------------------------------------------------
+   * Headline left, standfirst right, both starting on the same baseline row.
+   * 7:6 rather than 1:1 — the headline is display type and needs the wider
+   * half to break where it was written to break.
+   */
+  [data-eyebrow] {
+    /* From the token rather than Tailwind's `text-sm`: the tokens travel with
+     * the root scale, so the label and the headline grow together. */
     font-size: var(--text-body-sm);
     letter-spacing: 0.1em;
   }
 
-  [data-voice-headline] {
-    font-size: var(--text-display-lg);
-    letter-spacing: var(--tracking-display-lg);
-    line-height: 1.2;
+  [data-head] {
+    display: grid;
+    gap: var(--space-md) var(--space-xxl);
+    align-items: start;
+    margin: var(--space-md) 0 var(--space-xl);
   }
 
-  [data-voice-standfirst] {
+  /* 8:5, not 7:6. The split is set by the headline, not by taste: at 7:6 the
+   * first sentence is two characters wider than its column and wraps, which
+   * turns a two-line headline into three and pushes "talk back." onto a line of
+   * its own. The standfirst has slack to give; the display line does not. */
+  @media (min-width: 900px) {
+    [data-head] {
+      grid-template-columns: minmax(0, 8fr) minmax(0, 5fr);
+    }
+  }
+
+  [data-headline] {
+    margin: 0;
+    font-size: var(--text-display-xl);
+    letter-spacing: var(--tracking-display-xl);
+    line-height: 1.1;
+  }
+
+  [data-standfirst] {
+    margin: 0;
+    /* The standfirst is set beside display type, so it starts on the headline's
+     * first baseline rather than the top of its box. */
+    padding-top: 0.4em;
     color: var(--body);
     font-size: var(--text-body);
     line-height: 1.6;
   }
 
-  /* --- Tabs --------------------------------------------------------------
-   * design.md's secondary control, promoted to the primary ink fill when
-   * selected. One shape language: the 8px button radius, never a pill.
+  /* --- The picture -------------------------------------------------------
+   * The flex chain that keeps the section inside one screen: the figure takes
+   * the leftover height, the stage takes the leftover inside that, and both
+   * carry `min-height: 0` so a flex item is actually allowed to shrink below
+   * its content. Without that pair the canvas holds its aspect ratio and
+   * shoves the figures through the bottom of the viewport.
    */
+  [data-figure] {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+    margin: 0;
+  }
+
+  [data-stage] {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-xl);
+    /* The manual frame's own paper, so the box reads as one sheet before the
+     * canvas has painted and while the first frame is still in front. */
+    background: var(--ink);
+  }
+
+  [data-canvas] {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* The source frames feed the canvas and carry the alt text; they are never
+   * painted. `visibility: hidden` rather than `display: none` — a display-none
+   * image is not guaranteed to be fetched, and the canvas needs it decoded. */
+  [data-source] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    visibility: hidden;
+  }
+
+  /* --- The two states, set into the picture ------------------------------
+   * design.md's secondary control, promoted to the ink fill when selected. One
+   * shape language: the 8px button radius, never a pill. The group sits on the
+   * stage's own bottom-left corner, so only its two inner edges are drawn.
+   */
+  [data-switch] {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    display: flex;
+    border-top: 1px solid var(--hairline-strong);
+    border-right: 1px solid var(--hairline-strong);
+    border-start-end-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--canvas) 82%, transparent);
+    backdrop-filter: blur(6px);
+  }
+
   [role="tab"] {
-    border: 1px solid var(--hairline-strong);
-    border-radius: var(--radius-md);
-    background: var(--surface-card);
+    border: 0;
+    background: none;
     color: var(--body);
-    padding: 0 20px;
-    height: 40px;
+    padding: 0 var(--space-md);
+    height: 38px;
     font-size: var(--text-body-sm);
     font-weight: 500;
     cursor: pointer;
@@ -258,48 +381,36 @@ const figures = [
 
   [role="tab"][aria-selected="true"] {
     background: var(--ink);
-    border-color: var(--ink);
     color: var(--on-ink);
   }
 
-  /* --- The picture -------------------------------------------------------- */
-  [data-stage] {
-    position: relative;
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-    border: 1px solid var(--hairline);
-    border-radius: var(--radius-xl);
-    background: var(--canvas);
-  }
-
-  [data-frame] {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0;
-    /* The frames are 640 wide and the box is wider. Without this the browser
-     * smooths the dither into grey mush and the treatment is simply gone. */
-    image-rendering: pixelated;
-    transition: opacity 0.45s ease;
-  }
-
-  [data-frame][data-active="true"] {
-    opacity: 1;
+  /* The first button's corner is the stage's corner. */
+  [role="tab"]:first-child {
+    border-end-start-radius: calc(var(--radius-xl) - 1px);
   }
 
   /* --- Caption -----------------------------------------------------------
-   * Both captions reserve the same height, so switching does not shove the
-   * figures up and down the page.
+   * Both captions reserve the same box, so the state change does not shove the
+   * figures up and down the page. They are stacked rather than toggled with
+   * `hidden` at runtime: a caption that disappears for a frame between two
+   * states flickers, and the box has to hold the taller of the two anyway.
    */
   [data-caption] {
-    margin: 0;
-    min-height: 3lh;
-    text-align: center;
+    display: grid;
+    margin: var(--space-md) 0 0;
     color: var(--muted);
     font-size: var(--text-body-sm);
-    line-height: 1.6;
+    line-height: 1.5;
+  }
+
+  [data-caption] > span {
+    grid-area: 1 / 1;
+    transition: opacity 160ms ease;
+  }
+
+  [data-caption] > span[hidden] {
+    display: block;
+    opacity: 0;
   }
 
   [data-caption] strong {
@@ -316,7 +427,7 @@ const figures = [
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1px;
     background: var(--hairline);
-    margin: 0;
+    margin: var(--space-xl) 0 0;
   }
 
   @media (min-width: 768px) {
@@ -328,11 +439,10 @@ const figures = [
   [data-figures] > div {
     display: flex;
     flex-direction: column-reverse;
-    align-items: center;
+    align-items: baseline;
     gap: var(--space-xxs);
     background: var(--canvas);
-    padding: var(--space-lg) var(--space-base);
-    text-align: center;
+    padding: var(--space-md) var(--space-base);
   }
 
   [data-figures] dd {
@@ -362,12 +472,44 @@ const figures = [
     font-size: var(--text-caption);
   }
 
-  /* --- Reduced motion ----------------------------------------------------
-   * No cross-fade. The autoplay is switched off in the script, which reads the
-   * same query.
+  /* --- Where the scroll scrub is off -------------------------------------
+   * Three cases drop out of the sticky layout into an ordinary block: no tall
+   * scroll distance, no sticky child, no scrub, and the picture back at its own
+   * 16:9. The two buttons are then the whole control, which is why they are
+   * real buttons and not a decoration on top of the animation.
+   *
+   *   narrow    a three-screen scroll trap on a phone is worse than no
+   *             animation, and the head's two columns have collapsed anyway
+   *   short     the flex chain gives the picture whatever height is left, and
+   *             below about 880px of window that is a 4:1 letterbox slot the
+   *             photograph cannot survive — measured, not assumed: the crop
+   *             starts cutting the speech bubble off the top around there
+   *   calm      prefers-reduced-motion
+   *
+   * The JS reads the same three conditions, so the CSS and the script cannot
+   * disagree about which mode the section is in.
    */
+  @media (max-width: 1023px), (max-height: 879px), (prefers-reduced-motion: reduce) {
+    [data-track] {
+      height: auto;
+    }
+
+    [data-viewport] {
+      position: static;
+      height: auto;
+      padding-top: var(--space-xxl);
+      padding-bottom: var(--space-xxl);
+      overflow: visible;
+    }
+
+    [data-stage] {
+      flex: 0 0 auto;
+      aspect-ratio: 16 / 9;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    [data-frame] {
+    [data-caption] > span {
       transition: none;
     }
   }
@@ -375,60 +517,271 @@ const figures = [
 
 <script>
   /*
-   * Tab behaviour for the two frames.
+   * The wipe.
    *
-   * Autoplay exists so a visitor who never touches anything still sees the
-   * point being made. It stops permanently at the first interaction — a demo
-   * that keeps moving under someone's hand is worse than one that never moved.
+   * One canvas, two source frames, and a boundary that dissolves cell by cell
+   * instead of cutting a straight line.
+   *
+   * WHY A DITHERED EDGE. Both frames are printed with an ordered Bayer matrix,
+   * so the picture is already a grid of dots. A straight-edged clip crosses
+   * that grid and reads as one sheet sliding over another. Running the same
+   * matrix along the boundary makes the cells turn over in the frames' own
+   * rhythm — the picture changes rather than moves, which is the claim the
+   * section is making.
+   *
+   * WHY A MASK CANVAS AND NOT A CLIP PATH. The dissolve zone is a few thousand
+   * cells. As a path that is a few thousand sub-paths to clip against, per
+   * frame. As a mask it is one small ImageData — one cell per pixel — scaled up
+   * with smoothing off and composited in a single `destination-in`. Three
+   * drawImage calls a frame either way, and the cost stops depending on how
+   * wide the zone is.
    */
-  const RESET = "manual";
-  const CYCLE_MS = 4000;
+
+  /** Ordered threshold matrix, 8x8. The same one scripts/dither-scene.py prints
+   * the frames with, so the dissolve lands in the frames' own rhythm. */
+  const BAYER = (() => {
+    let m = [
+      [0, 2],
+      [3, 1],
+    ];
+    while (m.length < 8) {
+      const n = m.length;
+      const next: number[][] = [];
+      for (let y = 0; y < n * 2; y++) next.push(new Array(n * 2).fill(0));
+      for (let y = 0; y < n; y++) {
+        for (let x = 0; x < n; x++) {
+          const v = m[y][x] * 4;
+          next[y][x] = v;
+          next[y][x + n] = v + 2;
+          next[y + n][x] = v + 3;
+          next[y + n][x + n] = v + 1;
+        }
+      }
+      m = next;
+    }
+    return m.map((row) => row.map((v) => (v + 0.5) / 64));
+  })();
+
+  /** A dissolve cell, in CSS pixels. Larger than a printed dot on purpose: the
+   * edge has to be legible as it crosses the picture, not invisible. */
+  const CELL = 10;
+
+  /** Width of the dissolve zone as a fraction of the stage. Wide enough that
+   * several cells are mid-turn at once; narrow enough to still read as an edge
+   * travelling rather than the whole picture fading. */
+  const BAND = 0.16;
+
+  /** Fraction of the track held still at each end, so the reader arrives on a
+   * finished picture and leaves on the other one. The wipe owns the rest. */
+  const HOLD = 0.22;
+
+  /** ~30fps. The frames are a dot grid; the extra 30 buy nothing visible and
+   * cost a full repaint of the stage. */
+  const FRAME_MS = 33;
 
   const section = document.querySelector<HTMLElement>("[data-voice-switch]");
 
   if (section) {
+    const track = section.querySelector<HTMLElement>("[data-track]")!;
+    const stage = section.querySelector<HTMLElement>("[data-stage]")!;
+    const view = section.querySelector<HTMLCanvasElement>("[data-canvas]")!;
     const tabs = Array.from(section.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
-    const panel = section.querySelector<HTMLElement>('[role="tabpanel"]');
-    const frames = Array.from(section.querySelectorAll<HTMLElement>("[data-frame]"));
     const captions = Array.from(section.querySelectorAll<HTMLElement>("[data-caption-for]"));
+    const panel = section.querySelector<HTMLElement>('[role="tabpanel"]');
+    const sources = (["manual", "jarvis"] as const).map(
+      (name) => section.querySelector<HTMLImageElement>(`[data-source="${name}"]`)!,
+    );
+
+    const ctx = view.getContext("2d");
+    const layer = document.createElement("canvas");
+    const layerCtx = layer.getContext("2d");
+    const mask = document.createElement("canvas");
+    const maskCtx = mask.getContext("2d", { willReadFrequently: true });
+
     const calm = window.matchMedia("(prefers-reduced-motion: reduce)");
+    /* The same two conditions the stylesheet drops out of the sticky layout on.
+     * Kept literally identical so the script and the CSS cannot disagree about
+     * which mode the section is in — the CSS decides the geometry, this decides
+     * where the wipe's value comes from, and a mismatch leaves a scrub driving
+     * a section that no longer has a scroll track. */
+    const narrow = window.matchMedia("(max-width: 1023px), (max-height: 879px)");
 
-    let userTookOver = false;
-    let cycle: number | undefined;
+    /* The two grounds come from the tokens rather than from a literal, so a
+     * palette change reaches the canvas the same way it reaches the CSS. They
+     * are the frames' own baked-in backgrounds: paper under the daylight frame,
+     * canvas under the night one. */
+    const styles = getComputedStyle(document.documentElement);
+    const grounds = [
+      styles.getPropertyValue("--ink").trim(),
+      styles.getPropertyValue("--canvas").trim(),
+    ];
 
-    const show = (mode: string) => {
-      for (const frame of frames) {
-        frame.dataset.active = String(frame.dataset.frame === mode);
+    let box = { w: 0, h: 0 };
+    let painted = -1;
+
+    /** Sync the canvas backing store to the box and the display density. Returns
+     * false while the stage has no size yet — before layout, and while the tab
+     * is in a background window. */
+    const fit = (): boolean => {
+      const { width, height } = stage.getBoundingClientRect();
+      if (width <= 0 || height <= 0 || !ctx || !layerCtx || !maskCtx) return false;
+
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const w = Math.round(width * dpr);
+      const h = Math.round(height * dpr);
+      if (view.width !== w || view.height !== h) {
+        view.width = w;
+        view.height = h;
+        layer.width = w;
+        layer.height = h;
+        painted = -1; // a resized canvas is a cleared canvas
       }
-      for (const caption of captions) {
-        caption.hidden = caption.dataset.captionFor !== mode;
+      for (const c of [ctx, layerCtx]) c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      box = { w: width, h: height };
+      return true;
+    };
+
+    /** Draw one frame over the whole stage, cover-style.
+     *
+     * The vertical anchor is 42%, not 50%: the stage is much wider than 16:9
+     * once the flex chain has taken its height, so a centred crop cuts the
+     * desk edge away. Biasing upward keeps the head, the speech bubble and the
+     * desk in frame and loses ceiling instead. The number is paired with
+     * BUBBLE in scripts/dither-scene.py — moving one without the other clips
+     * the bubble's top edge on a short window. */
+    const drawFrame = (target: CanvasRenderingContext2D, index: number) => {
+      const img = sources[index];
+      target.fillStyle = grounds[index];
+      target.fillRect(0, 0, box.w, box.h);
+      if (!img.complete || img.naturalWidth === 0) return;
+
+      const scale = Math.max(box.w / img.naturalWidth, box.h / img.naturalHeight);
+      const w = img.naturalWidth * scale;
+      const h = img.naturalHeight * scale;
+      /* Smoothing off, or the browser resamples the dither into grey mush and
+       * the treatment is simply gone. */
+      target.imageSmoothingEnabled = false;
+      target.drawImage(img, (box.w - w) / 2, (box.h - h) * 0.42, w, h);
+    };
+
+    /** Build the dissolve mask: one pixel per cell, alpha only.
+     *
+     * A cell belongs to the incoming frame once the edge has passed it by more
+     * than its own Bayer threshold. The edge starts one band's width off the
+     * left of the picture and ends one band past the right, so the first and
+     * last cells get a full turn instead of appearing already finished. */
+    const buildMask = (wipe: number) => {
+      if (!maskCtx) return;
+      const cols = Math.max(1, Math.round(box.w / CELL));
+      const rows = Math.max(1, Math.round(box.h / CELL));
+      if (mask.width !== cols || mask.height !== rows) {
+        mask.width = cols;
+        mask.height = rows;
       }
+
+      const band = Math.max(1, cols * BAND);
+      const edge = -band + wipe * (cols + 2 * band);
+      const image = maskCtx.createImageData(cols, rows);
+      const data = image.data;
+
+      for (let y = 0; y < rows; y++) {
+        const threshold = BAYER[y & 7];
+        for (let x = 0; x < cols; x++) {
+          const i = (y * cols + x) * 4 + 3;
+          data[i] = (edge - x) / band > threshold[x & 7] ? 255 : 0;
+        }
+      }
+      maskCtx.putImageData(image, 0, 0);
+    };
+
+    const paint = (wipe: number) => {
+      if (!ctx || !layerCtx) return;
+      if (!fit()) return;
+      if (Math.abs(wipe - painted) < 0.0015) return;
+      painted = wipe;
+
+      drawFrame(ctx, 0);
+      if (wipe <= 0) return;
+      if (wipe >= 1) {
+        drawFrame(ctx, 1);
+        return;
+      }
+
+      drawFrame(layerCtx, 1);
+      buildMask(wipe);
+      layerCtx.globalCompositeOperation = "destination-in";
+      layerCtx.imageSmoothingEnabled = false;
+      layerCtx.drawImage(mask, 0, 0, box.w, box.h);
+      layerCtx.globalCompositeOperation = "source-over";
+
+      ctx.drawImage(layer, 0, 0, box.w, box.h);
+    };
+
+    /** Everything that is text rather than picture. Driven off the same wipe,
+     * so the words and the dots change together. */
+    const setMode = (mode: string) => {
+      if (section.dataset.mode === mode) return;
+      section.dataset.mode = mode;
+      for (const caption of captions) caption.hidden = caption.dataset.captionFor !== mode;
       for (const tab of tabs) {
         const selected = tab.dataset.target === mode;
         tab.setAttribute("aria-selected", String(selected));
         tab.tabIndex = selected ? 0 : -1;
         if (selected) panel?.setAttribute("aria-labelledby", tab.id);
       }
-      section.dataset.mode = mode;
     };
 
-    const takeOver = () => {
-      userTookOver = true;
-      if (cycle !== undefined) window.clearInterval(cycle);
-      cycle = undefined;
+    const render = (wipe: number) => {
+      paint(wipe);
+      setMode(wipe >= 0.5 ? "jarvis" : "manual");
     };
 
-    const startAutoplay = () => {
-      if (userTookOver || calm.matches || cycle !== undefined) return;
-      cycle = window.setInterval(() => {
-        show(section.dataset.mode === RESET ? "jarvis" : RESET);
-      }, CYCLE_MS);
+    /* --- Where the wipe's value comes from -------------------------------
+     *
+     * Scrolling drives it on a desktop with motion allowed; the two buttons
+     * drive it everywhere else. `pick` is null while the scroll owns the value.
+     */
+    let pick: number | null = null;
+    const scrubbing = () => !narrow.matches && !calm.matches && pick === null;
+
+    const fromScroll = (): number => {
+      const rect = track.getBoundingClientRect();
+      const distance = rect.height - window.innerHeight;
+      if (distance <= 0) return 0;
+      const through = Math.min(1, Math.max(0, -rect.top / distance));
+      return Math.min(1, Math.max(0, (through - HOLD) / (1 - 2 * HOLD)));
     };
+
+    /* Nothing repaints while the section is off screen. */
+    let onScreen = true;
+    new IntersectionObserver(([entry]) => (onScreen = entry.isIntersecting), {
+      rootMargin: "200px",
+    }).observe(section);
+
+    let last = 0;
+    let raf = 0;
+    const loop = (now: number) => {
+      raf = requestAnimationFrame(loop);
+      if (!onScreen || now - last < FRAME_MS) return;
+      last = now;
+      render(scrubbing() ? fromScroll() : (pick ?? 0));
+    };
+
+    /* The first paint has to wait for the frames to decode; until then the
+     * stage shows its paper background rather than an empty box. */
+    for (const img of sources) {
+      if (!img.complete) img.addEventListener("load", () => (painted = -1), { once: true });
+    }
+
+    /* A resize changes the crop and the cell grid, so the next frame has to
+     * repaint even at an unchanged wipe. */
+    new ResizeObserver(() => (painted = -1)).observe(stage);
 
     for (const [index, tab] of tabs.entries()) {
       tab.addEventListener("click", () => {
-        takeOver();
-        show(tab.dataset.target ?? RESET);
+        pick = tab.dataset.target === "jarvis" ? 1 : 0;
+        painted = -1;
+        render(pick);
       });
 
       /* The tab pattern owes arrow-key navigation; buttons alone do not give it. */
@@ -436,29 +789,33 @@ const figures = [
         const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
         if (!step) return;
         event.preventDefault();
-        takeOver();
         const next = tabs[(index + step + tabs.length) % tabs.length];
-        show(next.dataset.target ?? RESET);
         next.focus();
+        next.click();
       });
     }
 
-    /* Nothing moves until the section is actually on screen. */
-    new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) startAutoplay();
-          else if (cycle !== undefined) {
-            window.clearInterval(cycle);
-            cycle = undefined;
-          }
-        }
+    /* A picked state is released when the reader scrolls the section again —
+     * otherwise one click would freeze the scrub for the rest of the visit. It
+     * is NOT released under reduced motion or on a narrow screen, where the
+     * pick is the only control there is. */
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (!narrow.matches && !calm.matches) pick = null;
       },
-      { threshold: 0.4 },
-    ).observe(section);
+      { passive: true },
+    );
 
-    calm.addEventListener("change", () => {
-      if (calm.matches) takeOver();
-    });
+    for (const query of [calm, narrow]) {
+      query.addEventListener("change", () => {
+        pick = calm.matches || narrow.matches ? (pick ?? 0) : null;
+        painted = -1;
+      });
+    }
+
+    if (calm.matches || narrow.matches) pick = 0;
+    raf = requestAnimationFrame(loop);
+    window.addEventListener("pagehide", () => cancelAnimationFrame(raf), { once: true });
   }
 </script>

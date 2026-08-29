@@ -193,6 +193,44 @@ never text. An image that should look wide belongs on `.wide`.
 
 ---
 
+## A section that is one viewport and still scrolls
+
+When a section has to be exactly one screen tall *and* the scroll has to drive
+something inside it, the height is a **track** and what the reader sees is a
+sticky child:
+
+```css
+[data-track]     { height: 300svh; }                 /* the running length */
+[data-viewport]  { position: sticky; top: 0;
+                   height: 100svh; overflow: hidden; }
+```
+
+The reader scrolls `track - viewport` of distance and sees one screen. That
+distance is the animation's timeline: `-track.top / (track.height -
+innerHeight)` is a clean 0..1, measured inside a `requestAnimationFrame` like
+every other scroll figure on this site.
+
+Three rules come with it, and each one has already cost a defect:
+
+- **Every height between the sticky box and the element that gives carries
+  `min-height: 0`.** A flex item refuses to shrink below its content by default,
+  so one missing link and the content leaves the bottom of the screen instead of
+  the picture getting shorter.
+- **Subtract the nav.** It is `4rem`, sticky and opaque; a sticky child at
+  `top: 0` starts underneath it.
+- **Have a floor, and fall out of the pattern below it.** The element that gives
+  gets whatever height is left, and on a short window that is a letterbox slot
+  nothing survives. Below the floor the track collapses to `auto`, the child
+  goes `static`, and the section is an ordinary block. So do a narrow screen —
+  a three-screen scroll trap on a phone is worse than no animation — and
+  `prefers-reduced-motion`. **Spell the conditions identically in the CSS and in
+  the script**, or a scrub ends up driving a section that no longer has a track.
+
+`VoiceSwitch.astro` is the worked example; the reasoning behind its numbers is
+in [`section-3-voice.md`](section-3-voice.md).
+
+---
+
 ## Page chrome: rails and the scroll marker
 
 The gutters are made visible. Two vertical hairlines stand on the edges of the

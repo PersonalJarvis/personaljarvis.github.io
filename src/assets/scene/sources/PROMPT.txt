@@ -1,0 +1,84 @@
+Generate TWO photographs for a website section. Work in the current directory.
+
+Both photographs show THE SAME home office, from THE SAME camera, with THE SAME
+person. Only the time of day, the person's posture and what is on the monitor
+may differ. Nothing else in the room may move — that consistency is the entire
+point of the pair.
+
+=== THE SCENE (identical in both) ===
+
+A quiet, minimal home office. A plain desk stands side-on to the camera, running
+from the left edge of the frame toward the centre. On the desk, from left to
+right: a stack of loose papers, a plain ceramic mug, a mechanical keyboard, a
+mouse, and one wide monitor standing on a slim stand roughly in the middle of
+the frame, its screen turned toward the person. A single small potted plant sits
+at the far left corner of the desk. Behind the desk is a large window running
+the full width of the back wall, with a plain city view beyond it. Bare walls,
+no posters, no shelves.
+
+The person: a man in his late twenties, short dark hair, a plain crew-neck
+t-shirt, sitting in a simple office chair on the right-hand side of the frame,
+facing left toward the monitor.
+
+Camera: a real photograph, 35mm lens, eye level, three-quarter view from the
+person's right-front, the whole desk and the person in frame with room to spare
+on both sides. Wide 16:9 framing. Shallow but not extreme depth of field.
+
+Absolutely no text anywhere in the image — nothing readable on the monitor, no
+labels, no signage, no logos, no watermarks. The monitor content must read as
+abstract shapes of light only.
+
+=== IMAGE 1 — save as: overwhelmed.png ===
+
+Use the image_gen tool.
+
+Bright daylight. Hard sun floods through the window and washes the whole room to
+a bright, almost blown-out white; the walls, the desk and the papers are all
+very light, and the picture as a whole is high-key and glaring.
+
+The man is hunched forward over the desk, elbows in, shoulders up, head down
+close to the screen, both hands on the keyboard and his right hand half on the
+mouse. His body language is tense and buried in the work.
+
+The monitor is packed edge to edge with many small overlapping windows and
+panels — a chaotic mess of light rectangles piled on each other. The desk is
+cluttered: the paper stack has slid over, several loose sheets have spread
+across the desk, and a second mug has been left behind the keyboard.
+
+This is a photograph, not an illustration. No text.
+
+=== IMAGE 2 — save as: spoken.png ===
+
+Use the image_edit tool with overwhelmed.png as the source image, NOT a fresh
+generation. The room, the window, the desk, the monitor, the keyboard, the
+mouse, the mug, the plant, the chair, the person, the camera position, the lens
+and the crop must all survive the edit unchanged and land in the same place in
+the frame. Only change what is listed below.
+
+Change the time of day to night: the room lights are off, the window now shows a
+dark city with small distant lights, and the only real light in the room is the
+soft glow of the monitor falling on the man's face and the front edge of the
+desk. The whole picture becomes dark and low-key, deep shadow everywhere except
+that glow.
+
+Change the man's posture: he has pushed the chair back and sits upright and
+relaxed, leaning back, head up, chin slightly raised, BOTH hands away from the
+keyboard and away from the mouse — one resting on the arm of the chair, one
+loose in his lap. His mouth is open mid-sentence; he is talking out loud.
+
+Add ONE object: a broadcast microphone on a slim boom arm clamped to the right
+edge of the desk, swung in toward him at chin height, seen from the side.
+
+Change the monitor: instead of many windows it now shows a single calm, nearly
+empty panel of soft light.
+
+Tidy the desk: the loose sheets and the second mug are gone; the paper stack is
+square again.
+
+This is a photograph, not an illustration. No text, no speech bubble, no
+graphics overlaid on the photograph.
+
+=== WHEN DONE ===
+
+Print the absolute path and the pixel dimensions of both saved files, and state
+in one line for each whether it is a real PNG.

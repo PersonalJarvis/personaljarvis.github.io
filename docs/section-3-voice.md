@@ -10,21 +10,25 @@
 
 ## The argument
 
-Two photographs of one desk, a minute apart:
+Two photographs of one desk, printed as a one-bit dither, and the reader's own
+scroll drags the second across the first:
 
 | State | What is shown |
 |---|---|
-| **By hand** (`manual`) | Bent over the desk, both hands on the keyboard, one on the mouse, head down. The monitor is packed with overlapping windows. |
-| **By voice** (`jarvis`) | Sat back in the chair, both hands away from the keyboard and mouse, head up, speaking. The monitor shows one calm, almost empty window. |
+| **By hand** (`manual`) | Hard daylight. Bent over the desk, both hands on the keyboard, one on the mouse, head down. The monitor is packed with overlapping windows, the paper stack has slipped, a second mug is out. |
+| **By voice** (`jarvis`) | The same room at night. Sat back, both hands away from the keyboard and mouse, head up, speaking into a microphone on a boom arm. The monitor shows one calm, nearly empty panel. The desk is square again. |
 
-The contrast **is** the argument, and it only survives while nothing else
-changes. See "Frame consistency".
+**The inversion is the argument.** The daylight frame is dark ink on paper; the
+night frame is the same dots turned over — paper on ink. The page floor is that
+second ground, so the wipe does not merely swap two pictures: it settles the
+section onto the colour the rest of the site already stands on. The state the
+product is selling is the one that stops fighting the page.
 
 But the pictures alone do not make the case. Someone who only looks at the two
 frames learns that hands come off the keyboard, which is not the same as
 learning what Jarvis is. That is what the standfirst and the two captions are
 for, and why they describe the app rather than the photograph. This was the
-maintainer's own complaint about the previous version, 2026-08-29: *"man merkt
+maintainer's own complaint about an earlier version, 2026-08-29: *"man merkt
 nicht, was Jarvis wirklich der Unterschied ist."*
 
 ---
@@ -32,51 +36,90 @@ nicht, was Jarvis wirklich der Unterschied ist."*
 ## Reference, and where it stops
 
 The treatment is modelled on <https://www.meuze.ai> — photographs rendered as a
-fine dither, near-monochrome, with an eyebrow, a short headline and a bar of
-figures underneath.
+fine dither, near-monochrome, with an eyebrow, a headline set beside its
+standfirst, and a bar of figures underneath. The maintainer asked for that
+section's effect and its layout by name on 2026-08-29.
 
-**Carried over:** the technique. Rendering a photograph as a one-bit dot grid
-is newspaper halftone; it belongs to nobody.
+**Carried over:** the technique. A one-bit dot grid is newspaper halftone and
+belongs to nobody. The mechanism was read out of the reference's own bundle and
+is described under "The wipe" below; the sticky-track-plus-scroll-scrub shape is
+a standard scrollytelling pattern.
 
 **Deliberately not carried over:** their serif display face, their blue accent,
-their bordered section frame, their five-column figure bar, their isometric
-illustrations. `design.md` § "What this is not" exists because another
-product's brand was once copied into this site wholesale, and taking a second
-one would be the same mistake with a different logo. This site stays on Inter,
-on the app's own dark tokens, and on its own layout.
+their bordered section frame, their five-column figure bar, their counting
+numbers, their isometric illustrations. `design.md` § "What this is not" exists
+because another product's brand was once copied into this site wholesale, and
+taking a second one would be the same mistake with a different logo. This site
+stays on Inter, on the app's own dark tokens, and on its own layout.
+
+**Where this one goes further:** the reference cuts between its two frames on a
+straight-edged rectangular clip. Here the boundary dissolves cell by cell on the
+same Bayer matrix the frames were printed with, so the picture's own dots turn
+over rather than one sheet sliding across another.
 
 ---
 
-## Measurements
+## The section is exactly one viewport
+
+A tall track carries a `position: sticky` child of viewport height. The reader
+scrolls three screens of distance and sees one screen of section, and that
+distance is what drives the wipe.
+
+```
+[data-track]     height: 300svh        the animation's running length
+  [data-viewport]  position: sticky    what the reader actually sees
+                   top: 0
+                   height: 100svh
+                   overflow: hidden
+```
 
 | Element | Value |
 |---|---|
-| Section height | `min-height: 100svh` — a floor, not a cap |
-| Width | `content` step |
-| Picture | `aspect-ratio: 16 / 9`, `--radius-xl` (16px), 1px hairline |
+| Track | `300svh` |
+| Sticky viewport | `100svh`, `padding-top: 4rem` — the nav band is 4rem and opaque |
+| Width | one `content` container; the head is a 8:5 grid inside it |
 | Eyebrow | 14px from `--text-body-sm`, uppercase, `letter-spacing: .1em` |
-| Headline | `prose` column, two lines |
+| Headline | `--text-display-xl`, left column, **two lines** |
+| Standfirst | right column, `--text-body`, four lines |
+| Picture | fills the leftover height; `--radius-xl` (16px), 1px hairline |
 | Figures | four columns from `md`, two below; hairlines from `gap: 1px` |
 
-Order from the top: section rule → eyebrow → headline → standfirst → tabs →
-picture → caption → figures.
+Order from the top: section rule → eyebrow → head (headline | standfirst) →
+picture with the two states set into its corner → caption → figures.
 
-**The section is taller than one viewport on most screens.** A full-width 16:9
-picture is 684px at a 1216px content width on its own, and the text above and
-below it does not fit in what is left. The earlier brief asked for exactly one
-viewport; the maintainer released that on 2026-08-29. `min-h-svh` stays as a
-floor so the section never collapses on a short window.
+**Nothing is allowed to exceed the sticky box.** Every height between it and the
+picture is a flex chain carrying `min-height: 0`, so the picture is the one
+element that gives and the figures are never pushed through the fold. Without
+that `min-height: 0` a flex item refuses to shrink below its content, the canvas
+holds its aspect ratio, and the bottom of the section leaves the screen.
 
-### How two width steps live in one section
+**The head is 8:5, not 7:6.** The split is set by the headline, not by taste: at
+7:6 the first sentence is two characters wider than its column, wraps, and turns
+a two-line headline into three with "talk back." alone on a line.
 
-The eyebrow, headline and standfirst take the `.layout` grid's default `prose`
-column; the tabs, picture, caption and figures carry `.wide` for the `content`
-column. No width is named in the section at all — `layout.md` reserves that for
-`widths.ts` and `layout.css`, and `scripts/check-style.mjs` enforces it.
+**Why no width is named here.** One `content` container plus a grid inside it.
+`layout.md` reserves widths for `widths.ts` and `layout.css`, and
+`scripts/check-style.mjs` enforces it. Type comes from the tokens, never from
+Tailwind's rem utilities: the root font size grows with the viewport, so a
+`text-sm` label would climb past a token-sized headline.
 
-Type comes from the tokens, never from Tailwind's rem utilities: the root font
-size grows with the viewport, so a `text-sm` label would climb past a
-token-sized headline. The tokens themselves are rem now and travel together.
+### Where the sticky layout is dropped
+
+Three cases fall back to an ordinary block — no track, no sticky child, no
+scrub, and the picture back at its own 16:9, with the two buttons as the whole
+control:
+
+| Case | Query | Why |
+|---|---|---|
+| narrow | `max-width: 1023px` | a three-screen scroll trap on a phone is worse than no animation |
+| short | `max-height: 879px` | the flex chain gives the picture what height is left, and below about 880px that is a 4:1 letterbox slot the photograph cannot survive |
+| calm | `prefers-reduced-motion: reduce` | — |
+
+**The CSS and the script read the same three conditions, spelled identically.** A
+mismatch leaves a scrub driving a section that no longer has a scroll track.
+
+The 880px figure is measured, not chosen: it is where the crop starts cutting
+the speech bubble off the top of the frame.
 
 ---
 
@@ -88,8 +131,12 @@ token-sized headline. The tokens themselves are rem now and travel together.
    home office, side-on, high key, no text anywhere.
 2. **Frame 2 was derived from frame 1 by image-to-image**, never as a second
    prompt from nothing. That is the only way the room survives the switch.
-3. Both were then run through `scripts/dither-scene.py`, which produces the
-   files in `src/assets/scene/`.
+3. Both were then run through `scripts/dither-scene.py`.
+
+The sources and the prompt that produced them are committed under
+`src/assets/scene/sources/`. They are not imported anywhere, so the build never
+touches them — they are there because a token change means re-running the
+script, and the script needs the photographs.
 
 The sources are photographs, not drawings. An earlier version of this section
 used hand-drawn cartoons; the maintainer replaced that direction on 2026-08-29
@@ -98,84 +145,168 @@ with *"ein Pixel Theme, was realistischer aussieht"*.
 ### Frame consistency (critical)
 
 Both prompts describe the same scene. These stay identical: room, window, desk,
-monitor, keyboard, mouse, mug, papers, camera position, focal length, crop,
-lighting, and the person.
+monitor, keyboard, mouse, mug, plant, camera position, focal length, crop, and
+the person.
 
-Only these may change: posture, where the hands are, and what is on the screen.
+Only these may change: the light, posture, where the hands are, what is on the
+screen, and the microphone that appears in frame 2.
 
 **How the pair in the repo was checked.** Feature positions were measured in
 both source photographs rather than eyeballed: the desk's front edge lands on
-row 893 and row 890, the mug on column 200 and column 201. The camera did not
-move. What looks at first like a wider shot in frame 2 is the person leaning
-back and uncovering more of the desk.
+row 548 in both, and the left-hand objects on columns 47, 114 and 157 in both.
+The camera did not move. Mean luminance is 0.63 against 0.19 — that difference
+is the exposure, and it is the point.
 
 ### The dither
 
-`scripts/dither-scene.py`, ordered Bayer 8×8 on a 640px grid. Three decisions
-in it are worth knowing before changing anything:
+`scripts/dither-scene.py`, ordered Bayer 8×8 on a 720px grid. Four decisions in
+it are worth knowing before changing anything:
 
-- **The glass gets its own tone curve.** Lifting the room is what makes the
-  frame read, and it is also what erases the monitor: in the sources the
-  windows sit a few percent apart, pale grey on pale grey. So everything
-  outside the monitor takes the global curve and the glass is stretched on its
-  own range. That range is measured on a sample box which excludes the person's
-  head, then applied to the whole glass — the head at 4/255 would otherwise own
-  both percentiles and flatten the clutter to nothing.
-- **Both frames share ONE glass range, measured on the cluttered frame.**
-  Per-frame percentiles would stretch the calm screen's sensor noise up to
-  match the busy one and quietly erase the difference the section is about.
-- **Dots sit on the bright parts.** The page floor is near black and the dots
-  are near white, so a dot has to mean light. Thresholding the other way round
-  prints a photographic negative: the window goes solid and the person glows.
+- **The two frames are inverses.** `manual` prints `--canvas` dots on an `--ink`
+  ground; `jarvis` prints `--ink` dots on `--canvas`. Two tokens do all of it;
+  there is no third colour anywhere in the treatment. Getting the polarity
+  backwards on either frame prints a photographic negative.
+- **There is no autocontrast.** Stretching each frame to the full range is the
+  obvious move and it destroys the pair — it lifts the night frame into a bright
+  picture of a dark room, and the section's whole claim is that one of these is
+  light and the other is not. The exposures are left alone.
+- **The gamma is solved, not set.** The two sources sit two and a half stops
+  apart, so one hand-tuned exponent cannot serve both, and a pair whose dot
+  coverage differs is a pair where the wipe reads as the picture getting heavier
+  rather than as the room changing. The exponent is bisected per frame until
+  coverage lands on `COVERAGE` (0.22), so both print at the same weight by
+  construction — and a regenerated photograph needs no re-tuning by hand.
+  Coverage is deliberately well under half: the mark is the minority on both
+  grounds, which is what keeps the light frame light and the dark frame dark.
+- **Local contrast, not a global curve.** A global curve has nothing left to
+  separate at the ends of the range, which is exactly where the subject is: the
+  lit monitor is the brightest thing in both frames, so it flattens to bare
+  paper and the windows piled across it — the picture's whole point —
+  disappear. Subtracting a blurred copy puts the edges back at every brightness.
+  This replaced an earlier version carrying hand-measured pixel boxes around the
+  monitor glass, which had to be re-measured whenever a photograph changed.
 
-The palette is baked into the PNGs rather than left to CSS. A mask would let
-the page recolour the dots, but a mask is resampled by the compositor and the
-crisp pixel grid is the entire point. **If the tokens change, re-run the
-script** — that is why it is committed. The frames are 640×360 and 10–12 kB;
-the page scales them up with `image-rendering: pixelated`, so one source dot
-lands on a whole number of device pixels instead of being smoothed into grey.
+The palette is baked into the PNGs rather than left to CSS. A mask would let the
+page recolour the dots, but a mask is resampled by the compositor and the crisp
+pixel grid is the entire point. **If the tokens change, re-run the script.**
+
+### The speech bubble
+
+The night frame carries one empty speech bubble with three dots in it, drawn
+into the dot grid after the halftone, tail pointing at the microphone. The
+maintainer asked for it by name on 2026-08-29 so that "he is speaking" reads
+without having to interpret the posture.
+
+**It is drawn by the script, never asked of the image model.** A model puts
+letters in a speech bubble whatever the prompt says; its outline would be
+dithered into a fuzzy smudge along with everything else; and the position would
+move every time a photograph is regenerated. Drawn into the grid it is exactly
+two dots thick and lands on the same lattice as the picture.
+
+Two passes, and both are needed: the fill clears its dots so the bubble reads as
+a hole punched in the picture, then the stroke sets the outline and the dots.
+Outline alone leaves the room showing through and it stops looking like a
+bubble.
+
+**`BUBBLE` is measured against the photograph.** Regenerating the night frame
+means re-measuring it. It also has a crop constraint: the page crops this 16:9
+frame into a box up to three times as wide as it is tall, anchored at 0.42 of
+the height, so only rows 0.17–0.75 survive on the shortest window the sticky
+layout still runs on. Keep the box inside 0.19–0.73 — a bubble at 0.15 loses its
+top edge, which is exactly what the first version did.
+
+The 0.42 anchor in `VoiceSwitch.astro` and `BUBBLE` here are a pair. Move one
+without the other and the bubble clips.
 
 ---
 
-## The tabs
+## The wipe
 
-Two tabs above the picture, labelled with the states.
+One canvas, two source frames, and a boundary that dissolves cell by cell.
+
+### Where the value comes from
+
+```
+through = clamp(-track.top / (track.height - innerHeight))   0..1 through the track
+wipe    = clamp((through - HOLD) / (1 - 2 * HOLD))           HOLD = 0.22
+```
+
+The reader arrives on a finished picture and leaves on the other one; the wipe
+owns the 56% in between. On the fallback layouts the two buttons set `wipe`
+directly, and a click is released again the next time the reader scrolls the
+section — otherwise one click would freeze the scrub for the rest of the visit.
+
+### How it is drawn
+
+```js
+drawFrame(view, 0);                    // the paper frame, whole stage
+drawFrame(layer, 1);                   // the ink frame, offscreen
+layer.globalCompositeOperation = "destination-in";
+layer.drawImage(mask, 0, 0, w, h);     // one pixel per cell, scaled up hard
+view.drawImage(layer, 0, 0, w, h);
+```
+
+A cell belongs to the incoming frame once the edge has passed it by more than
+its own Bayer threshold:
+
+```js
+const edge = -band + wipe * (cols + 2 * band);
+on = (edge - x) / band > BAYER[y & 7][x & 7];
+```
+
+The edge starts one band off the left of the picture and ends one band past the
+right, so the first and last cells get a full turn instead of appearing already
+finished.
+
+| Constant | Value | Why |
+|---|---|---|
+| `CELL` | 10 CSS px | larger than a printed dot on purpose — the edge has to be legible as it crosses |
+| `BAND` | 0.16 of the stage | several cells mid-turn at once, still an edge travelling rather than a fade |
+| `HOLD` | 0.22 each end | — |
+| `FRAME_MS` | 33 (~30fps) | the frames are a dot grid; the extra 30 buy nothing visible |
+
+**A mask canvas, not a clip path.** The dissolve zone is a few thousand cells. As
+a path that is a few thousand sub-paths to clip against, per frame; as a mask it
+is one small `ImageData` composited in a single `destination-in`. Three
+`drawImage` calls a frame either way, and the cost stops depending on how wide
+the zone is.
+
+**Smoothing off everywhere**, or the browser resamples the dither into grey mush
+and the treatment is simply gone.
+
+Nothing repaints while the section is off screen, and an unchanged `wipe`
+repaints nothing at all — a resize clears that latch, because a resized canvas
+is a cleared canvas and the crop and the cell grid have both moved.
+
+### What this replaced
+
+Until 2026-08-29 this section cross-faded the two frames on opacity, and this
+document forbade a wipe in as many words. The maintainer replaced that direction
+on the same day, pointing at the reference and asking for the scroll-driven
+version. **The rule that a picture change here is opacity-only is withdrawn.**
+
+---
+
+## The two states
+
+Two buttons set into the picture's bottom-left corner, rather than a row of
+their own: the section has exactly one viewport to spend, and a row above the
+photograph is a row the photograph does not get.
 
 - Real `<button role="tab">` inside a `role="tablist"`, never divs
 - `aria-selected` marks the active one; arrow keys move between them with a
   roving `tabindex`; the panel's `aria-labelledby` follows the selection
-- **Autoplay** switches every 4s and stops **permanently** at the first
-  interaction. It only runs while the section is on screen
+- The scrub drives them on a desktop; on the fallback layouts they are the whole
+  control, which is why they are real buttons and not decoration
 - The starting state is `manual`. The visitor should see the problem first
-
----
-
-## The cross-fade
-
-Both frames sit in the same box, `position: absolute`, `inset: 0`,
-`object-fit: cover`. Both are in the markup from the first paint — a frame
-fetched on the first switch flashes an empty box.
-
-```css
-[data-frame]                     { position: absolute; inset: 0; opacity: 0; transition: opacity .45s ease; }
-[data-frame][data-active="true"] { opacity: 1; }
-```
-
-**Opacity and nothing else.** No slide, no wipe, no zoom, no filter fade. The
-claim is "the same place, a different state", and movement contradicts it — the
-camera holding still is exactly what was measured for above.
-
-A version of this section shipped briefly with a sheet sliding in from the
-right (`b9921f8`). It was built to an instruction that contradicted this
-document, and it is not the direction.
 
 ---
 
 ## No scroll indicator in here
 
 The reader's position through the **page** is `PageChrome`'s marker on the left
-rail, rendered once from the layout. An earlier version carried a rail scoped
-to this section; the maintainer's requirement is explicitly the whole site
+rail, rendered once from the layout. An earlier version carried a rail scoped to
+this section; the maintainer's requirement is explicitly the whole site
 (*"wie weit man noch scrollt, bis man durch die Website fertig ist"*), and a
 second indicator disagreeing with the first is worse than none.
 
@@ -184,8 +315,7 @@ second indicator disagreeing with the first is worse than none.
 ## The figures
 
 Four values below the picture, in a grid whose 1px gaps show a
-hairline-coloured ground — the divider technique from `LOGOS.md`. Each cell is
-the number, an uppercase label, and a short qualifier.
+hairline-coloured ground — the divider technique from `LOGOS.md`.
 
 Every value is countable in the app's own source. None may be invented.
 
@@ -203,40 +333,38 @@ every provable value is a fixed property of the app and has no "before"
 counterpart, so a switching bar would need an invented number — which this same
 document forbids. The maintainer settled it on 2026-08-28: **the bar stays
 static.** Changing that needs four evidenced "before" values, not a design
-decision.
+decision. The reference's own bar counts; ours does not, and that is the
+difference between having the numbers and wanting them.
 
 ---
 
 ## Accessibility
 
 - The picture is a `role="tabpanel"` labelled by whichever tab is selected; the
-  controls above it are `role="tab"` in a `role="tablist"`
-- Each frame carries a real, descriptive `alt`
-- Both captions are real DOM text; the inactive one is `hidden`, and the caption
-  box reserves the same height in both states so switching does not shove the
-  figures up and down the page
-- `prefers-reduced-motion`: no autoplay, no cross-fade. The visitor switches for
-  themselves
+  controls are `role="tab"` in a `role="tablist"`
+- The canvas is `aria-hidden`. The two source `<img>` elements are in the markup
+  with real, descriptive `alt` text — they are the picture for a reader who
+  cannot see the canvas, and they are hidden from layout with `visibility`
+  rather than `display: none`, which is not guaranteed to fetch them
+- Both captions are real DOM text, stacked in one grid cell so the box holds the
+  taller of the two and switching does not shove the figures up and down
+- `prefers-reduced-motion`: no track, no scrub, no caption fade. The visitor
+  switches for themselves
 
 ---
 
 ## Forbidden
 
-- Slide, wipe, zoom or filter transitions. Opacity only
 - Re-encoding the frames through `astro:assets` — `?url` is load-bearing
-- Dropping `image-rendering: pixelated`; the browser smooths the dither away
+- Drawing the canvas with `imageSmoothingEnabled` left on
+- Autocontrast, or any per-frame normalisation that pulls the two exposures
+  together
+- A dot coverage near 0.5, which converges both frames on the same grey
 - Two independently generated frames whose room or camera visibly differ
 - Text inside a generated image, and any third-party mark
-- Invented figures
+- Invented figures, or a figure bar that counts
 - Another product's accent colour, typeface or section furniture
 - A bespoke `max-width` instead of a step from `layout.md`
+- A flex chain to the picture with a `min-height: 0` missing from any link
 - A second scroll indicator
-
----
-
-## Open question
-
-**The empty monitor in the `jarvis` frame is a large solid bright block.** It
-reads, but it is the brightest thing on a dark page. One number in
-`scripts/dither-scene.py` (`SCREEN_GAMMA`) takes it back. Left as it is until
-the maintainer has seen it in place.
+- Scroll maths outside a `requestAnimationFrame`
