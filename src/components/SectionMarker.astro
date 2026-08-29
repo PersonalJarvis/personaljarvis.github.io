@@ -83,20 +83,24 @@
     });
 
     /**
-     * Is this box actually held still, right now?
+     * WHICH element is actually held still, right now — or null.
      *
      * `[data-scroll-span]` is markup and says the section CAN pin. Whether it
      * DOES is a computed style: `Install` drops its own pin whenever the frame
      * is too short for four steps, and `VoiceSwitch` and the stargazers drop
      * theirs below their breakpoints. Ask the elements, and every one of those
      * cases is answered without this file knowing any of them.
+     *
+     * It returns the element rather than a boolean because the schedule needs
+     * two numbers off it — where it rests and how tall it is — and they are
+     * not the window's any more. See `TrackMeasure.pinRest`.
      */
-    const isPinned = (box: HTMLElement, pin: HTMLElement | null) => {
-      if (!pin) return false;
+    const stickyChild = (box: HTMLElement, pin: HTMLElement | null) => {
+      if (!pin) return null;
       for (let el: HTMLElement | null = box; el && el !== pin; el = el.parentElement) {
-        if (getComputedStyle(el).position === "sticky") return true;
+        if (getComputedStyle(el).position === "sticky") return el;
       }
-      return getComputedStyle(pin).position === "sticky";
+      return getComputedStyle(pin).position === "sticky" ? pin : null;
     };
 
     let spans: TrackSpan[] = [];
@@ -114,17 +118,23 @@
         tracks.map((track): TrackMeasure => {
           track.length = track.path.getTotalLength();
           const boxRect = track.box.getBoundingClientRect();
-          const pinned = isPinned(track.box, track.pin);
-          const pinRect = pinned ? track.pin!.getBoundingClientRect() : null;
+          const sticky = stickyChild(track.box, track.pin);
+          const pinRect = sticky ? track.pin!.getBoundingClientRect() : null;
+          /* Where it comes to REST, off the style, not where it happens to be
+           * this frame: the rect only reads that back while the pin is
+           * actually holding, and the schedule is worked out once for every
+           * scroll position at which it will. */
+          const rest = sticky ? parseFloat(getComputedStyle(sticky).top) || 0 : 0;
           return {
             boxTop: boxRect.top + top,
             boxHeight: boxRect.height,
             pinTop: pinRect ? pinRect.top + top : null,
             pinHeight: pinRect ? pinRect.height : 0,
+            pinRest: rest,
+            pinBox: sticky ? sticky.getBoundingClientRect().height : 0,
             end: track.end,
           };
         }),
-        viewport,
         maxScroll,
       );
     };

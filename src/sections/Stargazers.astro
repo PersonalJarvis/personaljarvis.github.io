@@ -199,12 +199,18 @@ const places = placed === 1 ? "one place" : `${clusters.length} places`;
 
   /* `section-full-height` is on this element in the markup, so the pinned box
      and the fallback block are the same box with one property different: it is
-     `height: 100svh` while it pins and `auto` when it does not, over a floor of
-     one screen either way. */
+     `height: var(--section-height)` while it pins and `auto` when it does not,
+     over a floor of one screen either way.
+
+     PINNED AT `--nav-height`, NOT AT 0, and one screen here means
+     `--section-height` rather than `100svh`: the nav is fixed over the whole
+     document and the page rests a boundary that far below the top of the
+     window, so a box pinned flush with the window sits higher than the section
+     it draws. See layout.css § "Section heights" for the derivation. */
   [data-viewport] {
     position: sticky;
-    top: 0;
-    height: 100svh;
+    top: var(--nav-height);
+    height: var(--section-height);
   }
 
   /*
@@ -238,10 +244,17 @@ const places = placed === 1 ? "one place" : `${clusters.length} places`;
    * squashed to a letterbox, and holding a reader still on either is a worse
    * bet than letting them past — `max-width` already takes most of that case.
    *
+   * THE QUERY SAYS 752 BECAUSE THAT RANGE WAS MEASURED IN BOXES, NOT WINDOWS.
+   * The pinned box is `--section-height` now — `2 x --nav-height` shorter than
+   * the window it stands in, see layout.css § "Section heights" — so the 600px
+   * box at the bottom of that run is what a 752px window gives today. The
+   * measurement is unchanged and so is what it says; only the frame it is
+   * quoted in moved.
+   *
    * The section is then exactly what it was before the track existed: one
    * ordinary full-height block. Nothing else in the file knows the difference.
    */
-  @media (max-width: 1023px), (max-height: 599px), (prefers-reduced-motion: reduce) {
+  @media (max-width: 1023px), (max-height: 751px), (prefers-reduced-motion: reduce) {
     [data-track] {
       height: auto;
     }
@@ -338,12 +351,18 @@ const places = placed === 1 ? "one place" : `${clusters.length} places`;
    * container still governs through `100%`, and this only stops the graphic
    * outgrowing the screen it has to fit on.
    *
-   * The subtraction is the section's own furniture: the two rules, the body's
-   * padding at its ceiling, and the nav the page keeps above everything —
-   * PLUS `2 x --section-inset`, which is what makes this a framed band rather
-   * than a section flush with its edges. docs/layout.md § "The inset is a
-   * share" names that term specifically: it is up to 80px at each end, and a
-   * viewport-derived cap that forgets it overflows the screen by 160px.
+   * The subtraction is the section's own furniture: the two rules and the
+   * body's padding at its ceiling — PLUS `2 x --section-inset`, which is what
+   * makes this a framed band rather than a section flush with its edges.
+   * docs/layout.md § "The inset is a share" names that term specifically: it is
+   * up to 80px at each end, and a viewport-derived cap that forgets it
+   * overflows the screen by 160px.
+   *
+   * THE NAV IS NOT IN IT ANY MORE. It used to be, as part of the 14rem, when
+   * this was measured against the whole window. It is measured against
+   * `--section-height` now, which is the pinned box's own height and already
+   * has the nav taken off it — twice, so that the section's two rules stand in
+   * equal air. Leaving the nav in the furniture would take it off a third time.
    */
   .stargazers-globe :global(.star-globe) {
     /* A quarter smaller than the column would allow (maintainer, 2026-08-29).
@@ -352,9 +371,17 @@ const places = placed === 1 ? "one place" : `${clusters.length} places`;
        one edit rather than four. */
     --globe-scale: 0.75;
 
+    /* `--section-height`, and the nav is NOT in the subtraction any more: the
+     * pinned box is that height, which already has the nav taken off it twice.
+     * Counting it a third time here would shrink the globe by a nav for
+     * nothing. What is left of the 14rem is this section's own furniture — the
+     * head above the globe and the body's padding at its ceiling. */
     width: min(
       calc(100% * var(--globe-scale)),
-      calc((100svh - 14rem - 2 * var(--section-inset)) * var(--globe-scale))
+      calc(
+        (var(--section-height) - 10rem - 2 * var(--section-inset)) *
+          var(--globe-scale)
+      )
     );
     margin-inline: auto;
   }

@@ -317,17 +317,22 @@ const figures = [
 
   [data-viewport] {
     position: sticky;
-    top: 0;
-    height: 100svh;
+    /* PINNED UNDER THE NAV, IN A BOX THE HEIGHT OF `--section-height`, so this
+     * section's two rules stand exactly where an ordinary section's do. The nav
+     * is fixed over the whole document since 2026-08-29, and the page rests a
+     * section boundary `--nav-height` below the top of the window; a child
+     * pinned at `top: 0` and a whole `100svh` tall therefore sat 76px higher
+     * than the section it belongs to, and its frame jumped by that much between
+     * the moment the section snapped and the moment the pin took hold. Pinning
+     * at the same offset the snap uses removes the jump, and taking `2 x
+     * --nav-height` off the height is what leaves the closing rule the same air
+     * the opening one has. The derivation is in layout.css § "Section
+     * heights". */
+    top: var(--nav-height);
+    height: var(--section-height);
     /* `--section-inset`, top and bottom, because this padding IS this section's
      * inset: it is the air between the section's own edge and the frame's two
-     * rules, which is what every other section spends on `.section-inset`.
-     *
-     * It used to be `4rem` over `--space-xl` — nav clearance over an arbitrary
-     * 32px — and that asymmetry is why this boundary looked different from
-     * every other one. The clearance was not needed either: the nav is sticky
-     * INSIDE the hero and has long since unstuck by the time this section is
-     * pinned. */
+     * rules, which is what every other section spends on `.section-inset`. */
     padding-block: var(--section-inset);
     overflow: hidden;
   }
@@ -664,10 +669,15 @@ const figures = [
    *   narrow    a three-screen scroll trap on a phone is worse than no
    *             animation, and the head's two columns have collapsed anyway
    *   short     the flex chain gives the picture whatever height is left, and
-   *             below about 880px of window that is a 4:1 letterbox slot the
-   *             photograph cannot survive — measured, not assumed: at that crop
-   *             the picture is down to the monitor and the head, and the
-   *             keyboard and the two hands are outside it
+   *             below about 880px of PINNED BOX that is a 4:1 letterbox slot
+   *             the photograph cannot survive — measured, not assumed: at that
+   *             crop the picture is down to the monitor and the head, and the
+   *             keyboard and the two hands are outside it. The query below asks
+   *             for 1030px of WINDOW, because the box is `--section-height` and
+   *             not `100svh` any more: it is `2 x --nav-height` shorter than
+   *             the window it is measured in, so the same box needs that much
+   *             more window to exist. The 880 is the figure that was measured
+   *             and the one to re-measure; 1030 is 880 plus the page chrome.
    *   calm      prefers-reduced-motion
    *
    * THIS IS A GEOMETRY DECISION AND NOTHING ELSE. It used to be a mode: the
@@ -678,7 +688,7 @@ const figures = [
    * tall or one block high — so only `calm` still means anything to the
    * script, and there is no longer a pair of conditions to keep spelled alike.
    */
-  @media (max-width: 1023px), (max-height: 879px), (prefers-reduced-motion: reduce) {
+  @media (max-width: 1023px), (max-height: 1029px), (prefers-reduced-motion: reduce) {
     [data-track] {
       height: auto;
     }
@@ -743,7 +753,7 @@ const figures = [
    */
 
   import { TURN_DOWN, downTheRail } from "@/lib/sectionTrack";
-  import { spanProgress } from "@/lib/scrollSpan";
+  import { trackProgress } from "@/lib/scrollSpan";
 
   /** Ordered threshold matrix, 8x8. The same one scripts/dither-scene.py prints
    * the frames with, so the dissolve lands in the frames' own rhythm. */
@@ -1404,7 +1414,7 @@ const figures = [
      * through the window is the whole input.
      */
     const fromScroll = (): number => {
-      const through = spanProgress(track.getBoundingClientRect(), window.innerHeight);
+      const through = trackProgress(track);
       return span(through, WIPE_FROM, WIPE_TO);
     };
 

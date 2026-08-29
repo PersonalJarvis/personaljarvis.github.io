@@ -260,8 +260,12 @@ function segments(body: string) {
 
   [data-viewport] {
     position: sticky;
-    top: 0;
-    height: 100svh;
+    /* Under the nav, in a box `2 x --nav-height` shorter than the window — the
+     * same two figures every pinned section on this page uses, so this
+     * section's opening rule lands where an ordinary section's does. See
+     * layout.css § "Section heights". */
+    top: var(--nav-height);
+    height: var(--section-height);
     /* ASYMMETRIC, AND EACH END FOR ITS OWN REASON.
      *
      * The TOP is this section's inset — the air between its own edge and the
@@ -458,7 +462,7 @@ function segments(body: string) {
    * the real threshold: below it the pin cannot be right at any width, and
    * above it the measurement decides.
    */
-  @media (max-width: 1279px), (max-height: 1059px), (prefers-reduced-motion: reduce) {
+  @media (max-width: 1279px), (max-height: 1211px), (prefers-reduced-motion: reduce) {
     [data-track] {
       height: auto;
     }
@@ -466,7 +470,7 @@ function segments(body: string) {
     [data-viewport] {
       position: static;
       height: auto;
-      padding-block: var(--space-xxl);
+      padding-block: var(--section-inset) var(--space-lg);
       overflow: visible;
     }
 
@@ -474,7 +478,7 @@ function segments(body: string) {
        the bottom one — take it away and the band floats. */
   }
 
-  /* The measured guard. Same three declarations as the query above, because
+  /* The measured guard. Same four declarations as the query above, because
      "not pinned" has to look identical however it was arrived at. */
   [data-unpinned] [data-track] {
     height: auto;
@@ -483,7 +487,7 @@ function segments(body: string) {
   [data-unpinned] [data-viewport] {
     position: static;
     height: auto;
-    padding-block: var(--space-xxl);
+    padding-block: var(--section-inset) var(--space-lg);
     overflow: visible;
   }
 
@@ -505,8 +509,9 @@ function segments(body: string) {
    * each step owns a quarter of the scrolling and the section only lets go
    * once the fourth has had its share.
    *
-   * `spanProgress` is the same function the section marker and the voice wipe
-   * measure with. Three things draw this page's scroll position and one
+   * `trackProgress` is the same function the section marker and the voice wipe
+   * measure with — and it reads the pinned box rather than the window, which
+   * is what keeps the fourth step from lighting up before the pin lets go. Three things draw this page's scroll position and one
    * formula decides it, or they drift apart in the way a reader actually
    * notices: the last step lighting up before the marker reaches the corner.
    *
@@ -531,7 +536,7 @@ function segments(body: string) {
    * forces layout, and doing that in the scroll handler ties the page's frame
    * rate to the wheel.
    */
-  import { spanProgress } from "@/lib/scrollSpan";
+  import { trackProgress } from "@/lib/scrollSpan";
 
   const section = document.querySelector<HTMLElement>("#install");
   const list = section?.querySelector<HTMLElement>("[data-steps]");
@@ -564,7 +569,7 @@ function segments(body: string) {
          the only value that overruns is a progress of exactly 1, at the last
          pixel of the pin, and it belongs to the last step. */
       const fromTrack = () => {
-        const progress = spanProgress(track.getBoundingClientRect(), window.innerHeight);
+        const progress = trackProgress(track);
         return Math.min(items.length - 1, Math.floor(progress * items.length));
       };
 

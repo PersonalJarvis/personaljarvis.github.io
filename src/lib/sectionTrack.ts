@@ -182,6 +182,24 @@ export interface TrackMeasure {
   pinTop: number | null;
   /** The pinning track's height. Meaningless when `pinTop` is null. */
   pinHeight: number;
+  /**
+   * Where the pinned child comes to REST, in viewport pixels from the top of
+   * the window, and how tall it is while it is held there.
+   *
+   * THESE TWO USED TO BE `0` AND `window.innerHeight`, and that was true only
+   * while every pinned child was `top: 0; height: 100svh`. The sections stand
+   * under the fixed nav now — `top: var(--nav-height)`, `--section-height`
+   * tall, see layout.css § "Section heights" — so the pin STARTS one nav
+   * further down the page and lasts `2 x --nav-height` longer than the window
+   * would say. Assume the window and the square walks a section 152px shorter
+   * than the one the reader is scrolling: it reaches the closing corner at 94%
+   * and stands there for the rest, which is precisely the "not keeping up" the
+   * schedule was written to fix.
+   *
+   * Both are meaningless when `pinTop` is null.
+   */
+  pinRest: number;
+  pinBox: number;
   /** Whether a rule closes this section — how long its path is. */
   end: TrackEnd;
 }
@@ -253,15 +271,20 @@ export interface TrackSpan {
  */
 export const scheduleTracks = (
   measures: readonly TrackMeasure[],
-  viewport: number,
   maxScroll: number,
 ): TrackSpan[] => {
   const bounded = (value: number) => Math.max(0, Math.min(maxScroll, value));
 
   const spans = measures.map((measure): TrackSpan => {
-    const pin = measure.pinTop === null ? 0 : measure.pinHeight - viewport;
+    /* The pin lasts until the track's BOTTOM reaches the line the child rests
+     * on plus the child's own height — so it is the track minus the child, not
+     * the track minus the window, and it starts one `pinRest` before the track
+     * reaches the top of the window. */
+    const pin = measure.pinTop === null ? 0 : measure.pinHeight - measure.pinBox;
     const pinned = measure.pinTop !== null && pin > 0;
-    const enter = pinned ? (measure.pinTop as number) : measure.boxTop;
+    const enter = pinned
+      ? (measure.pinTop as number) - measure.pinRest
+      : measure.boxTop;
     const span = pinned ? pin : measure.boxHeight;
     const leave = enter + span * walkShare(measure.end);
     return { enter: bounded(enter), leave: bounded(leave), hand: bounded(leave) };

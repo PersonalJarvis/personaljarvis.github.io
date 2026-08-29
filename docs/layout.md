@@ -201,16 +201,18 @@ sticky child:
 
 ```css
 [data-track]     { height: 300svh; }                 /* the running length */
-[data-viewport]  { position: sticky; top: 0;
-                   height: 100svh; overflow: hidden; }
+[data-viewport]  { position: sticky; top: var(--nav-height);
+                   height: var(--section-height); overflow: hidden; }
 ```
 
-The reader scrolls `track - viewport` of distance and sees one screen. That
-distance is the animation's timeline: `-track.top / (track.height -
-innerHeight)` is a clean 0..1, measured inside a `requestAnimationFrame` like
-every other scroll figure on this site.
+The reader scrolls `track - child` of distance and sees one screen. That
+distance is the animation's timeline: `(child.top - track.top) / (track.height -
+child.height)` is a clean 0..1, measured inside a `requestAnimationFrame` like
+every other scroll figure on this site. It is the **child**, not the window, on
+both halves — `trackProgress` in `src/lib/scrollSpan.ts` is the one place it is
+written, and the rule below says what happens when it is not.
 
-Three rules come with it, and each one has already cost a defect:
+Four rules come with it, and each one has already cost a defect:
 
 - **Every height between the sticky box and the element that gives carries
   `min-height: 0`.** A flex item refuses to shrink below its content by default,
@@ -226,10 +228,26 @@ Three rules come with it, and each one has already cost a defect:
   is legible enough to look deliberate and wrong enough to read badly. Anything
   that has to be **read** at the very top of the window takes
   `var(--nav-height)` of clearance and gives the same figure back out of its
-  height. A pinned frame that already holds its own content an inset down from
-  the section's edge needs nothing extra, and should not have a nav-sized gap
-  bolted on top of the inset — that asymmetry is what made this boundary look
-  unlike every other one.
+  height.
+
+  **A pinned frame is not the exception it looks like.** Its inset does hold its
+  own content clear, so nothing has to be bolted on top of it — but the frame
+  still has to land where an ordinary section's band lands, and an ordinary
+  section is pushed `var(--nav-height)` down the window by the snap before its
+  inset even starts. A child at `top: 0` therefore opens 76px higher than every
+  band on the page, and jumps by exactly that much at the moment the pin takes
+  hold. `top: var(--nav-height)` with `height: var(--section-height)` is the
+  same two measurements arrived at from the other side: no gap bolted on, no
+  jump, and the frame's two rules in the same air as everybody else's — 156px at
+  each end at 2560x1249, measured.
+- **Measure the progress off the pinned box, not off the window.**
+  `trackProgress` in `src/lib/scrollSpan.ts` reads the child: the span runs from
+  where the child rests to where the track's bottom reaches the end of it. Pass
+  `window.innerHeight` instead and the scrub finishes `2 x --nav-height` of
+  scrolling early — 152px of 2650 on the voice section, so the picture stops
+  changing and then stands still for the last 6% of the pin. `scheduleTracks`
+  carries the same two numbers as `pinRest` and `pinBox`, or the square reaches
+  the closing corner at 94% and waits there.
 - **Have a floor, and fall out of the pattern below it.** The element that gives
   gets whatever height is left, and on a short window that is a letterbox slot
   nothing survives. Below the floor the track collapses to `auto`, the child
@@ -970,12 +988,51 @@ to be adjacent. It is also the one number that tunes the page's pacing.
 viewport — such as section 6's `--stage-cap` — must add `2 x --section-inset`
 to its chrome figure, or the section overflows its screen.
 
+### One screen is `--section-height`, not `100svh`
+
+```css
+--section-height: calc(100svh - 2 * var(--nav-height));
+```
+
+**A section that fills a screen is the window less TWICE the nav, and both
+subtractions are load-bearing.** The page rests on a section boundary and
+`scroll-padding-block-start` puts that boundary `--nav-height` below the top of
+the window, so the nav never lands on a section's opening rule. A section that
+is a whole `100svh` therefore hangs the same `--nav-height` out of the *bottom*
+of the window, and the air under its closing rule is the inset minus the nav.
+Measured on the built page at 2560x1249: **156px above the opening rule and 4px
+under the closing one**, on every one-screen section — reported by the
+maintainer on 2026-08-29 as one end being roomy and the other all but touching
+the edge of the window.
+
+Taking the nav off *once* only pays back what the snap took; the two figures
+come out 156 and 80. With `V` the window, `N` the nav and `I` the inset, the air
+above the opening rule is `N + I` and the air under the closing rule is
+`V - N - H + I`, so `H = V - 2N` is the one height at which they match — and
+they then both read `N + I` at every window size.
+
+**Everything that fills a screen reads the token, and nothing writes the
+arithmetic out again.** Ordinary sections through `.section-full-height`; a
+pinned section as its sticky child's height, which also pins at
+`--nav-height` so its frame lands on the same two figures while it is held; and
+any cap sized against the screen as the term to subtract from — `--stage-cap`
+in sections 6 and 8, the globe's width in the stargazers. A hand-written
+`min-h-svh` is exactly the screen the snap does not leave room for.
+
+**A window-height threshold moves with it.** The three pinned sections give up
+their pin below a window height at which their content stops fitting, and that
+figure was measured against the *box*, not the window: the box is now
+`2 x --nav-height` shorter than the window it stands in, so each query gained
+that much — voice 880 → 1030, install 1060 → 1212, stargazers 600 → 752. The
+measurements behind them are unchanged; only the frame they are quoted in
+moved.
+
 ### The markup
 
 Two classes on two elements that are already there:
 
 ```astro
-<section id="…" class="relative flex min-h-svh flex-col">
+<section id="…" class="section-full-height relative flex flex-col">
   <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
     <div class="section-bounds section-bounds--fill">
       <SectionTrack nested />
@@ -1297,3 +1354,4 @@ in the same file:
 |---|---|---|
 | `--section-inset` | `clamp(32px, 7svh, 80px)` | Air outside a section's two rules. The gap between two sections is twice it |
 | `--section-pad` | `clamp(48px, 6svh, 80px)` | Air inside them, in an auto-height band |
+| `--section-height` | `calc(100svh - 2 * var(--nav-height))` | How tall a one-screen section is. **Derived, not a preference** — it is the one height at which the snap leaves equal air above the opening rule and under the closing one. Change `--nav-height` and this follows; change this by hand and the two ends stop matching |

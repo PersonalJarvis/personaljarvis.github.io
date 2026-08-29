@@ -125,14 +125,51 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Section heights
+ * Section heights — one screen is the window MINUS TWICE THE NAV
  *
  * svh, not vh: on iOS the address bar collapses on scroll, and vh is measured
  * against the collapsed viewport, so a 100vh hero jumps as the bar animates.
+ *
+ * WHY TWICE, AND NOT ONCE OR NONE. The page rests on a section boundary and
+ * `scroll-padding-block-start` puts that boundary `--nav-height` below the top
+ * of the window, so the nav never covers a section's opening rule. A section
+ * that is a whole `100svh` therefore hangs the same `--nav-height` out of the
+ * BOTTOM of the window, and the air under its closing rule is
+ * `--section-inset` minus the nav — measured on the built page at 2560x1249 on
+ * 2026-08-29: 156px above the opening rule and 4px under the closing one, on
+ * every one-screen section. The maintainer reported exactly that ("oben ist
+ * richtig viel Space", the bottom rule all but touching the edge of the
+ * window).
+ *
+ * One `--nav-height` off the height only pays back what the snap took: the
+ * section then ends level with the bottom of the window, and the two figures
+ * come out 156 and 80. It takes the SECOND one to make them equal, and that is
+ * the whole derivation — with `V` the window, `N` the nav and `I` the inset,
+ * the air above the opening rule is `N + I` and the air under the closing rule
+ * is `V - N - H + I`, so `H = V - 2N` is the one height at which they match.
+ * Both come out at `N + I` — 156px at that window — whatever the window is.
+ *
+ * IT IS ONE TOKEN BECAUSE THE ANSWER IS ONE HEIGHT. Every section that fills a
+ * screen reads it: the ordinary ones through `.section-full-height`, the pinned
+ * ones as the height of their sticky child (which also pins at
+ * `--nav-height`, so its frame lands on the same two figures while it is held),
+ * and anything sizing a picture against the screen as the term to subtract
+ * from. Written out per section it is a copy of a fact about the page chrome,
+ * and the section that misses the next change to it is the one boundary that
+ * looks wrong with nothing in its own file to explain why.
+ *
+ * `--nav-height` is defined further down this file, next to the nav's own
+ * boxes. Custom properties resolve where they are USED, not where they are
+ * written, so the order does not matter — and the nav's height belongs beside
+ * the nav.
  * ------------------------------------------------------------------------ */
 
+:root {
+  --section-height: calc(100svh - 2 * var(--nav-height));
+}
+
 .section-full-height {
-  min-height: 100svh;
+  min-height: var(--section-height);
 }
 
 /* ---------------------------------------------------------------------------
@@ -779,7 +816,7 @@ body > section::before {
  * The whole pattern is two classes on two elements that are already in the
  * markup — the Container, and the block inside it:
  *
- *   <section class="relative flex min-h-svh flex-col">
+ *   <section class="section-full-height relative flex flex-col">
  *     <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
  *       <div class="section-bounds section-bounds--fill">
  *         <SectionTrack nested />
@@ -967,8 +1004,10 @@ body > section::before {
 
 /* The band fills what the section has left over.
  *
- * Only for a section with a height of its own — `min-h-svh` or
- * `.section-full-height`. Without it the band wraps its content and the bottom
+ * Only for a section with a height of its own, which on this page means
+ * `.section-full-height` and nothing else — a hand-written `min-h-svh` is the
+ * one screen the snap does NOT leave room for, see "Section heights" above.
+ * Without it the band wraps its content and the bottom
  * rule stops where the text stops instead of standing an inset above the
  * section's bottom edge, which is the whole point of the frame. It is a
  * modifier and not part of the base because a bounded band in an auto-height

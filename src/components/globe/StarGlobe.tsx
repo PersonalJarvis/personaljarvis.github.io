@@ -70,7 +70,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { LAND_LAT_CELLS, LAND_LON_CELLS, LAND_MASK_BASE64 } from "@/data/land-mask";
-import { spanProgress } from "@/lib/scrollSpan";
+import { trackProgress } from "@/lib/scrollSpan";
 import {
   buildDotField,
   dotAlpha,
@@ -478,7 +478,7 @@ export function StarGlobe({ clusters }: GlobeProps) {
        * page that ignored the request. */
       const scrolled =
         span && !motion.matches
-          ? spanProgress(span.getBoundingClientRect(), window.innerHeight) * SCROLL_TURN
+          ? trackProgress(span) * SCROLL_TURN
           : 0;
 
       view.sinSpin = Math.sin(spin + scrolled);

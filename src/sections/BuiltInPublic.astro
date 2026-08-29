@@ -163,7 +163,7 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
 <section
   id="built-in-public"
   aria-labelledby="bip-heading"
-  class="relative flex min-h-svh flex-col"
+  class="section-full-height relative flex flex-col"
   data-bip
   data-active={FEATURED.id}
   data-active-uploaded={FEATURED.uploaded}
@@ -473,9 +473,13 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
    * everywhere else — which is the same mistake as a hard line break in a
    * headline, one layer down. */
   [data-bip] {
+    /* `--section-height` and not `100svh`: this section IS that height, so a
+     * cap measured against the whole window overshoots the box it has to fit
+     * in by `2 x --nav-height` and pushes the closing rule off the screen. See
+     * layout.css § "Section heights". */
     --stage-cap: clamp(
       190px,
-      calc(100svh - 434px - 2 * var(--section-inset)),
+      calc(var(--section-height) - 434px - 2 * var(--section-inset)),
       460px
     );
   }

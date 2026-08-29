@@ -310,9 +310,13 @@ const WAYS_IN = [
     width: 100%;
     margin-top: var(--space-xl);
     aspect-ratio: 1440 / 880;
+    /* `--section-height`, not `100svh`: this section IS that height — the
+     * window less `2 x --nav-height`, see layout.css § "Section heights" — so a
+     * cap measured against the whole window lets the stage grow past the box it
+     * has to fit in and pushes the closing rule off the bottom of the screen. */
     max-height: clamp(
       240px,
-      calc(100svh - 360px - 2 * var(--section-inset)),
+      calc(var(--section-height) - 360px - 2 * var(--section-inset)),
       780px
     );
   }
