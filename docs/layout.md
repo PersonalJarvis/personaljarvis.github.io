@@ -609,18 +609,13 @@ neighbour below opens on a pinned frame an inset further down, so there is
 nothing at that joint to cross. The two blocks above it close on
 `.section-run-rule` and are ordinary closed sections.
 
-`Hero.astro` is the other, and it was found by the defect it caused: **nothing
-rail-to-rail is drawn at the hero's bottom edge.** What closes the hero is its
-own stage frame, a rounded card 75px higher up, and the last
-`--section-inset` of the section is the tail that pulls that card's line clear
-of the fold. Closed, the square turned off the rail at the bottom of the box and
-ran straight across bare ground to the other rail (maintainer, 2026-08-29: "er
-ist nicht ganz auf der Linie"). Open, it comes down the rail and carries on into
-the logo strip's opening rule, which is the next line that actually exists.
+`Hero.astro` is the other: nothing rail-to-rail is drawn at the hero's
+bottom edge, because what closes it is its own stage frame, a rounded card
+75px higher up. Both of them turn the corner all the same — on the opening
+rule of the section below, which is the line the reader sees at that joint.
 
-**A section that draws a rule must not be `open`**, or the square runs past a
-line the reader can see; **a section that does not must not be closed**, or it
-crosses one they cannot.
+**A section that draws a rule must not be `open`**, or the square turns on
+the wrong one of the two lines at its joint.
 
 Track all three on the section rather than `nested` inside a band, and that part
 is unchanged: the three `<section>` elements tile the document, so the marker's
@@ -673,6 +668,25 @@ A fixed layer has none of those. Nothing clips it, there is one transform to
 write, and the question "whose perimeter is this" is a comparison against
 numbers worked out once.
 
+#### The reading line
+
+**The square marks the reader, not the top of the window.** It rides four
+tenths of the way down the screen — the line the eye sits on while reading —
+and it holds that height for the whole of an ordinary section, so it is always
+beside what is being read rather than somewhere else on the page.
+
+Everything used to be measured against `scrollY` alone, which is the same thing
+as measuring against the window's top edge. Every hand-over from one section to
+the next therefore happened on the first row of pixels on the screen: behind the
+fixed nav, with half the square cut off by the edge, nowhere near the reader.
+The maintainer's ask on 2026-08-29 was plain — "du machst halt, dass es mit dem
+User ungefähr immer auf einer Höhe ist" — and the exception is the one they
+already signed off: **a section that pins**, where the page stops under the
+reader and the square walks the frame instead.
+
+Four tenths clears the nav at every window height and leaves room below for the
+square to dip onto a rule without leaving the screen.
+
 #### The schedule
 
 Each tracked section gets three scroll positions, in document coordinates,
@@ -680,17 +694,18 @@ computed on load and on every resize — never per frame:
 
 | | |
 |---|---|
-| `enter` | progress 0. The square is on this section's entry corner |
-| `leave` | progress 1. The square is on its exit corner |
-| `hand` | the next section's `enter` — where the square is handed on |
+| `enter` | where this section takes the square |
+| `leave` | where it hands it on: its own line has reached the reading line |
+| `hand` | the next section's `enter` |
 
-`enter`..`leave` is **the box's own passage for an ordinary section** — its top
-edge to its bottom edge crossing the top of the window — and **the pinned
-stretch for a section that holds a sticky child**: the track's top, to the point
-`viewport` short of the track's bottom, which is the last moment the child is
-still pinned. Those are the two shapes a section has, and they are the same two
-`src/lib/scrollSpan.ts` branches on, so the marker and anything else scrubbing
-on the same section agree to the pixel.
+For an ordinary section both ends are measured **against the reading line**: it
+takes the square when its opening edge reaches that line, and hands it on when
+the line it closes over reaches it. For **a section that pins a sticky child**
+the span is the pinned stretch — the track's top, to the point one child short
+of the track's bottom, which is the last moment the child is still held. Those
+are the two shapes a section has, and the pinned one is measured exactly as
+`src/lib/scrollSpan.ts` measures it, so the marker and the wipe that scrubs on
+the same section agree to the pixel.
 
 **Whether a section is pinned is read off computed style, not off the markup.**
 `[data-scroll-span]` says a section *can* pin. `Install` carries a track at
@@ -702,24 +717,45 @@ where it has just stopped pinning is about a dozen pixels: the square crosses
 the whole section in one wheel notch and then sits in the corner. That was "it
 does not work at all in How to install Jarvis".
 
-**`leave` to `hand` is a gap, and the square walks it.** Boxes do not tile the
-document, however much the old note here claimed they did: a band is held
-`--section-inset` inside its section, a pinned frame stops a whole viewport
-before its track does, and the hero's box ends 80px above the logo strip's
-opening rule. Left alone the square reaches a corner, waits the gap out and then
-jumps to wherever the next box starts. Instead it slides from one section's exit
-corner to the next one's entry corner over exactly that stretch of scrolling.
-Both ends are on the **same rail** — that is precisely what the serpentine
-guarantees — so the slide is vertical, and it reads as the square carrying on
-down a line that is already drawn there.
+#### Turning the corner
 
-That is also what keeps it on the screen at the end of a pinned section: the
-frame leaves upwards, the next section's box arrives from below, and the square
-crosses from one to the other in view the whole way.
+Inside an ordinary section the square does exactly one thing that is not "hold
+the reading line", and it is the corner:
 
-`hand` for the last tracked section is the end of the document. Its bottom edge
-can never reach the top of the window — the page runs out first — so on its own
-height the square would stop somewhere in the middle and never finish the page.
+| | |
+|---|---|
+| on the line | the rule is still more than two dips below. The square rides the rail at the reading line |
+| coming down | the rule is between two dips and one. The square walks down its rail to meet it, arriving exactly as the rule reaches one dip below the line |
+| across | the square is **on** the rule, riding it up to the reading line while it crosses to the other rail |
+
+A dip is a fixed distance — nine hundredths of the window — and **not** a share
+of the section, which is what keeps "roughly always at one height" true for a
+331px band and a three-screen block alike. Every one of the three puts the
+square on a line the reader can see, and it lands on the far rail at the reading
+line at the very moment the rule passes it, which is where the section below
+starts.
+
+**The line it turns on is not always its own bottom edge.** A joint carries
+exactly one line and either side may draw it: an ordinary section closes on its
+own rule, but `Clis` draws nothing under itself and the voice section below
+opens on its pinned frame's rule an inset further down. Measured against its own
+box, the square turned the corner 80px above a line the reader can see and then
+walked straight past the line itself — "da sollte es eigentlich nach links
+abbiegen, man geht dann einfach geradeaus weiter" (maintainer, 2026-08-29).
+`open` therefore no longer means "hands over without crossing"; it means **the
+line at my bottom joint is drawn by the section below me**.
+
+**`leave` to `hand` is a gap, and there is nothing to see in it.** Boxes do not
+tile the document: a band is held `--section-inset` inside its section, a pinned
+frame stops a whole viewport before its track does, and the hero's box ends 80px
+above the logo strip's opening rule. Between two ordinary sections both sides of
+that gap are the same rail at the same height, so the square simply carries on
+where it already is. Where one of the two is **pinned**, its end of the joint is
+a corner of a frame rather than a point on the reading line, and the square
+glides from one to the other over the scrolling between them — which is what
+keeps it on screen while a pinned frame is arriving or leaving.
+
+`hand` for the last tracked section is the end of the document.
 
 #### The box it walks
 

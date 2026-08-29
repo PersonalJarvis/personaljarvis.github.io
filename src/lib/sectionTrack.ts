@@ -200,43 +200,78 @@ export interface TrackMeasure {
    */
   pinRest: number;
   pinBox: number;
-  /** Whether a rule closes this section — how long its path is. */
+  /** Whether a rule closes this section — which line it hands over on. */
   end: TrackEnd;
+  /**
+   * Document y of the DRAWN line this section hands the square over on, or
+   * null when the page draws nothing at that joint.
+   *
+   * It is not always this box's own bottom edge, and that is the whole point.
+   * The joint between two sections carries exactly one line, and either side
+   * may be the one drawing it: an ordinary section closes on its own rule, but
+   * `Clis` draws nothing under itself and the voice section below opens on its
+   * pinned frame's rule an inset further down. Measured against the box's own
+   * bottom, the square turned the corner 80px above a line the reader can see
+   * and then walked straight past the line itself — "da sollte es eigentlich
+   * nach links abbiegen, man geht dann einfach geradeaus weiter" (maintainer,
+   * 2026-08-29).
+   */
+  cross: number | null;
 }
 
 /**
- * The share of a section's own scrolling that walking its path costs.
+ * Where the square rides, as a share of the window's height.
  *
- * ONE SPEED FOR THE WHOLE PAGE, in path units per pixel of scroll. A closed
- * section's path is 200 units and it spends all of its scrolling on them; an
- * open section's is 100, so it spends half, and what is left is the square
- * carrying on down the same rail into the section below — which is exactly
- * what the gap between `leave` and `hand` is drawn as.
+ * THE SQUARE MARKS THE READER, NOT THE TOP OF THE WINDOW. Everything used to be
+ * measured against `scrollY` alone, which is the same as measuring against the
+ * window's top edge — so every hand-over from one section to the next happened
+ * on the first row of pixels on the screen, behind the fixed nav, with half the
+ * square cut off by the edge. The maintainer's ask on 2026-08-29 was plain:
+ * "du machst halt, dass es mit dem User ungefähr immer auf einer Höhe ist".
  *
- * SPENDING ALL OF IT ON 100 UNITS IS THE DEFECT THIS REPLACED, and it is worth
- * spelling out because the arithmetic hides it. An open section's square
- * travels one box height down the box while the box travels one box height up
- * the window: the two cancel exactly, and the square stands still at the top of
- * the window for the whole section. `Clis` did that for its entire height, and
- * it is half of what the maintainer meant on 2026-08-29 by the marker "not
- * keeping up" — it was not lagging there, it was stopped.
+ * A line four tenths down the window is where the eye sits while reading a
+ * screen, it clears the nav at every window height, and it leaves room below
+ * for the square to dip onto a rule without leaving the screen.
  */
-export const walkShare = (end: TrackEnd): number =>
-  (end === "closed" ? RAIL + CLOSING_RULE : RAIL) / TOTAL;
+export const READING_SHARE = 0.4;
+
+/**
+ * How far the square leaves the reading line to meet a rule, as a share of the
+ * window's height — and, in scroll, how long it then takes to cross it.
+ *
+ * THE DIP IS THE ONLY THING THAT MOVES THE SQUARE OFF THE READING LINE, and it
+ * is a fixed distance rather than a share of the section, which is what keeps
+ * the promise "roughly always at one height" on a section of any length. The
+ * square sits exactly on the line until the rule is two dips below it, comes
+ * down the rail to meet it, rides it across to the other rail, and arrives back
+ * on the reading line exactly as the rule passes it.
+ */
+export const CORNER_SHARE = 0.09;
 
 /**
  * When one section owns the square, and when it hands it on.
  *
- * `enter`..`leave` is the stretch of scrolling the square spends walking that
- * section's perimeter — progress 0 to 1. `hand` is where the NEXT section takes
- * over, and it is never earlier than `leave`: what lies between the two is dead
- * scrolling that belongs to no section's box, and the square crosses it as a
- * slide down the rail rather than by parking in a corner.
+ * `enter`..`leave` is the stretch of scrolling the square spends on this
+ * section. `hand` is where the NEXT one takes over, and it is never earlier
+ * than `leave`: what lies between the two is dead scrolling that belongs to no
+ * section's box, and the square crosses it rather than parking in a corner.
+ *
+ * `pinned` says which of the two shapes this section has, because they are read
+ * differently and a reader can tell them apart on sight. A FLOWING section
+ * scrolls past: the square holds the reading line on this section's rail and
+ * only leaves it to turn the corner. A PINNED one stops under the reader: the
+ * page stands still, so the square walks the frame's whole perimeter over the
+ * scrolling the pin costs — which is the one the maintainer signed off on
+ * ("bei einer Sektion, wo man stehen bleibt, da funktioniert es perfekt",
+ * 2026-08-29) and which is left exactly as it was.
  */
 export interface TrackSpan {
   enter: number;
   leave: number;
   hand: number;
+  pinned: boolean;
+  /** Document y of the line this section turns the corner on, or null. */
+  cross: number | null;
 }
 
 /**
@@ -244,36 +279,38 @@ export interface TrackSpan {
  * where, in document scroll positions.
  *
  * WHY A SCHEDULE AND NOT A TEST PER FRAME. The old loop asked every section
- * every frame whether its driver had crossed the top of the window. That is a
- * dozen forced layout reads a frame for an answer that only changes when the
- * page is resized, and — worse — it asked the question of the DRIVER while the
- * square was drawn in the BOX. For a pinned section those are different
- * elements: the track keeps the square long after the frame it is drawn in has
- * scrolled off the top, so the square left the screen for the best part of a
- * viewport at the end of every pinned section. That is the marker "just
- * disappearing" over `This is being built in public` (maintainer, 2026-08-29).
- * Computed once, the schedule is read with a comparison instead.
+ * every frame whether it had crossed the top of the window. That is a dozen
+ * forced layout reads a frame for an answer that only changes when the page is
+ * resized. Computed once, the schedule is read with a comparison instead.
+ *
+ * EVERY POSITION IS MEASURED AGAINST THE READING LINE, not against the top of
+ * the window. A flowing section takes the square when its opening edge reaches
+ * that line and hands it on when the line it closes over reaches it — so what
+ * the square marks is the section the reader is LOOKING at, and every hand-over
+ * happens in plain sight in the middle of the screen instead of on the first
+ * row of pixels behind the nav.
  *
  * WHY THE SPANS ARE FORCED TO TILE. Boxes do not: a band is held
  * `--section-inset` inside its section, a pinned frame stops a whole viewport
  * before its track does, and the hero's box ends 80px above the logo strip's
  * opening rule. Left alone, the square reaches a corner, waits out the gap and
  * then jumps to wherever the next box starts. Handing over on `hand` — the next
- * section's `enter` — and sliding across the gap instead is what makes the
- * square move continuously all the way down the page. Both ends of every gap
- * sit on the SAME rail, because that is exactly what the serpentine guarantees,
- * so the slide is vertical and reads as the square carrying on down the line.
+ * section's `enter` — is what makes the square move continuously all the way
+ * down the page. Both ends of every gap sit on the SAME rail at the SAME
+ * height, because that is what the serpentine and the reading line together
+ * guarantee, so there is nothing to see at the joint at all.
  *
- * `maxScroll` is the document's own last scroll position. It closes the last
- * section, whose bottom edge can never reach the top of the window — on its own
- * height the square would stop somewhere in the middle and never finish the
- * page.
+ * `maxScroll` is the document's own last scroll position, and it closes the
+ * last section: its rule can never reach the reading line, because the page
+ * runs out first.
  */
 export const scheduleTracks = (
   measures: readonly TrackMeasure[],
+  viewport: number,
   maxScroll: number,
 ): TrackSpan[] => {
   const bounded = (value: number) => Math.max(0, Math.min(maxScroll, value));
+  const reading = viewport * READING_SHARE;
 
   const spans = measures.map((measure): TrackSpan => {
     /* The pin lasts until the track's BOTTOM reaches the line the child rests
@@ -282,13 +319,28 @@ export const scheduleTracks = (
      * reaches the top of the window. */
     const pin = measure.pinTop === null ? 0 : measure.pinHeight - measure.pinBox;
     const pinned = measure.pinTop !== null && pin > 0;
+    const closes = measure.cross ?? measure.boxTop + measure.boxHeight;
     const enter = pinned
       ? (measure.pinTop as number) - measure.pinRest
-      : measure.boxTop;
-    const span = pinned ? pin : measure.boxHeight;
-    const leave = enter + span * walkShare(measure.end);
-    return { enter: bounded(enter), leave: bounded(leave), hand: bounded(leave) };
+      : measure.boxTop - reading;
+    const leave = pinned ? enter + pin : closes - reading;
+    return {
+      enter: bounded(enter),
+      leave: bounded(leave),
+      hand: bounded(leave),
+      pinned,
+      cross: measure.cross,
+    };
   });
+
+  /* IN ORDER, WHATEVER THE MEASUREMENTS SAY. A pinned section's `enter` is its
+   * track's, a flowing one's is its box's less the reading line, and the two
+   * are not the same yardstick — so the sequence has to be made monotonic here
+   * rather than assumed. Out of order, the scan that names the owner ("the last
+   * section the reader has entered") would skip one entirely. */
+  for (let i = 1; i < spans.length; i++) {
+    spans[i].enter = Math.max(spans[i].enter, spans[i - 1].enter);
+  }
 
   for (let i = 0; i < spans.length; i++) {
     const next = spans[i + 1];

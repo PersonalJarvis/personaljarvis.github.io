@@ -39,6 +39,8 @@
 
 <script>
   import {
+    CORNER_SHARE,
+    READING_SHARE,
     scheduleTracks,
     sidesForTracks,
     trackPath,
@@ -56,25 +58,29 @@
 
   if (dot && layers.length > 0) {
     /* The serpentine, folded over document order — the only place that order is
-     * knowable, since a component cannot see its own siblings. How a section
-     * ENDS travels on the element, because it is a fact about that section's own
-     * markup; where it STARTS depends on every section above it. */
-    const sides = sidesForTracks(
-      layers.map((layer): TrackEnd =>
-        layer.dataset.sectionTrack === "open" ? "open" : "closed",
-      ),
-    );
+     * knowable, since a component cannot see its own siblings.
+     *
+     * EVERY JOINT ON THIS PAGE CARRIES A LINE, so every section turns the
+     * corner and the sides simply alternate. `open` no longer means "hands over
+     * without crossing"; it means "the line at my bottom joint is drawn by the
+     * section BELOW me" — see `TrackMeasure.cross`. The fold is still done by
+     * `sidesForTracks` rather than by `index % 2`, because the day a joint
+     * really draws nothing, the chain has to keep the side rather than flip it,
+     * and that is the one rule that holds for both cases. */
+    const sides = sidesForTracks(layers.map((): TrackEnd => "closed"));
 
     const tracks = layers.map((layer, index) => {
       const box = layer.querySelector<HTMLElement>(".section-track__box")!;
       const path = layer.querySelector<SVGPathElement>("path")!;
-      const end: TrackEnd = layer.dataset.sectionTrack === "open" ? "open" : "closed";
       /* Written before getTotalLength reads it. */
-      path.setAttribute("d", trackPath(sides[index], end));
+      path.setAttribute("d", trackPath(sides[index], "closed"));
       return {
         box,
         path,
-        end,
+        side: sides[index],
+        /* Whether this section's own bottom edge is the drawn line at its
+         * bottom joint, or the section below draws it. */
+        end: layer.dataset.sectionTrack === "open" ? "open" : ("closed" as TrackEnd),
         /* The tall track a pinned section scrolls on, if it has one. Whether it
          * is actually pinning is decided per measurement, not here. */
         pin: layer.closest<HTMLElement>("[data-scroll-span]"),
@@ -114,27 +120,56 @@
       const maxScroll = Math.max(0, document.documentElement.scrollHeight - viewport);
       const top = window.scrollY;
 
+      const boxes = tracks.map((track) => {
+        track.length = track.path.getTotalLength();
+        const boxRect = track.box.getBoundingClientRect();
+        const sticky = stickyChild(track.box, track.pin);
+        const pinRect = sticky ? track.pin!.getBoundingClientRect() : null;
+        /* Where it comes to REST, off the style, not where it happens to be
+         * this frame: the rect only reads that back while the pin is
+         * actually holding, and the schedule is worked out once for every
+         * scroll position at which it will. */
+        const rest = sticky ? parseFloat(getComputedStyle(sticky).top) || 0 : 0;
+        return {
+          boxTop: boxRect.top + top,
+          boxHeight: boxRect.height,
+          pinTop: pinRect ? pinRect.top + top : null,
+          pinHeight: pinRect ? pinRect.height : 0,
+          pinRest: rest,
+          pinBox: sticky ? sticky.getBoundingClientRect().height : 0,
+        };
+      });
+
+      /**
+       * Where the line at a section's bottom joint is, in the document.
+       *
+       * A PINNED NEIGHBOUR'S OPENING RULE IS NOT WHERE ITS BOX CURRENTLY IS.
+       * Its box is a sticky child, so a rect taken while the pin is holding
+       * reads back the resting place rather than the layout position, and the
+       * schedule has to be true at every scroll position — including the ones
+       * measured from somewhere else on the page. Its track never moves, and
+       * the child rests one `pinRest` inside it, so those two say where the
+       * reader will see that rule when the square arrives at it.
+       */
+      const openingRule = (i: number) => {
+        const at = boxes[i];
+        if (!at) return null;
+        return at.pinTop === null ? at.boxTop : at.pinTop + at.pinRest;
+      };
+
       spans = scheduleTracks(
-        tracks.map((track): TrackMeasure => {
-          track.length = track.path.getTotalLength();
-          const boxRect = track.box.getBoundingClientRect();
-          const sticky = stickyChild(track.box, track.pin);
-          const pinRect = sticky ? track.pin!.getBoundingClientRect() : null;
-          /* Where it comes to REST, off the style, not where it happens to be
-           * this frame: the rect only reads that back while the pin is
-           * actually holding, and the schedule is worked out once for every
-           * scroll position at which it will. */
-          const rest = sticky ? parseFloat(getComputedStyle(sticky).top) || 0 : 0;
+        tracks.map((track, i): TrackMeasure => {
+          const at = boxes[i];
           return {
-            boxTop: boxRect.top + top,
-            boxHeight: boxRect.height,
-            pinTop: pinRect ? pinRect.top + top : null,
-            pinHeight: pinRect ? pinRect.height : 0,
-            pinRest: rest,
-            pinBox: sticky ? sticky.getBoundingClientRect().height : 0,
+            ...at,
             end: track.end,
+            /* Its own closing rule, or — when it draws none — the opening rule
+             * of the section below, which is the line the reader actually sees
+             * at that joint. */
+            cross: track.end === "closed" ? at.boxTop + at.boxHeight : openingRule(i + 1),
           };
         }),
+        viewport,
         maxScroll,
       );
     };
@@ -169,24 +204,101 @@
       };
     };
 
+    /** This section's two rails, in viewport pixels, entry side first. */
+    const railsOf = (track: (typeof tracks)[number]) => {
+      const rect = track.box.getBoundingClientRect();
+      /* The rails are 1px lines lying just INSIDE the box, so the square is
+       * centred on the line rather than on the box's edge. */
+      const left = rect.left + 0.5;
+      const right = rect.right - 0.5;
+      return track.side === "left" ? { entry: left, exit: right } : { entry: right, exit: left };
+    };
+
+    /**
+     * A FLOWING section: the square holds the reading line and only leaves it
+     * to turn the corner.
+     *
+     * Three stretches, and the reader sees them as one movement:
+     *
+     *   on the line     the rule is still more than two dips below the reading
+     *                   line. The square rides the rail at exactly that height,
+     *                   which is what "always at the reader's height" means
+     *   coming down     the rule is between two dips and one. The square walks
+     *                   down its rail to meet it, arriving exactly as the rule
+     *                   reaches one dip below the line
+     *   across         the square is ON the rule, riding it up to the reading
+     *                   line while it crosses to the other rail. It lands on
+     *                   that rail at the reading line at the very moment the
+     *                   rule passes it, which is where the section below starts
+     *
+     * Every one of them puts the square on a line the reader can see, and the
+     * whole excursion is one dip — a fixed distance, not a share of the
+     * section, so a short band and a three-screen one read the same.
+     */
+    const onTheLine = (
+      track: (typeof tracks)[number],
+      span: TrackSpan,
+      top: number,
+    ) => {
+      const viewport = window.innerHeight;
+      const reading = viewport * READING_SHARE;
+      const dip = viewport * CORNER_SHARE;
+      const rails = railsOf(track);
+
+      if (span.cross === null) return { x: rails.entry, y: reading + 0.5 };
+
+      /* Never above the reading line: past its own rule the section is done and
+       * the hand-over has it, but the last section on the page has nothing to
+       * hand to and simply holds the line. */
+      const rule = Math.max(reading, span.cross - top);
+
+      if (rule >= reading + 2 * dip) return { x: rails.entry, y: reading + 0.5 };
+
+      if (rule >= reading + dip) {
+        const down = (reading + 2 * dip - rule) / dip;
+        return { x: rails.entry, y: reading + dip * down + 0.5 };
+      }
+
+      const across = (reading + dip - rule) / dip;
+      return { x: rails.entry + (rails.exit - rails.entry) * across, y: rule + 0.5 };
+    };
+
+    /** Where a section takes the square, and where it leaves it. */
+    const startOf = (i: number) =>
+      spans[i].pinned ? pointOn(tracks[i], 0) : onTheLine(tracks[i], spans[i], spans[i].enter);
+
+    const endOf = (i: number, top: number) =>
+      spans[i].pinned ? pointOn(tracks[i], 1) : onTheLine(tracks[i], spans[i], top);
+
     const place = (top: number) => {
       const index = ownerAt(top);
       const span = spans[index];
-      const next = tracks[index + 1];
+      const next = spans[index + 1];
 
       let point;
       if (top <= span.leave || !next) {
-        const run = span.leave - span.enter;
-        point = pointOn(tracks[index], run > 0 ? (top - span.enter) / run : 1);
+        /* A PINNED SECTION IS THE OTHER SHAPE and it is left exactly as it was:
+         * the page stands still under the reader, so the square walks the
+         * frame's whole perimeter over the scrolling the pin costs. That is the
+         * one the maintainer signed off on. */
+        point = span.pinned
+          ? pointOn(tracks[index], (top - span.enter) / Math.max(1, span.leave - span.enter))
+          : onTheLine(tracks[index], span, top);
+      } else if (!span.pinned && !next.pinned) {
+        /* THE GAP BETWEEN TWO FLOWING BOXES IS NOTHING TO SEE. Both sides end
+         * and begin on the same rail at the same height — that is what the
+         * serpentine and the reading line together guarantee — so the square
+         * simply carries on where it already is. */
+        point = startOf(index + 1);
       } else {
-        /* THE GAP BETWEEN TWO BOXES, walked rather than waited out. Both ends
-         * are on the same rail — the serpentine is the guarantee — so this is a
-         * slide straight down the line, and it is the one thing that keeps the
-         * square on the screen while a pinned frame is leaving it. */
+        /* One of the two is pinned, so its end of the joint is a corner of a
+         * frame rather than a point on the reading line, and the square glides
+         * from one to the other over the scrolling between them. It is the one
+         * thing that keeps it on screen while a pinned frame is leaving. */
         const gap = span.hand - span.leave;
         const across = gap > 0 ? Math.min(1, (top - span.leave) / gap) : 1;
-        const from = pointOn(tracks[index], 1);
-        const to = pointOn(next, 0);
+        const from = endOf(index, top);
+        const to = startOf(index + 1);
         point = {
           x: from.x + (to.x - from.x) * across,
           y: from.y + (to.y - from.y) * across,
