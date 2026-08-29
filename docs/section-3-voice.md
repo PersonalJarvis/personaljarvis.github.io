@@ -15,8 +15,16 @@ scroll drags the second across the first:
 
 | State | What is shown |
 |---|---|
-| **By hand** (`manual`) | Hard daylight. Bent over the desk, both hands on the keyboard, one on the mouse, head down. The monitor is packed with overlapping windows, the paper stack has slipped, a second mug is out. |
-| **By voice** (`jarvis`) | The same room at night. Sat back, both hands away from the keyboard and mouse, head up, speaking into a microphone on a boom arm. The monitor shows one calm, nearly empty panel. The desk is square again. |
+| **By hand** (`manual`) | Hard daylight. Bent over the desk, both hands on the keyboard, one on the mouse, head down. The editor on the monitor is buried under a dozen overlapping panels, its tab row crammed and its terminal full; the paper stack has slipped, a second mug is out. |
+| **By voice** (`jarvis`) | The same room at night. Sat back, both hands away from the keyboard and mouse, head up, speaking into a microphone on a boom arm. The same editor is down to one tidy column of code with space around it. The desk is square again. |
+
+**The monitor is the subject of both.** The shot is over the shoulder, with the
+screen square on and filling about a third of the frame, and what is on it reads
+unmistakably as a code editor: a file tree, a tab row, code, a minimap, a
+terminal strip. The first version of this pair was side-on, and the maintainer's
+complaint on 2026-08-29 was the obvious one — *"man erkennt wirklich nicht den
+Bildschirm"*. A section arguing about what happens on your screen has to show
+the screen.
 
 **The inversion is the argument.** The daylight frame is dark ink on paper; the
 night frame is the same dots turned over — paper on ink. The page floor is that
@@ -128,10 +136,16 @@ the speech bubble off the top of the frame.
 ### How they were made
 
 1. **Frame 1** was generated with the Grok CLI as a plain photograph — a bright
-   home office, side-on, high key, no text anywhere.
+   home office, over the shoulder, high key, no text anywhere.
 2. **Frame 2 was derived from frame 1 by image-to-image**, never as a second
    prompt from nothing. That is the only way the room survives the switch.
 3. Both were then run through `scripts/dither-scene.py`.
+
+**The editor on the screen is composited, not asked for in words.** Every image
+model puts letters on a monitor whatever the prompt says, and letters do not
+survive a halftone — they dither into a smudge. The generator drew the editor as
+flat shapes and set it on the screen in perspective, which is the same reasoning
+that keeps the speech bubble out of the model's hands (below).
 
 The sources and the prompt that produced them are committed under
 `src/assets/scene/sources/`. They are not imported anywhere, so the build never
@@ -153,9 +167,10 @@ screen, and the microphone that appears in frame 2.
 
 **How the pair in the repo was checked.** Feature positions were measured in
 both source photographs rather than eyeballed: the desk's front edge lands on
-row 548 in both, and the left-hand objects on columns 47, 114 and 157 in both.
-The camera did not move. Mean luminance is 0.63 against 0.19 — that difference
-is the exposure, and it is the point.
+row **649 in both**, and the monitor's left bezel on column 370 against 379 — 9
+pixels of 1280, which is the image-to-image pass breathing, not the camera
+moving. Mean luminance is **0.60 against 0.12**; that difference is the
+exposure, and it is the point.
 
 ### The dither
 
@@ -190,6 +205,39 @@ The palette is baked into the PNGs rather than left to CSS. A mask would let the
 page recolour the dots, but a mask is resampled by the compositor and the crisp
 pixel grid is the entire point. **If the tokens change, re-run the script.**
 
+### The colour on the screen
+
+The room prints in two tokens. The **code lines do not** — they print in the
+app's own five agent-timeline hues (`--stage-thinking`, `--stage-grep`,
+`--stage-read`, `--stage-edit`, `--stage-done`), each dot taking whichever of
+the five its own hue is nearest.
+
+This is not a third colour smuggled into a two-token treatment. It is the
+screen, and the screen is the one thing in that room with a colour of its own —
+which is also the rule, stated as a rule rather than as a box. The maintainer
+asked for it on 2026-08-29: *"es ein bisschen farbiger ist, ein bisschen IDE"*.
+
+**A coloured dot is the frame's own mark mixed `TINT` toward its token**, never
+the raw token. The five are all light, made for a dark UI; painted raw onto the
+paper frame they turn to pastel and the screen reads as a hole punched in the
+picture. Mixed toward the mark, every dot stays on the right side of its ground
+and the hue still reads.
+
+**Finding the screen takes two tests, and neither works alone.** Both are in
+`scripts/dither-scene.py`:
+
+| Test | What it removes |
+|---|---|
+| `COLOUR_MICRO` — a second high-pass, on the colour *strength* | Colour that holds over any distance. Skin, wood and a blue t-shirt are all as saturated as a code comment; they are just saturated **smoothly**, and a smooth field high-passes to nothing |
+| `COLOUR_REGION` — where that micro-colour is dense | The fringe a compressed photograph rings along every hard edge with. The bezel and the keys each carry a line of it; a screen full of code carries an **area** |
+
+Measured on this pair: **98% of the coloured dots land inside the monitor
+glass.** Every simpler rule tried first put the majority of them on the desk — a
+plain saturation threshold puts them on the man's forearm, because skin and a
+code comment sit at the same saturation. `COLOURED` is a ceiling on the share of
+dots that may take a hue, not a target; the micro-colour test runs out of screen
+first, at about 3% of the dots on the daylight frame and 5% on the night one.
+
 ### The speech bubble
 
 The night frame carries one empty speech bubble with three dots in it, drawn
@@ -209,7 +257,10 @@ Outline alone leaves the room showing through and it stops looking like a
 bubble.
 
 **`BUBBLE` is measured against the photograph.** Regenerating the night frame
-means re-measuring it. It also has a crop constraint: the page crops this 16:9
+means re-measuring it. It sits **off the monitor** — top right, over the dark
+wall above the person's head, tail pointing down-left at the microphone. It used
+to sit on the glass, which was harmless when the screen was a bright smudge and
+is not now that the screen is the subject. It also has a crop constraint: the page crops this 16:9
 frame into a box up to three times as wide as it is tall, anchored at 0.42 of
 the height, so only rows 0.17–0.75 survive on the shortest window the sticky
 layout still runs on. Keep the box inside 0.19–0.73 — a bubble at 0.15 loses its
@@ -227,14 +278,26 @@ One canvas, two source frames, and a boundary that dissolves cell by cell.
 ### Where the value comes from
 
 ```
-through = clamp(-track.top / (track.height - innerHeight))   0..1 through the track
-wipe    = clamp((through - HOLD) / (1 - 2 * HOLD))           HOLD = 0.22
+through = spanProgress(track.rect, innerHeight)              0..1 through the track
+wipe    = clamp((through - WIPE_FROM) / (WIPE_TO - WIPE_FROM))
 ```
 
-The reader arrives on a finished picture and leaves on the other one; the wipe
-owns the 56% in between. On the fallback layouts the two buttons set `wipe`
-directly, and a click is released again the next time the reader scrolls the
-section — otherwise one click would freeze the scrub for the rest of the visit.
+**The two ends are read out of the section marker's path, not set by hand.**
+`WIPE_FROM` is `downTheRail(0.75)` — three quarters of the way down the rail the
+marker enters on — and `WIPE_TO` is `TURN_DOWN`, the moment it turns the exit
+corner. So the reader arrives on a finished picture, watches it turn over while
+the marker crosses the closing rule, and leaves on the other one with the marker
+heading down into the next section. The maintainer specified exactly this on
+2026-08-29.
+
+Tying the two together is the point. Two independent numbers drift, and the
+defect that produces is one anybody notices: the photograph finishes changing
+while the marker is still halfway along the bottom line. `spanProgress` is
+shared with the marker for the same reason.
+
+On the fallback layouts the two buttons set `wipe` directly, and a click is
+released again the next time the reader scrolls the section — otherwise one
+click would freeze the scrub for the rest of the visit.
 
 ### How it is drawn
 
@@ -250,19 +313,25 @@ A cell belongs to the incoming frame once the edge has passed it by more than
 its own Bayer threshold:
 
 ```js
-const edge = -band + wipe * (cols + 2 * band);
-on = (edge - x) / band > BAYER[y & 7][x & 7];
+const edge = cols + band - wipe * (cols + 2 * band);
+on = (x - edge) / band > BAYER[y & 7][x & 7];
 ```
 
-The edge starts one band off the left of the picture and ends one band past the
-right, so the first and last cells get a full turn instead of appearing already
-finished.
+**The edge travels right to left**, on the maintainer's instruction of
+2026-08-29. It starts one band off the *right* of the picture and ends one band
+past the *left*, so the first and last cells get a full turn instead of
+appearing already finished.
+
+It is deliberately **not** tied to which way the section marker happens to be
+crossing the closing rule underneath it. That side alternates down the page, so
+a wipe that followed it would reverse the moment a section was added above this
+one — and a picture that changes direction because of something in a different
+section is a picture nobody can explain.
 
 | Constant | Value | Why |
 |---|---|---|
 | `CELL` | 10 CSS px | larger than a printed dot on purpose — the edge has to be legible as it crosses |
 | `BAND` | 0.16 of the stage | several cells mid-turn at once, still an edge travelling rather than a fade |
-| `HOLD` | 0.22 each end | — |
 | `FRAME_MS` | 33 (~30fps) | the frames are a dot grid; the extra 30 buy nothing visible |
 
 **A mask canvas, not a clip path.** The dissolve zone is a few thousand cells. As
@@ -302,13 +371,30 @@ photograph is a row the photograph does not get.
 
 ---
 
-## No scroll indicator in here
+## The frame, and the marker on it
 
-The reader's position through the **page** is `PageChrome`'s marker on the left
-rail, rendered once from the layout. An earlier version carried a rail scoped to
-this section; the maintainer's requirement is explicitly the whole site
-(*"wie weit man noch scrollt, bis man durch die Website fertig ist"*), and a
-second indicator disagreeing with the first is worse than none.
+This section is drawn as a **box** while it is pinned. The two rails give it its
+sides; `[data-frame]` closes it top and bottom with a hairline, inset from the
+sticky viewport so the closing line is not lying on the bottom edge of the
+window where nobody would see it. The maintainer asked for the boundaries to be
+this legible on 2026-08-29, pointing at the reference: *"die haben die Sektionen
+klar abgegrenzt"*.
+
+The **section marker** then walks that box's perimeter — see
+[`layout.md`](layout.md) § "The section marker", which owns the mechanism. Two
+things about it are this section's business:
+
+- The marker goes inside `[data-frame]`, **not** on the `<section>`. The section
+  element is three screens tall; a marker at its halfway point would be a screen
+  and a half below the fold. The pinned frame is what the reader sees the
+  section as, and that is what gets traced.
+- It is passed **`nested`**, because the frame is already on the `content`
+  column. Without it the marker rides a line a gutter inside both rails.
+
+The page-long marker this replaced is gone. The earlier version of this document
+forbade a rail scoped to this section on the grounds that the requirement was
+the whole site; the maintainer replaced that direction on 2026-08-29, and there
+is now exactly one kind of indicator on the page.
 
 ---
 
@@ -364,7 +450,12 @@ difference between having the numbers and wanting them.
 - Text inside a generated image, and any third-party mark
 - Invented figures, or a figure bar that counts
 - Another product's accent colour, typeface or section furniture
+- A photograph whose monitor is small, angled away, or hidden behind the person
+- Colour anywhere but the screen, or a screen coloured by a measured pixel box
+  instead of by a property of the picture
+- A wipe whose start and end are hand-set numbers instead of the marker path's
+  own milestones
+- A second scroll indicator
 - A bespoke `max-width` instead of a step from `layout.md`
 - A flex chain to the picture with a `min-height: 0` missing from any link
-- A second scroll indicator
 - Scroll maths outside a `requestAnimationFrame`

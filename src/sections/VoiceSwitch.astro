@@ -2,8 +2,23 @@
 /**
  * Section 3 — what changes when you stop typing.
  *
- * Two photographs of one desk, printed as a one-bit dither, and the reader's
- * own scroll drags the second one across the first. See docs/section-3-voice.md.
+ * Two photographs of one screen, printed as a one-bit dither, and the reader's
+ * own scroll drags the second one across the first, RIGHT TO LEFT. The
+ * direction is the maintainer's, 2026-08-29; it is not derived from anything
+ * else in the section and nothing else in the section depends on it. See
+ * docs/section-3-voice.md.
+ *
+ * THE MONITOR IS THE SUBJECT. Both photographs are shot over the shoulder with
+ * the screen square on, and the screen carries an editor: a file tree, a tab
+ * row, code, a minimap, a terminal. The first version of this pair was side-on
+ * and the screen was a bright smudge — the maintainer's complaint on
+ * 2026-08-29 was that you could not tell what the picture was about.
+ *
+ * AND THE SCREEN IS THE ONLY THING IN COLOUR. The room prints in the two tokens
+ * this site is made of; the code lines print in the app's own five stage hues,
+ * because they are the one thing in the room that HAS a colour. The rule that
+ * finds them is in scripts/dither-scene.py, and it is a property of the picture
+ * rather than a box measured around this particular monitor.
  *
  * THE ARGUMENT IS THE INVERSION. The first frame is the room in daylight,
  * dithered as dark ink on paper; the second is the same room at night, the same
@@ -31,11 +46,17 @@
  * docs/layout.md reserves that for widths.ts and layout.css, and
  * scripts/check-style.mjs enforces it.
  *
- * There is no scroll indicator in here. The reader's position through the PAGE
- * is PageChrome's marker on the left rail; a second one scoped to one section
- * would answer a question nobody asked and disagree with the first.
+ * THE SECTION IS A FRAMED BOX WHILE IT IS PINNED, and the marker walks that
+ * box's perimeter — down one rail, along the closing rule, then down the other
+ * into the section below. The frame is what makes the box exist: the rails give
+ * it two sides, and `[data-frame]` closes it top and bottom. The marker goes
+ * inside that frame rather than on the section element, which is three screens
+ * tall and would put the halfway point a screen and a half below the fold.
+ * Which rail it enters on alternates down the page and is not this section's to
+ * decide — see src/components/SectionTrack.astro.
  */
 import Container from "@/components/Container.astro";
+import SectionTrack from "@/components/SectionTrack.astro";
 
 /**
  * `?url` rather than astro:assets: these are one-bit dither, and the build's
@@ -110,124 +131,136 @@ const figures = [
     and the section becomes an ordinary block with two buttons. A three-screen
     scroll trap on a phone is a worse experience than no animation.
   -->
-  <div data-track>
+  <div data-track data-scroll-span>
     <div data-viewport>
       <Container width="content" class="flex h-full min-h-0 flex-col">
-        <p class="uppercase text-muted" data-eyebrow>What changes</p>
-
-        <div data-head>
-          <h2 id="voice-heading" class="text-balance" data-headline>
-            Most assistants talk back.<br />This one does the thing.
-          </h2>
-
-          <p class="text-pretty" data-standfirst>
-            It runs on your own machine and answers to a name you pick. Small
-            things it does itself — opens the app, changes the setting, takes
-            the mouse. Real work goes to a coding agent in an isolated copy of
-            your files and comes back finished.
-          </p>
-        </div>
-
         <!--
-          The picture is the one element allowed to give: `flex: 1` on a
-          `min-height: 0` chain, so a short window shrinks the photograph
-          instead of pushing the figures past the fold.
+          The pinned frame. Its four edges are the section: the two rails
+          stand on the container this sits in, and these two hairlines close
+          the box top and bottom. That box is what the section marker walks,
+          which is why the marker goes INSIDE it rather than on the section —
+          the section element is three screens tall, and a marker halfway
+          down it would be a screen and a half below the fold.
         -->
-        <figure data-figure>
-          <div
-            data-stage
-            id="voice-panel"
-            role="tabpanel"
-            aria-labelledby="voice-tab-manual"
-            tabindex="0"
-          >
-            <!--
-              Both frames are in the markup from the first paint: the canvas
-              draws from these elements, and a frame fetched on the first
-              switch would flash an empty box. They are hidden from layout, not
-              from the accessibility tree — the alt text is the picture for a
-              reader who cannot see the canvas, which is aria-hidden.
-            -->
-            <img
-              src={manualFrame}
-              width="640"
-              height="360"
-              loading="eager"
-              decoding="async"
-              alt="A home office in hard daylight, printed as fine dark dots on paper white. A person sits bent over the desk, both hands on the keyboard and one on the mouse, head down. The monitor is packed edge to edge with small overlapping windows. A mug, a plant and a slipped stack of papers sit at the left, a bright window behind."
-              data-source="manual"
-            />
-            <img
-              src={jarvisFrame}
-              width="640"
-              height="360"
-              loading="eager"
-              decoding="async"
-              alt="The same desk, the same room, the same mug and plant, at night. The dots have inverted to light on black. The person has sat back with both hands away from the keyboard and mouse, head up, speaking into a microphone on a boom arm. The monitor now shows one calm, almost empty window."
-              data-source="jarvis"
-            />
+        <div data-frame>
+          <SectionTrack nested />
 
-            <canvas aria-hidden="true" data-canvas></canvas>
+          <p class="uppercase text-muted" data-eyebrow>What changes</p>
 
-            <!--
-              The two states, set into the picture's bottom-left corner rather
-              than given a row of their own: this section has exactly one
-              viewport to spend, and a row of buttons above the photograph is a
-              row the photograph does not get.
+          <div data-head>
+            <h2 id="voice-heading" class="text-balance" data-headline>
+              Most assistants talk back.<br />This one does the thing.
+            </h2>
 
-              They are the whole control surface when the scroll scrub is off —
-              on a phone, and under prefers-reduced-motion.
-            -->
-            <div role="tablist" aria-label="Two ways of working at the same desk" data-switch>
-              <button
-                type="button"
-                role="tab"
-                id="voice-tab-manual"
-                aria-controls="voice-panel"
-                aria-selected="true"
-                tabindex="0"
-                data-target="manual"
-              >
-                By hand
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="voice-tab-jarvis"
-                aria-controls="voice-panel"
-                aria-selected="false"
-                tabindex="-1"
-                data-target="jarvis"
-              >
-                By voice
-              </button>
-            </div>
+            <p class="text-pretty" data-standfirst>
+              It runs on your own machine and answers to a name you pick. Small
+              things it does itself — opens the app, changes the setting, takes
+              the mouse. Real work goes to a coding agent in an isolated copy of
+              your files and comes back finished.
+            </p>
           </div>
 
-          <figcaption data-caption>
+          <!--
+            The picture is the one element allowed to give: `flex: 1` on a
+            `min-height: 0` chain, so a short window shrinks the photograph
+            instead of pushing the figures past the fold.
+          -->
+          <figure data-figure>
+            <div
+              data-stage
+              id="voice-panel"
+              role="tabpanel"
+              aria-labelledby="voice-tab-manual"
+              tabindex="0"
+            >
+              <!--
+                Both frames are in the markup from the first paint: the canvas
+                draws from these elements, and a frame fetched on the first
+                switch would flash an empty box. They are hidden from layout, not
+                from the accessibility tree — the alt text is the picture for a
+                reader who cannot see the canvas, which is aria-hidden.
+              -->
+              <img
+                src={manualFrame}
+                width="640"
+                height="360"
+                loading="eager"
+                decoding="async"
+                alt="A home office in hard daylight, printed as fine dark dots on paper white, seen over the shoulder of a person hunched at the desk with both hands on the keyboard. The wide monitor facing the camera shows a code editor buried under a dozen overlapping panels, its tab row crammed and its terminal full. A mug, a plant and a slipped stack of papers sit at the left, a bright window behind."
+                data-source="manual"
+              />
+              <img
+                src={jarvisFrame}
+                width="640"
+                height="360"
+                loading="eager"
+                decoding="async"
+                alt="The same desk, the same room, the same mug and plant, at night, from the same place over the shoulder. The dots have inverted to light on black. The person has sat back with both hands away from the keyboard and mouse, head up, speaking into a microphone on a boom arm. The same editor is on the monitor, now down to a single tidy column of code in colour with empty space around it."
+                data-source="jarvis"
+              />
+
+              <canvas aria-hidden="true" data-canvas></canvas>
+
+              <!--
+                The two states, set into the picture's bottom-left corner rather
+                than given a row of their own: this section has exactly one
+                viewport to spend, and a row of buttons above the photograph is a
+                row the photograph does not get.
+
+                They are the whole control surface when the scroll scrub is off —
+                on a phone, and under prefers-reduced-motion.
+              -->
+              <div role="tablist" aria-label="Two ways of working at the same desk" data-switch>
+                <button
+                  type="button"
+                  role="tab"
+                  id="voice-tab-manual"
+                  aria-controls="voice-panel"
+                  aria-selected="true"
+                  tabindex="0"
+                  data-target="manual"
+                >
+                  By hand
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  id="voice-tab-jarvis"
+                  aria-controls="voice-panel"
+                  aria-selected="false"
+                  tabindex="-1"
+                  data-target="jarvis"
+                >
+                  By voice
+                </button>
+              </div>
+            </div>
+
+            <figcaption data-caption>
+              {
+                (["manual", "jarvis"] as const).map((mode) => (
+                  <span data-caption-for={mode} hidden={mode !== "manual"}>
+                    <strong>{captions[mode].lead}</strong> {captions[mode].rest}
+                  </span>
+                ))
+              }
+            </figcaption>
+          </figure>
+
+          <dl data-figures>
             {
-              (["manual", "jarvis"] as const).map((mode) => (
-                <span data-caption-for={mode} hidden={mode !== "manual"}>
-                  <strong>{captions[mode].lead}</strong> {captions[mode].rest}
-                </span>
+              figures.map(({ value, label, note }) => (
+                <div>
+                  <dt>
+                    <span data-figure-label>{label}</span>
+                    <span data-figure-note>{note}</span>
+                  </dt>
+                  <dd>{value}</dd>
+                </div>
               ))
             }
-          </figcaption>
-        </figure>
-
-        <dl data-figures>
-          {
-            figures.map(({ value, label, note }) => (
-              <div>
-                <dt>
-                  <span data-figure-label>{label}</span>
-                  <span data-figure-note>{note}</span>
-                </dt>
-                <dd>{value}</dd>
-              </div>
-            ))
-          }
-        </dl>
+          </dl>
+        </div>
       </Container>
     </div>
   </div>
@@ -258,6 +291,27 @@ const figures = [
     overflow: hidden;
   }
 
+  /* --- The pinned frame --------------------------------------------------
+   * The section drawn as a box: the rails give its two sides, these two
+   * hairlines close it top and bottom, and the section marker walks that
+   * perimeter. It is inset from the sticky viewport rather than flush with it,
+   * because a closing line lying on the bottom edge of the window is a line
+   * nobody sees — and the reader is meant to watch the marker turn that corner.
+   *
+   * It carries the flex chain on from the container: `min-height: 0` here as
+   * well, or the picture stops being the element that gives and the figures go
+   * through the bottom of the frame.
+   */
+  [data-frame] {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+    border-block: 1px solid var(--hairline);
+    padding-block: var(--space-lg);
+  }
+
   /* --- The head ----------------------------------------------------------
    * Headline left, standfirst right, both starting on the same baseline row.
    * 7:6 rather than 1:1 — the headline is display type and needs the wider
@@ -274,7 +328,7 @@ const figures = [
     display: grid;
     gap: var(--space-md) var(--space-xxl);
     align-items: start;
-    margin: var(--space-md) 0 var(--space-xl);
+    margin: var(--space-md) 0 var(--space-lg);
   }
 
   /* 8:5, not 7:6. The split is set by the headline, not by taste: at 7:6 the
@@ -427,7 +481,7 @@ const figures = [
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1px;
     background: var(--hairline);
-    margin: var(--space-xl) 0 0;
+    margin: var(--space-lg) 0 0;
   }
 
   @media (min-width: 768px) {
@@ -506,6 +560,22 @@ const figures = [
       flex: 0 0 auto;
       aspect-ratio: 16 / 9;
     }
+
+    /* Nothing is pinned, so there is no box for a perimeter to be the
+     * perimeter OF: the frame's own two lines would float in the middle of an
+     * ordinary block, and the section keeps its rule at the top like every
+     * other one instead.
+     *
+     * The marker stays, and the box it walks grows to the section's own edges:
+     * the negative margin and the equal padding cancel each other, so nothing
+     * moves on the page and the box simply reaches out through the sticky
+     * viewport's padding to where the rules actually are. */
+    [data-frame] {
+      display: block;
+      border-block: 0;
+      margin-block: calc(-1 * var(--space-xxl));
+      padding-block: var(--space-xxl);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -536,6 +606,9 @@ const figures = [
    * drawImage calls a frame either way, and the cost stops depending on how
    * wide the zone is.
    */
+
+  import { TURN_DOWN, downTheRail } from "@/lib/sectionTrack";
+  import { spanProgress } from "@/lib/scrollSpan";
 
   /** Ordered threshold matrix, 8x8. The same one scripts/dither-scene.py prints
    * the frames with, so the dissolve lands in the frames' own rhythm. */
@@ -571,9 +644,22 @@ const figures = [
    * travelling rather than the whole picture fading. */
   const BAND = 0.16;
 
-  /** Fraction of the track held still at each end, so the reader arrives on a
-   * finished picture and leaves on the other one. The wipe owns the rest. */
-  const HOLD = 0.22;
+  /** WHERE THE WIPE SITS ON THE SECTION MARKER'S PATH.
+   *
+   * The marker walks the section's perimeter (src/lib/sectionTrack.ts), and the
+   * wipe is timed against it rather than against a pair of hand-set numbers:
+   * the picture starts turning over three quarters of the way down the LEFT
+   * rail, and is finished the moment the marker turns the BOTTOM-RIGHT corner —
+   * which is also the moment the section stops being the thing the reader is
+   * scrolling. So the reader arrives on a finished picture, watches it change
+   * while the marker crosses the closing rule, and leaves on the other one with
+   * the marker heading down into the next section.
+   *
+   * Tying the two together is the point. Two independent numbers drift, and the
+   * defect that produces is one anybody notices: the photograph finishes
+   * changing while the marker is still halfway along the bottom line. */
+  const WIPE_FROM = downTheRail(0.75);
+  const WIPE_TO = TURN_DOWN;
 
   /** ~30fps. The frames are a dot grid; the extra 30 buy nothing visible and
    * cost a full repaint of the stage. */
@@ -667,9 +753,19 @@ const figures = [
     /** Build the dissolve mask: one pixel per cell, alpha only.
      *
      * A cell belongs to the incoming frame once the edge has passed it by more
-     * than its own Bayer threshold. The edge starts one band's width off the
-     * left of the picture and ends one band past the right, so the first and
-     * last cells get a full turn instead of appearing already finished. */
+     * than its own Bayer threshold.
+     *
+     * THE EDGE TRAVELS RIGHT TO LEFT, on the maintainer's instruction of
+     * 2026-08-29. It starts one band's width off the RIGHT of the picture and
+     * ends one band past the LEFT, so the first and last cells get a full turn
+     * instead of appearing already finished.
+     *
+     * It is deliberately NOT tied to which way the section marker happens to be
+     * crossing the closing rule underneath it. That alternates down the page,
+     * so a wipe that followed it would reverse the moment a section was added
+     * above this one — and a picture that changes direction because of
+     * something happening in a different section is a picture nobody can
+     * explain. */
     const buildMask = (wipe: number) => {
       if (!maskCtx) return;
       const cols = Math.max(1, Math.round(box.w / CELL));
@@ -680,7 +776,7 @@ const figures = [
       }
 
       const band = Math.max(1, cols * BAND);
-      const edge = -band + wipe * (cols + 2 * band);
+      const edge = cols + band - wipe * (cols + 2 * band);
       const image = maskCtx.createImageData(cols, rows);
       const data = image.data;
 
@@ -688,7 +784,7 @@ const figures = [
         const threshold = BAYER[y & 7];
         for (let x = 0; x < cols; x++) {
           const i = (y * cols + x) * 4 + 3;
-          data[i] = (edge - x) / band > threshold[x & 7] ? 255 : 0;
+          data[i] = (x - edge) / band > threshold[x & 7] ? 255 : 0;
         }
       }
       maskCtx.putImageData(image, 0, 0);
@@ -745,11 +841,8 @@ const figures = [
     const scrubbing = () => !narrow.matches && !calm.matches && pick === null;
 
     const fromScroll = (): number => {
-      const rect = track.getBoundingClientRect();
-      const distance = rect.height - window.innerHeight;
-      if (distance <= 0) return 0;
-      const through = Math.min(1, Math.max(0, -rect.top / distance));
-      return Math.min(1, Math.max(0, (through - HOLD) / (1 - 2 * HOLD)));
+      const through = spanProgress(track.getBoundingClientRect(), window.innerHeight);
+      return Math.min(1, Math.max(0, (through - WIPE_FROM) / (WIPE_TO - WIPE_FROM)));
     };
 
     /* Nothing repaints while the section is off screen. */
