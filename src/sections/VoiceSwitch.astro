@@ -1,0 +1,447 @@
+---
+/**
+ * Section 3 — typing vs speaking.
+ *
+ * Two states of one scene: the same person at the same desk, once working the
+ * keyboard and mouse by hand, once leaning back with a microphone. The contrast
+ * IS the argument, which is why nothing but opacity is allowed to move between
+ * the frames. See docs/section-3-voice.md.
+ *
+ * Widths come from the `.layout` grid in src/styles/layout.css: the eyebrow and
+ * the headline sit on the `prose` column, the tabs, the picture and the figures
+ * on `content`. That grid is what lets one section carry two width steps without
+ * naming a max-width of its own — which docs/layout.md forbids and
+ * scripts/check-style.mjs enforces.
+ */
+import { Image } from "astro:assets";
+
+import jarvisScene from "@/assets/scene/jarvis.png";
+import manualScene from "@/assets/scene/manual.png";
+
+/**
+ * The spoken line in the bubble. It is real DOM text, not part of the drawing —
+ * the generated images carry no text at all, on purpose.
+ *
+ * Every capability it names is registered in the app: the `gmail`,
+ * `google_calendar` and `google_drive` tool plugins (pyproject.toml, the
+ * `jarvis.tool` entry points).
+ */
+const spokenLine =
+  "Hey Jarvis, check my Google Workspace and tell me everything I need to know today.";
+
+/**
+ * The figures under the picture. Each one is countable in the app's own source;
+ * none is a marketing number, and nothing here may be invented.
+ *
+ * They do NOT change with the state. Every provable figure is a fixed property
+ * of the app with no "before" counterpart, and inventing one would be exactly
+ * what docs/section-3-voice.md forbids. Decided by the maintainer, 2026-08-28.
+ */
+const figures = [
+  {
+    value: "32",
+    label: "Providers",
+    // 12 brain + 8 speech-to-text + 8 text-to-speech + 4 realtime voice,
+    // counted from the jarvis.* entry points in the app's pyproject.toml.
+    title: "12 brain, 8 speech-to-text, 8 text-to-speech and 4 realtime providers",
+  },
+  {
+    value: "3",
+    label: "Platforms",
+    title: "Windows, macOS and Linux, from one install command",
+  },
+  {
+    value: "< 1 s",
+    label: "Spoken reply",
+    title: "The realtime model hears you and answers in under a second",
+  },
+  {
+    value: "4",
+    label: "Channels",
+    title:
+      "The desktop window, the browser, Telegram and Discord reach the same brain and share the same memory",
+  },
+];
+---
+
+<section
+  id="voice"
+  aria-labelledby="voice-heading"
+  class="flex min-h-svh flex-col justify-center py-20"
+  data-voice-switch
+  data-mode="manual"
+>
+  <div class="layout">
+    <p class="text-center text-sm uppercase tracking-[.1em] text-muted">
+      Typing vs speaking
+    </p>
+
+    <h2
+      id="voice-heading"
+      class="mt-4 text-balance text-center"
+      data-voice-headline
+    >
+      Nothing on this desk changed except who does the typing.
+    </h2>
+
+    <div
+      class="wide mt-8 flex justify-center gap-2"
+      role="tablist"
+      aria-label="Two ways of working at the same desk"
+    >
+      <button
+        type="button"
+        role="tab"
+        id="voice-tab-manual"
+        aria-controls="voice-panel"
+        aria-selected="true"
+        tabindex="0"
+        data-target="manual"
+      >
+        With mouse and keyboard
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="voice-tab-jarvis"
+        aria-controls="voice-panel"
+        aria-selected="false"
+        tabindex="-1"
+        data-target="jarvis"
+      >
+        With Jarvis
+      </button>
+    </div>
+
+    <!--
+      Both frames are stacked in the same box and only their opacity changes.
+      Both load eagerly: a lazy second frame flashes white the first time the
+      visitor switches, which reads as a page bug rather than a transition.
+    -->
+    <div
+      class="wide mt-8"
+      id="voice-panel"
+      role="tabpanel"
+      aria-labelledby="voice-tab-manual"
+      tabindex="0"
+      data-stage
+    >
+      <Image
+        src={manualScene}
+        alt="An ink drawing on ruled paper: a person hunched over a desk with both hands on the keyboard and one on the mouse, brow furrowed and a bead of sweat at the temple, facing a monitor filled with a scribbled mess of overlapping windows. A coffee mug steams at the left."
+        loading="eager"
+        data-frame="manual"
+        data-active="true"
+      />
+      <Image
+        src={jarvisScene}
+        alt="The same desk, the same person, the same mug and monitor. Now leaning back with a small desk microphone held near the mouth, both hands away from the keyboard and mouse, smiling. An empty speech bubble rises to the upper left and the monitor shows a few tidy lines."
+        loading="eager"
+        data-frame="jarvis"
+        data-active="false"
+      />
+
+      <p data-bubble>
+        <span class="sr-only">{spokenLine}</span>
+        <span data-typed aria-hidden="true">{spokenLine}</span>
+      </p>
+    </div>
+
+    <dl class="wide mt-8" data-figures>
+      {
+        figures.map(({ value, label, title }) => (
+          <div title={title}>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+</section>
+
+<!--
+  Global rather than scoped: the frames are rendered by astro:assets' <Image>,
+  and a scoped rule cannot be relied on to reach inside another component. Every
+  selector is anchored on [data-voice-switch], so the section still owns them.
+-->
+<style is:global>
+  [data-voice-switch] [data-voice-headline] {
+    font-size: var(--text-display-lg);
+    letter-spacing: var(--tracking-display-lg);
+    line-height: 1.2;
+  }
+
+  /* --- Tabs -------------------------------------------------------------
+   * design.md's secondary control, promoted to the primary ink fill when
+   * selected. One shape language: the 8px button radius, never a pill.
+   */
+  [data-voice-switch] [role="tab"] {
+    border: 1px solid var(--hairline-strong);
+    border-radius: var(--radius-md);
+    background: var(--surface-card);
+    color: var(--body);
+    padding: 0 20px;
+    height: 40px;
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  [data-voice-switch] [role="tab"]:hover {
+    color: var(--ink);
+  }
+
+  [data-voice-switch] [role="tab"][aria-selected="true"] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--on-ink);
+  }
+
+  /* --- The picture ------------------------------------------------------- */
+  [data-voice-switch] [data-stage] {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-xl);
+    background: var(--surface-card);
+    /* Lets the bubble's type scale with the picture instead of with the
+     * viewport, so a percentage-placed overlay keeps sitting where it was
+     * measured. Same result as hero.md's scaled 1440px stage, without JS. */
+    container-type: inline-size;
+  }
+
+  [data-voice-switch] [data-frame] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    /* Opacity and nothing else. A slide, wipe or zoom would say "somewhere
+     * else", and the whole point is "the same place, a different state". */
+    transition: opacity 0.45s ease;
+  }
+
+  [data-voice-switch] [data-frame][data-active="true"] {
+    opacity: 1;
+  }
+
+  /* --- The speech bubble -------------------------------------------------
+   * Positioned in percentages of the picture, measured against the drawn
+   * bubble in jarvis.png (its body spans 9-30% across and 1-32% down at
+   * 1920x1080). The site's own body face, never a handwriting imitation.
+   */
+  [data-voice-switch] [data-bubble] {
+    position: absolute;
+    left: 11.5%;
+    top: 6%;
+    width: 17.5%;
+    height: 23%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    text-align: center;
+    text-wrap: balance;
+    color: var(--ink);
+    font-size: 1.35cqw;
+    line-height: 1.35;
+    pointer-events: none;
+    opacity: 0;
+    /* Leaving has no delay. The delay belongs to the arrival alone — carrying
+     * it in both directions leaves the bubble hanging over the wrong frame for
+     * two thirds of a second. */
+    transition: opacity 0.3s ease;
+  }
+
+  [data-voice-switch][data-mode="jarvis"] [data-bubble] {
+    opacity: 1;
+    /* 450ms for the cross-fade to finish, then the 200ms the brief asks for.
+     * Arriving mid-fade muddies both. */
+    transition: opacity 0.3s ease 0.65s;
+  }
+
+  /* --- The figures -------------------------------------------------------
+   * Hairlines are the 1px gaps of a grid sitting on a hairline-coloured
+   * ground, the same technique the logo strip uses. No borders are drawn.
+   */
+  [data-voice-switch] [data-figures] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--hairline);
+    margin: 0;
+  }
+
+  @media (min-width: 768px) {
+    [data-voice-switch] [data-figures] {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  [data-voice-switch] [data-figures] > div {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: var(--space-xs);
+    background: var(--canvas);
+    padding: var(--space-lg) var(--space-base);
+  }
+
+  [data-voice-switch] [data-figures] dd {
+    margin: 0;
+    color: var(--ink);
+    font-size: var(--text-display-md);
+    letter-spacing: var(--tracking-display-md);
+    line-height: 1;
+  }
+
+  [data-voice-switch] [data-figures] dt {
+    color: var(--muted);
+    font-size: var(--text-caption-upper);
+    font-weight: 600;
+    letter-spacing: var(--tracking-caption-upper);
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  /* --- Reduced motion ----------------------------------------------------
+   * No cross-fade, no delay. The autoplay and the typewriter are switched off
+   * in the script, which reads the same query.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    [data-voice-switch] [data-frame],
+    [data-voice-switch] [data-bubble] {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  /*
+   * Tab behaviour for the two frames.
+   *
+   * Autoplay exists so a visitor who never touches anything still sees the
+   * point being made. It stops permanently at the first interaction — a demo
+   * that keeps moving under someone's hand is worse than one that never moved.
+   */
+  const RESET = "manual";
+  const CYCLE_MS = 4000;
+  /* The bubble's own transition delay; typing may not start before it shows. */
+  const BUBBLE_DELAY_MS = 650;
+  const TYPE_MS = 30;
+
+  const section = document.querySelector<HTMLElement>("[data-voice-switch]");
+
+  if (section) {
+    const tabs = Array.from(
+      section.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+    );
+    const panel = section.querySelector<HTMLElement>('[role="tabpanel"]');
+    const frames = Array.from(
+      section.querySelectorAll<HTMLElement>("[data-frame]"),
+    );
+    const typed = section.querySelector<HTMLElement>("[data-typed]");
+    const fullLine = typed?.textContent ?? "";
+
+    const calm = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    let userTookOver = false;
+    let cycle: number | undefined;
+    let typing: number | undefined;
+
+    const stopTyping = () => {
+      if (typing !== undefined) window.clearInterval(typing);
+      typing = undefined;
+    };
+
+    const runTypewriter = () => {
+      if (!typed) return;
+      stopTyping();
+      if (calm.matches) {
+        typed.textContent = fullLine;
+        return;
+      }
+      typed.textContent = "";
+      let i = 0;
+      typing = window.setInterval(() => {
+        typed.textContent = fullLine.slice(0, ++i);
+        if (i >= fullLine.length) stopTyping();
+      }, TYPE_MS);
+    };
+
+    const show = (mode: string) => {
+      for (const frame of frames) {
+        frame.dataset.active = String(frame.dataset.frame === mode);
+      }
+      for (const tab of tabs) {
+        const selected = tab.dataset.target === mode;
+        tab.setAttribute("aria-selected", String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+        if (selected) panel?.setAttribute("aria-labelledby", tab.id);
+      }
+      section.dataset.mode = mode;
+
+      stopTyping();
+      /* Whatever was typed fades out as it stands; rewriting it mid-fade shows
+       * the line snapping back to full length. The next arrival retypes it, and
+       * the screen-reader copy never changed in the first place. */
+      if (mode === RESET) return;
+      /* Let the picture settle and the bubble arrive before the line starts. */
+      window.setTimeout(runTypewriter, calm.matches ? 0 : BUBBLE_DELAY_MS);
+    };
+
+    const takeOver = () => {
+      userTookOver = true;
+      if (cycle !== undefined) window.clearInterval(cycle);
+      cycle = undefined;
+    };
+
+    const startAutoplay = () => {
+      if (userTookOver || calm.matches || cycle !== undefined) return;
+      cycle = window.setInterval(() => {
+        show(section.dataset.mode === RESET ? "jarvis" : RESET);
+      }, CYCLE_MS);
+    };
+
+    for (const [index, tab] of tabs.entries()) {
+      tab.addEventListener("click", () => {
+        takeOver();
+        show(tab.dataset.target ?? RESET);
+      });
+
+      /* The tab pattern owes arrow-key navigation; buttons alone do not give it. */
+      tab.addEventListener("keydown", (event) => {
+        const step =
+          event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+        if (!step) return;
+        event.preventDefault();
+        takeOver();
+        const next = tabs[(index + step + tabs.length) % tabs.length];
+        show(next.dataset.target ?? RESET);
+        next.focus();
+      });
+    }
+
+    /* Nothing moves until the section is actually on screen. */
+    const watcher = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) startAutoplay();
+          else if (cycle !== undefined) {
+            window.clearInterval(cycle);
+            cycle = undefined;
+          }
+        }
+      },
+      { threshold: 0.4 },
+    );
+    watcher.observe(section);
+
+    calm.addEventListener("change", () => {
+      if (calm.matches) takeOver();
+    });
+  }
+</script>
