@@ -1,0 +1,231 @@
+---
+/**
+ * The square itself — ONE element for the whole page, in a fixed layer.
+ *
+ * `SectionTrack` says where each section's perimeter is. This file owns the
+ * single square that walks all of them, and the schedule that decides which
+ * perimeter it is on at any scroll position. Rendered once, from `Base.astro`,
+ * beside `PageChrome` and for the same reason: what runs the length of the
+ * document is not any one section's to draw.
+ *
+ * WHY THE SQUARE LEFT THE SECTIONS. It used to be one element per section, with
+ * `visibility` revealing whichever section the reader was inside. Three things
+ * came out of that and all three were reported as bugs on 2026-08-29:
+ *
+ *   it disappeared   A pinned section's square is drawn in the frame but timed
+ *                    by the tall track behind it. The track kept the square for
+ *                    a viewport after the frame had scrolled off the top, so
+ *                    there was no square at all over the first screen of
+ *                    `This is being built in public`, and again after the
+ *                    stargazers globe and the install steps.
+ *   it was clipped   The square overhangs its own corners by half its width,
+ *                    and it sat inside boxes that hide their overflow.
+ *   it could not     Twelve `getBoundingClientRect` calls a frame, to answer a
+ *   keep up          question that only changes when the page is resized.
+ *
+ * A fixed layer has none of those: nothing clips it, there is one transform to
+ * write, and the section it belongs to is a comparison against numbers worked
+ * out once. See docs/layout.md § "The section marker".
+ *
+ * Decorative: aria-hidden, pointer-events: none, no navigation function. Its
+ * CSS is in src/styles/layout.css, next to the width formula the rails are
+ * measured against.
+ */
+---
+
+<div class="section-marker" aria-hidden="true">
+  <span class="section-marker__dot"></span>
+</div>
+
+<script>
+  import {
+    scheduleTracks,
+    sidesForTracks,
+    trackPath,
+    type TrackEnd,
+    type TrackMeasure,
+    type TrackSpan,
+  } from "@/lib/sectionTrack";
+
+  /* Half the 8px square: the transform places its top-left corner, and every
+   * point on the path is where the square's CENTRE has to be. */
+  const HALF = 4;
+
+  const dot = document.querySelector<HTMLElement>(".section-marker__dot");
+  const layers = Array.from(document.querySelectorAll<HTMLElement>("[data-section-track]"));
+
+  if (dot && layers.length > 0) {
+    /* The serpentine, folded over document order — the only place that order is
+     * knowable, since a component cannot see its own siblings. How a section
+     * ENDS travels on the element, because it is a fact about that section's own
+     * markup; where it STARTS depends on every section above it. */
+    const sides = sidesForTracks(
+      layers.map((layer): TrackEnd =>
+        layer.dataset.sectionTrack === "open" ? "open" : "closed",
+      ),
+    );
+
+    const tracks = layers.map((layer, index) => {
+      const box = layer.querySelector<HTMLElement>(".section-track__box")!;
+      const path = layer.querySelector<SVGPathElement>("path")!;
+      const end: TrackEnd = layer.dataset.sectionTrack === "open" ? "open" : "closed";
+      /* Written before getTotalLength reads it. */
+      path.setAttribute("d", trackPath(sides[index], end));
+      return {
+        box,
+        path,
+        /* The tall track a pinned section scrolls on, if it has one. Whether it
+         * is actually pinning is decided per measurement, not here. */
+        pin: layer.closest<HTMLElement>("[data-scroll-span]"),
+        length: path.getTotalLength(),
+      };
+    });
+
+    /**
+     * Is this box actually held still, right now?
+     *
+     * `[data-scroll-span]` is markup and says the section CAN pin. Whether it
+     * DOES is a computed style: `Install` drops its own pin whenever the frame
+     * is too short for four steps, and `VoiceSwitch` and the stargazers drop
+     * theirs below their breakpoints. Ask the elements, and every one of those
+     * cases is answered without this file knowing any of them.
+     */
+    const isPinned = (box: HTMLElement, pin: HTMLElement | null) => {
+      if (!pin) return false;
+      for (let el: HTMLElement | null = box; el && el !== pin; el = el.parentElement) {
+        if (getComputedStyle(el).position === "sticky") return true;
+      }
+      return getComputedStyle(pin).position === "sticky";
+    };
+
+    let spans: TrackSpan[] = [];
+    let stale = true;
+
+    /* Everything that forces layout happens HERE, and here runs on a resize, on
+     * load and when a tracked element changes size — never on a scroll. */
+    const measure = () => {
+      stale = false;
+      const viewport = window.innerHeight;
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - viewport);
+      const top = window.scrollY;
+
+      spans = scheduleTracks(
+        tracks.map((track): TrackMeasure => {
+          track.length = track.path.getTotalLength();
+          const boxRect = track.box.getBoundingClientRect();
+          const pinned = isPinned(track.box, track.pin);
+          const pinRect = pinned ? track.pin!.getBoundingClientRect() : null;
+          return {
+            boxTop: boxRect.top + top,
+            boxHeight: boxRect.height,
+            pinTop: pinRect ? pinRect.top + top : null,
+            pinHeight: pinRect ? pinRect.height : 0,
+          };
+        }),
+        viewport,
+        maxScroll,
+      );
+    };
+
+    /** Which section owns the square: the last one the reader has entered. */
+    const ownerAt = (top: number) => {
+      let owner = 0;
+      for (let i = 0; i < spans.length; i++) {
+        if (top >= spans[i].enter) owner = i;
+      }
+      return owner;
+    };
+
+    /**
+     * A point on one section's perimeter, in VIEWPORT pixels.
+     *
+     * The rails and the rules are 1px lines lying just inside the tracked box —
+     * on its left and right, and just below it at the bottom — so the square is
+     * centred on the line rather than on the box's edge. Both corrections are
+     * linear in the point's own coordinate, which is what makes them one term
+     * each instead of a case per corner: the x nudge runs +0.5 to -0.5 across
+     * the box, the y nudge is +0.5 everywhere. Drop them and the square sits a
+     * pixel off the line it is meant to ride, which is visible.
+     */
+    const pointOn = (track: (typeof tracks)[number], progress: number) => {
+      const along = Math.min(1, Math.max(0, progress));
+      const point = track.path.getPointAtLength(along * track.length);
+      const rect = track.box.getBoundingClientRect();
+      return {
+        x: rect.left + (point.x / 100) * rect.width + 0.5 - point.x / 100,
+        y: rect.top + (point.y / 100) * rect.height + 0.5,
+      };
+    };
+
+    const place = (top: number) => {
+      const index = ownerAt(top);
+      const span = spans[index];
+      const next = tracks[index + 1];
+
+      let point;
+      if (top <= span.leave || !next) {
+        const run = span.leave - span.enter;
+        point = pointOn(tracks[index], run > 0 ? (top - span.enter) / run : 1);
+      } else {
+        /* THE GAP BETWEEN TWO BOXES, walked rather than waited out. Both ends
+         * are on the same rail — the serpentine is the guarantee — so this is a
+         * slide straight down the line, and it is the one thing that keeps the
+         * square on the screen while a pinned frame is leaving it. */
+        const gap = span.hand - span.leave;
+        const across = gap > 0 ? Math.min(1, (top - span.leave) / gap) : 1;
+        const from = pointOn(tracks[index], 1);
+        const to = pointOn(next, 0);
+        point = {
+          x: from.x + (to.x - from.x) * across,
+          y: from.y + (to.y - from.y) * across,
+        };
+      }
+
+      dot.style.transform = `translate3d(${point.x - HALF}px, ${point.y - HALF}px, 0)`;
+    };
+
+    let frame = 0;
+    let placed = -1;
+
+    const loop = () => {
+      frame = requestAnimationFrame(loop);
+      if (stale) {
+        measure();
+        placed = -1;
+      }
+      const top = window.scrollY;
+      /* Nothing that decides the square's position changes without the page
+       * scrolling or the layout going stale, so a still page costs one number
+       * comparison a frame and nothing else. */
+      if (top === placed) return;
+      placed = top;
+      place(top);
+      dot.style.visibility = "visible";
+    };
+
+    const invalidate = () => {
+      stale = true;
+    };
+
+    addEventListener("resize", invalidate, { passive: true });
+    /* The pinned sections decide whether they pin on `load`, once their images
+     * and islands have settled, and that changes a track from four screens to
+     * one. */
+    addEventListener("load", invalidate, { passive: true });
+
+    if ("ResizeObserver" in window) {
+      /* The tracked elements, for a section that grows — and the body, because
+       * a section growing ABOVE this one moves it down the document without
+       * changing its own size. */
+      const grown = new ResizeObserver(invalidate);
+      for (const track of tracks) {
+        grown.observe(track.box);
+        if (track.pin) grown.observe(track.pin);
+      }
+      grown.observe(document.body);
+    }
+
+    frame = requestAnimationFrame(loop);
+    addEventListener("pagehide", () => cancelAnimationFrame(frame), { once: true });
+  }
+</script>

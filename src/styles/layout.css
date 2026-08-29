@@ -315,10 +315,13 @@ body > section::before {
  * a marker passing THROUGH the nav reads as a bug rather than as chrome.
  * ------------------------------------------------------------------------ */
 
+/* The per-section layer PAINTS NOTHING. It is a box laid over the section, on
+ * the two rails, carrying the path the square walks — the square itself is one
+ * element in a fixed layer below. No z-index for the same reason: there is
+ * nothing here to stack. */
 .section-track {
   position: absolute;
   inset: 0;
-  z-index: 20;
   pointer-events: none;
 }
 
@@ -339,14 +342,44 @@ body > section::before {
   overflow: visible;
 }
 
-/* Hidden, and parked off screen, until the first frame decides which section
- * owns it. Both halves are load-bearing: `visibility` is what keeps this to ONE
- * square on the page — every section carries a marker element so the geometry
- * stays in its own box, but only the section the reader is inside reveals it
- * (src/components/SectionTrack.astro) — and the parking keeps the square out of
- * the top-left corner for the one frame before any of that runs, which would
- * otherwise be a page of dots flashing at once on load. */
-.section-track__marker {
+/* --- The square ----------------------------------------------------------
+ *
+ * ONE element for the whole page, in a FIXED layer, placed in viewport pixels
+ * by src/components/SectionMarker.astro. It used to be one element per section
+ * with `visibility` revealing the current one, and that cost three defects the
+ * maintainer reported on 2026-08-29 — see that file for each.
+ *
+ * The one that this layer settles by itself is the clipping. The square
+ * overhangs its own corners by half its width so that it sits centred on the
+ * hairline, and several of the boxes it walks hide their overflow: the hero's
+ * section does, and the install steps' pinned viewport does. Inside those, half
+ * the square was cut off at exactly the corners it is there to mark. Nothing
+ * clips a fixed layer.
+ *
+ * z-index 20: above the cards, which have surfaces of their own and would
+ * otherwise bury the square, and below the nav at 30.
+ *
+ * THAT ORDER USED TO BE ABOUT AN OPAQUE BAND — the square would have passed
+ * THROUGH the nav's own ground, which reads as a bug rather than as chrome. The
+ * nav has no ground any more (SiteNav.astro, 2026-08-29), so the square travels
+ * the top 4rem of the rail in plain sight, which is correct: the rail is drawn
+ * there too, and a square that vanished for the first 4rem of every section
+ * would be the defect instead. The order still matters, for a smaller reason —
+ * the wordmark starts exactly on the left rail, so the two do meet, and when
+ * they do the lettering is what should be on top.
+ *
+ * Hidden, and parked off screen, until the first frame has placed it. Both
+ * halves are load-bearing: the parking keeps the square out of the top-left
+ * corner for the one frame before the schedule is worked out, and `visibility`
+ * covers the case where the page has no tracked section at all. */
+.section-marker {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.section-marker__dot {
   position: absolute;
   top: 0;
   left: 0;
@@ -361,7 +394,8 @@ body > section::before {
 /* Below the container's own breakpoint there are no gutters left to draw in,
  * which is also where the rails disappear. */
 @media (max-width: 767px) {
-  .section-track {
+  .section-track,
+  .section-marker {
     display: none;
   }
 }

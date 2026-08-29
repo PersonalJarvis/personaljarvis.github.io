@@ -155,3 +155,104 @@ export const TURN_DOWN = (RAIL + CLOSING_RULE) / TOTAL;
  * section — the only kind that reads its milestones back out (`VoiceSwitch`).
  */
 export const downTheRail = (t: number): number => (t * RAIL) / TOTAL;
+
+/**
+ * One tracked box, measured in DOCUMENT coordinates.
+ *
+ * `pinTop` is null for a section that simply scrolls past. It is a number for a
+ * section that PINS its box — a tall track carrying a `position: sticky` child
+ * — and then it is the track's own top, because the track is what the reader
+ * spends scrolling on while the box itself stands still.
+ *
+ * WHETHER A SECTION IS PINNED IS A RUNTIME FACT, NOT A MARKUP ONE. `Install`
+ * carries a track at every window size and drops the pin — `position: static`
+ * on the sticky child — whenever the frame cannot hold its content. Read the
+ * pin off computed style rather than off `[data-scroll-span]`, or the schedule
+ * gives that section a running length of `track - viewport`, which at the
+ * window where it just stopped pinning is a dozen pixels: the square crosses
+ * the whole section in one wheel notch and sits in the corner for the rest of
+ * it. That was the "it does not work at all in How to install Jarvis" the
+ * maintainer reported on 2026-08-29.
+ */
+export interface TrackMeasure {
+  /** Document y of the drawn box's top edge. Read only while it is NOT pinned. */
+  boxTop: number;
+  boxHeight: number;
+  /** Document y of the pinning track, or null when the section flows. */
+  pinTop: number | null;
+  /** The pinning track's height. Meaningless when `pinTop` is null. */
+  pinHeight: number;
+}
+
+/**
+ * When one section owns the square, and when it hands it on.
+ *
+ * `enter`..`leave` is the stretch of scrolling the square spends walking that
+ * section's perimeter — progress 0 to 1. `hand` is where the NEXT section takes
+ * over, and it is never earlier than `leave`: what lies between the two is dead
+ * scrolling that belongs to no section's box, and the square crosses it as a
+ * slide down the rail rather than by parking in a corner.
+ */
+export interface TrackSpan {
+  enter: number;
+  leave: number;
+  hand: number;
+}
+
+/**
+ * The whole page's schedule for the square: who owns it, and from where to
+ * where, in document scroll positions.
+ *
+ * WHY A SCHEDULE AND NOT A TEST PER FRAME. The old loop asked every section
+ * every frame whether its driver had crossed the top of the window. That is a
+ * dozen forced layout reads a frame for an answer that only changes when the
+ * page is resized, and — worse — it asked the question of the DRIVER while the
+ * square was drawn in the BOX. For a pinned section those are different
+ * elements: the track keeps the square long after the frame it is drawn in has
+ * scrolled off the top, so the square left the screen for the best part of a
+ * viewport at the end of every pinned section. That is the marker "just
+ * disappearing" over `This is being built in public` (maintainer, 2026-08-29).
+ * Computed once, the schedule is read with a comparison instead.
+ *
+ * WHY THE SPANS ARE FORCED TO TILE. Boxes do not: a band is held
+ * `--section-inset` inside its section, a pinned frame stops a whole viewport
+ * before its track does, and the hero's box ends 80px above the logo strip's
+ * opening rule. Left alone, the square reaches a corner, waits out the gap and
+ * then jumps to wherever the next box starts. Handing over on `hand` — the next
+ * section's `enter` — and sliding across the gap instead is what makes the
+ * square move continuously all the way down the page. Both ends of every gap
+ * sit on the SAME rail, because that is exactly what the serpentine guarantees,
+ * so the slide is vertical and reads as the square carrying on down the line.
+ *
+ * `maxScroll` is the document's own last scroll position. It closes the last
+ * section, whose bottom edge can never reach the top of the window — on its own
+ * height the square would stop somewhere in the middle and never finish the
+ * page.
+ */
+export const scheduleTracks = (
+  measures: readonly TrackMeasure[],
+  viewport: number,
+  maxScroll: number,
+): TrackSpan[] => {
+  const bounded = (value: number) => Math.max(0, Math.min(maxScroll, value));
+
+  const spans = measures.map((measure): TrackSpan => {
+    const pin = measure.pinTop === null ? 0 : measure.pinHeight - viewport;
+    const pinned = measure.pinTop !== null && pin > 0;
+    const enter = pinned ? (measure.pinTop as number) : measure.boxTop;
+    const leave = enter + (pinned ? pin : measure.boxHeight);
+    return { enter: bounded(enter), leave: bounded(leave), hand: bounded(leave) };
+  });
+
+  for (let i = 0; i < spans.length; i++) {
+    const next = spans[i + 1];
+    /* The last section hands over to the end of the document, and nothing
+     * overlaps: a box that starts before its predecessor's own span is done
+     * shortens that span rather than fighting it for the square. */
+    const hand = next ? Math.max(spans[i].enter, next.enter) : maxScroll;
+    spans[i].leave = Math.min(Math.max(spans[i].enter, spans[i].leave), hand);
+    spans[i].hand = hand;
+  }
+
+  return spans;
+};

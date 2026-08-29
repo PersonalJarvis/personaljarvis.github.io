@@ -9,8 +9,15 @@
  * PageChrome is here rather than in a section because the rails run the whole
  * page. Assembled per section they would come out as segments with seams, and
  * the seams are the first thing the eye finds. See docs/layout.md.
+ *
+ * SectionMarker is here for the same reason. There is exactly one square on the
+ * page and it walks every section's perimeter in turn, so it belongs to the
+ * document rather than to any one section — which is also what lets it cross
+ * the gaps BETWEEN sections instead of parking in a corner until the next one
+ * starts. The sections declare their own geometry with `SectionTrack`.
  */
 import PageChrome from "@/components/PageChrome.astro";
+import SectionMarker from "@/components/SectionMarker.astro";
 import "@/styles/global.css";
 
 interface Props {
@@ -37,6 +44,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   </head>
   <body>
     <PageChrome />
+    <SectionMarker />
     <slot />
   </body>
 </html>

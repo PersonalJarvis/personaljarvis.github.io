@@ -97,9 +97,18 @@ const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <
     band. This box starts on the rule instead, which is the corner the reader
     can actually see. `SectionTrack` measures the box it is dropped into, so
     naming the box is all it takes.
+
+    `open`, because NOTHING RAIL-TO-RAIL IS DRAWN AT THIS BOX'S BOTTOM EDGE.
+    What closes the hero is its own stage frame, and that is a rounded card
+    75px higher up — the section spends its last `--section-inset` on the tail
+    that pulls the card's line clear of the fold. Closed, the square turned off
+    the rail at the bottom of this box and ran across bare ground to the other
+    one; the maintainer's report on 2026-08-29 was that it "is not quite on the
+    line". Open, it comes down the rail and carries straight on into the logo
+    strip's opening rule, which is the next line that actually exists.
   -->
   <div class="relative grid min-h-0 grid-rows-[auto_minmax(0,1fr)]">
-    <SectionTrack />
+    <SectionTrack open />
 
     <div class="pt-[5svh]">
       <Container width="prose">

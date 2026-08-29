@@ -1,6 +1,6 @@
 ---
 /**
- * The section marker — one small square walking a section's own perimeter.
+ * One section's own perimeter, declared for the page's single square to walk.
  *
  * It answers a different question from the rails: the rails say where the
  * column is, this says how far the reader is through THIS section and how much
@@ -8,49 +8,67 @@
  * down the OTHER rail into the section below. See docs/layout.md
  * § "The section marker" and src/lib/sectionTrack.ts for the path itself.
  *
+ * THE SQUARE IS NOT IN HERE. There is exactly one on the page and it lives in a
+ * fixed layer — src/components/SectionMarker.astro, rendered once from the
+ * layout — which reads every `[data-section-track]` in document order and moves
+ * that one square along whichever perimeter the reader is on. This component
+ * only declares the geometry: a box laid over the section, on the rails, with a
+ * path in it. Nothing here paints.
+ *
+ * A square per section is what this file used to hold, and it cost three
+ * reported bugs at once on 2026-08-29: it vanished for most of a screen at the
+ * end of every pinned section, it was clipped by boxes that hide their
+ * overflow, and it fell behind the scroll because deciding whose square to show
+ * meant measuring every section every frame. `SectionMarker` explains each.
+ *
  * WHICH RAIL IT WALKS IS NOT THIS COMPONENT'S TO DECIDE, and it is not a prop
  * either. The side is a running total down the page — a section that closes on
  * a rule flips it for the section below, a section that does not keeps it (see
  * `sidesForTracks`) — so it is a function of everything ABOVE this one, and a
  * prop would mean every section carrying a hand-maintained answer that silently
- * goes wrong the moment one is inserted, removed or reordered. The client
+ * goes wrong the moment one is inserted, removed or reordered. The marker
  * script reads `[data-section-track]` in document order and writes the `d` it
  * derives, which is the one place that ordering is knowable. The markup below
- * therefore ships a placeholder path: it is never stroked and the marker is
- * parked off-screen until the first frame, so nothing of it is ever seen.
+ * therefore ships a placeholder path, and it is never stroked.
  *
  * `open` IS THE ONE THING THIS COMPONENT CANNOT DERIVE, and that is why it IS a
  * prop. Whether a rule is drawn under a section is a local fact about that
  * section's own markup, not about its place in the page: pass `open` when
  * nothing is drawn at this section's bottom edge, so there is no line for the
- * square to cross and it hands over on the rail it came down. The page has one
- * such section — `Clis.astro`, the last block of the run that opts out of the
- * shell, whose neighbour below opens on a pinned frame an inset further down.
- * The other two blocks of that run close on `.section-run-rule` and are
- * ordinary closed sections (maintainer, 2026-08-29).
+ * square to cross and it hands over on the rail it came down. Two sections use
+ * it. `Clis.astro` is the last block of the run that opts out of the shell,
+ * whose neighbour below opens on a pinned frame an inset further down.
+ * `Hero.astro` is the other: what closes the hero is its own stage frame, a
+ * rounded card 75px above the section's bottom edge, so there is no rail-to-rail
+ * line at the joint either — the square used to cross a rule that was not there
+ * (maintainer, 2026-08-29: "er ist nicht ganz auf der Linie").
  *
  * WHERE TO PUT IT. Drop it inside the box the reader sees the section AS, and
  * give that box `position: relative`. For an ordinary section that is the
  * `<section>` element, whose top edge IS its horizontal rule and whose bottom
- * edge is the next one. For a section that pins a sticky child — VoiceSwitch —
- * it is the pinned frame, because the section element itself is three screens
- * tall and a marker halfway down it would be halfway off the screen.
+ * edge is the next one. For a section that pins a sticky child — VoiceSwitch,
+ * the stargazers, the install steps — it is the pinned frame, because the
+ * section element itself is several screens tall and a marker halfway down it
+ * would be halfway off the screen.
  *
- * WHERE THE PROGRESS COMES FROM. The nearest `[data-scroll-span]` ancestor, or
- * the section itself. Those differ for exactly the same reason: a sticky
- * section is driven by its tall track, not by the box being drawn.
+ * WHERE THE PROGRESS COMES FROM. The nearest `[data-scroll-span]` ancestor when
+ * that ancestor is really pinning its child, and the box itself otherwise. The
+ * marker settles that per measurement rather than from the markup, because a
+ * pinned section can stop pinning at a window size — `Install` does exactly
+ * that — and a track that is no longer holding anything still is not what the
+ * reader is scrolling through.
  *
  * ITS CSS IS IN src/styles/layout.css, NOT IN A SCOPED BLOCK HERE. The layer's
  * two edges come from a `Container`, and Container does not spread the rest of
  * its props onto its root element — so Astro's scope attribute never reaches
  * it, a scoped `.section-track__column { height: 100% }` never matches, and the
- * box collapses to zero height with the marker parked in a corner forever. The
+ * box collapses to zero height with the square parked in a corner forever. The
  * page chrome's rules live in that file for the same reason.
  *
  * `nested` IS NOT OPTIONAL WHEN IT APPLIES. The layer reaches the two rails
  * through a `Container`, and a `content` Container inside another one applies
  * BOTH of its jobs a second time — the gutter, and a max-width that is itself
- * "100% minus two gutters". The marker then rides a line 32px inside the rail,
+ * "100% minus two gutters". The square then rides a line 32px inside the rail,
  * which reads as a rendering fault rather than as a wrong prop. Pass `nested`
  * whenever the host box is already on the content column — the pinned frame
  * is — and the layer takes the `full` step instead, which is the width step
@@ -93,155 +111,6 @@ const { nested = false, open = false } = Astro.props;
       >
         <path d={trackPath("left")} fill="none" stroke="none"></path>
       </svg>
-
-      <span class="section-track__marker"></span>
     </div>
   </Container>
 </div>
-
-<script>
-  import { sidesForTracks, trackPath, type TrackEnd } from "@/lib/sectionTrack";
-  import { sectionProgress, spanProgress } from "@/lib/scrollSpan";
-
-  /* Half the 8px square. The marker is placed by its top-left corner. */
-  const HALF = 4;
-
-  /* One rAF for the whole page, not one per section. Each loop would force its
-   * own layout read, and eight sections would then flush layout eight times a
-   * frame; read together they cost a single pass. It also has to be one loop,
-   * because deciding WHICH section owns the square is a decision about all of
-   * them at once. */
-  const layers = Array.from(document.querySelectorAll<HTMLElement>("[data-section-track]"));
-
-  /* The serpentine, folded over document order — which is the only place that
-   * order is known, since a component cannot see its own siblings. How a
-   * section ENDS is its own markup's business and travels on the element; where
-   * it STARTS depends on every section above it and is computed here. A per
-   * section side prop would be a hand-maintained answer that goes wrong the
-   * moment the page is reordered. */
-  const sides = sidesForTracks(
-    layers.map((layer): TrackEnd =>
-      layer.dataset.sectionTrack === "open" ? "open" : "closed",
-    ),
-  );
-
-  const tracks = layers
-    .map((layer, index) => {
-      const box = layer.querySelector<HTMLElement>(".section-track__box")!;
-      const path = layer.querySelector<SVGPathElement>("path")!;
-      const marker = layer.querySelector<HTMLElement>(".section-track__marker")!;
-      const end: TrackEnd = layer.dataset.sectionTrack === "open" ? "open" : "closed";
-      /* Written before getTotalLength below reads it. */
-      path.setAttribute("d", trackPath(sides[index], end));
-      /* WHAT DRIVES THE PROGRESS. A sticky section is driven by its tall track;
-       * everything else by the very box the marker is drawn in, which is the
-       * element `SectionTrack` was dropped into. Not by `closest("section")`:
-       * the hero's box starts under the nav rather than at the section's top
-       * edge, and measuring the progress against a box the marker does not walk
-       * puts the square off its own corners. */
-      const sticky = layer.closest<HTMLElement>("[data-scroll-span]");
-      const driver = sticky ?? layer.parentElement;
-      return driver
-        ? { box, path, marker, driver, sticky: sticky !== null, length: 0, placed: -1 }
-        : null;
-    })
-    .filter((t): t is NonNullable<typeof t> => t !== null);
-
-  if (tracks.length > 0) {
-    /* getTotalLength is a measurement of the path in its own user units, so it
-     * is the same 200 for every section and survives any resize. Read once. */
-    for (const track of tracks) track.length = track.path.getTotalLength();
-
-    /* THERE IS ONE SQUARE ON THE PAGE, NOT ONE PER SECTION.
-     *
-     * Every section still owns a marker element — that is what keeps the
-     * geometry in the section's own box, on its own two rails — but only the
-     * section the reader is currently inside paints it. Without this, every
-     * section parks its square in its entry corner and waits there, so the page
-     * shows a dot in every corner at once and the moving one is lost among
-     * them. The maintainer asked for a single dot on 2026-08-29.
-     *
-     * The owner is the LAST section whose driver has crossed the top of the
-     * window, and the first section before anything has. Sections tile the
-     * document, so that rule names exactly one at every scroll position, with
-     * no gap between two of them and no moment when two qualify.
-     *
-     * It also lands the hand-over on a single point: a section reaches progress
-     * 1 — its exit corner — at the very moment its bottom edge touches the top
-     * of the window, which is the same moment the section below crosses it and
-     * takes over at ITS progress 0, the entry corner directly beneath. The
-     * square goes out on one corner and comes back on the same pixel. */
-    const ownerIndex = () => {
-      let owner = 0;
-      for (let i = 0; i < tracks.length; i++) {
-        if (tracks[i].driver.getBoundingClientRect().top <= 0) owner = i;
-      }
-      return owner;
-    };
-
-    const place = (track: (typeof tracks)[number]) => {
-      const rect = track.driver.getBoundingClientRect();
-      /* How much scrolling the document has left once this box's top reaches
-       * the top of the window. Only the last section is ever limited by it —
-       * see sectionProgress. */
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      const reach = maxScroll - (rect.top + window.scrollY);
-      const progress = track.sticky
-        ? spanProgress(rect, window.innerHeight)
-        : sectionProgress(rect, reach);
-      /* A sub-pixel move is a repaint nobody can see. */
-      if (Math.abs(progress - track.placed) < 0.0004) return;
-      track.placed = progress;
-
-      const point = track.path.getPointAtLength(progress * track.length);
-      const { width, height } = track.box.getBoundingClientRect();
-
-      /* The rails and the rules are 1px lines lying just INSIDE the tracked box
-       * on its left and right and just below it at the bottom, so the square is
-       * centred on the line rather than on the box edge. Both corrections are
-       * linear in the point's own coordinate, which is what makes them one term
-       * each instead of a case per corner: the x nudge runs +0.5 to -0.5 across
-       * the box, the y nudge is +0.5 everywhere. Drop them and the marker sits
-       * a pixel off the line it is meant to ride, which is visible. */
-      const x = (point.x / 100) * width + 0.5 - point.x / 100 - HALF;
-      const y = (point.y / 100) * height + 0.5 - HALF;
-
-      track.marker.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-    };
-
-    let frame = 0;
-    let shown = -1;
-    const loop = () => {
-      frame = requestAnimationFrame(loop);
-      const owner = ownerIndex();
-      if (owner !== shown) {
-        /* `visibility`, not `display`: it costs no layout, and the square that
-         * is handing over has already been placed on the shared corner, so the
-         * swap happens on one pixel with nothing to see. */
-        if (shown >= 0) tracks[shown].marker.style.visibility = "hidden";
-        tracks[owner].marker.style.visibility = "visible";
-        shown = owner;
-      }
-      place(tracks[owner]);
-    };
-
-    /* A resize moves every corner and every line, so nothing may be trusted. */
-    const invalidate = () => {
-      for (const track of tracks) {
-        track.placed = -1;
-        track.length = track.path.getTotalLength();
-      }
-    };
-    addEventListener("resize", invalidate, { passive: true });
-
-    /* The page grows as islands hydrate and images land, and a taller section
-     * means the same scroll position is a different fraction of it. */
-    if ("ResizeObserver" in window) {
-      const grown = new ResizeObserver(invalidate);
-      for (const track of tracks) grown.observe(track.driver);
-    }
-
-    frame = requestAnimationFrame(loop);
-    addEventListener("pagehide", () => cancelAnimationFrame(frame), { once: true });
-  }
-</script>

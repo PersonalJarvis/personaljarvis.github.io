@@ -441,8 +441,11 @@ A small square per section, walking that section's own perimeter. It says two
 things at once: how far the reader is through **this** section, and how much of
 it is left.
 
-> Implemented in `src/components/SectionTrack.astro`; the path and its timing
-> in `src/lib/sectionTrack.ts`; the box in `src/styles/layout.css`.
+> The square and the schedule that moves it are in
+> `src/components/SectionMarker.astro`, rendered once from `Base.astro`; each
+> section declares its own perimeter with `src/components/SectionTrack.astro`;
+> the path, the pacing and the schedule's arithmetic are in
+> `src/lib/sectionTrack.ts`; the boxes are in `src/styles/layout.css`.
 
 **It replaced a single marker that rode the left rail for the whole document**
 (2026-08-29). That one answered "how far through the page", which is a question
@@ -486,14 +489,25 @@ does not.
 
 **That is what `open` is for**, and it is a prop precisely because it is the one
 thing document order cannot tell you: whether a rule is drawn under a section is
-a fact about that section's own markup. One section uses it: `Clis.astro`, the
-last block of the run that opts out of the shell, whose neighbour below opens on
-a pinned frame an inset further down, so there is nothing at that joint to
-cross. The two blocks above it close on `.section-run-rule` and are ordinary
-closed sections — the square comes down the left rail through plugins, crosses
-to the right, comes down through skills, crosses back, and descends through CLIs
-to hand over on the left. **A block that draws a rule must not be `open`**, or
-the square runs straight past a line the reader can see.
+a fact about that section's own markup. Two sections use it.
+
+`Clis.astro` is the last block of the run that opts out of the shell, whose
+neighbour below opens on a pinned frame an inset further down, so there is
+nothing at that joint to cross. The two blocks above it close on
+`.section-run-rule` and are ordinary closed sections.
+
+`Hero.astro` is the other, and it was found by the defect it caused: **nothing
+rail-to-rail is drawn at the hero's bottom edge.** What closes the hero is its
+own stage frame, a rounded card 75px higher up, and the last
+`--section-inset` of the section is the tail that pulls that card's line clear
+of the fold. Closed, the square turned off the rail at the bottom of the box and
+ran straight across bare ground to the other rail (maintainer, 2026-08-29: "er
+ist nicht ganz auf der Linie"). Open, it comes down the rail and carries on into
+the logo strip's opening rule, which is the next line that actually exists.
+
+**A section that draws a rule must not be `open`**, or the square runs past a
+line the reader can see; **a section that does not must not be closed**, or it
+crosses one they cannot.
 
 Track all three on the section rather than `nested` inside a band, and that part
 is unchanged: the three `<section>` elements tile the document, so the marker's
@@ -516,34 +530,83 @@ below and then snaps back up to it at the hand-over. Ending on the corner is
 what makes the hand-over invisible, because that corner *is* the next section's
 first point.
 
-#### One square, not one per section
+#### One square, in a fixed layer
 
-Every section carries a marker element — that is what keeps each square's
-geometry inside its own box, on its own two rails — but **only the section the
-reader is inside ever paints it.** Without that, each section parks a square in
-its entry corner and waits there, and the page shows a dot sitting in every
-corner at once with the moving one lost among them (maintainer, 2026-08-29:
-"nur einen Punkt, der ständig von oben nach unten geht").
+There is **exactly one square on the page** (maintainer, 2026-08-29: "nur einen
+Punkt, der ständig von oben nach unten geht"), and it is a single element in a
+`position: fixed` layer rendered once from the layout. The sections do not hold
+it; they only declare where their perimeters are.
 
-The owner is the **last section whose box has crossed the top of the window**,
-and the first section before any has. Sections tile the document, so that names
-exactly one at every scroll position — no gap between two of them, and no moment
-when two qualify.
+**It used to be one element per section**, revealed with `visibility` for
+whichever section the reader was inside. That put each square's geometry inside
+its own box, which sounded right and cost three separate defects, all three
+reported on 2026-08-29:
 
-It also puts the hand-over on a single pixel. A section reaches progress 1 — its
-exit corner — at the moment its bottom edge touches the top of the window, which
-is the same moment the section below crosses that line and takes over at *its*
-progress 0, the entry corner directly beneath. The square goes out on one corner
-and comes back on the same one.
+- **it disappeared.** A pinned section's square is drawn in the frame but timed
+  by the tall track behind it, and the track keeps it long after the frame has
+  scrolled off the top of the window. There was no square at all over the first
+  screen of `This is being built in public`, and the same again after the
+  stargazers globe and after the install steps
+- **it was clipped.** The square overhangs its own corners by half its width, on
+  purpose, so that it sits centred on the hairline — and several of the boxes it
+  walks hide their overflow. Half of it was cut off at exactly the corners it is
+  there to mark
+- **it could not keep up.** Deciding whose square to reveal meant asking every
+  section every frame whether it had crossed the top of the window: a dozen
+  forced layout reads a frame for an answer that only changes when the page is
+  resized
 
-**Progress is the box's own height, not the pinned-track formula.** `spanProgress`
-subtracts a viewport once an element is taller than the screen, which is right
-for a sticky track and wrong for an ordinary section: one 40px taller than the
-window would get a 40px span, and the square would race its whole perimeter in
-40 pixels and then sit in the corner. Ordinary sections use `sectionProgress`.
-Its one extra term is `reach`, the scrolling the document has left — the **last**
-section's bottom can never touch the top of the window, so on its own height the
-square would stop halfway and never finish the page.
+A fixed layer has none of those. Nothing clips it, there is one transform to
+write, and the question "whose perimeter is this" is a comparison against
+numbers worked out once.
+
+#### The schedule
+
+Each tracked section gets three scroll positions, in document coordinates,
+computed on load and on every resize — never per frame:
+
+| | |
+|---|---|
+| `enter` | progress 0. The square is on this section's entry corner |
+| `leave` | progress 1. The square is on its exit corner |
+| `hand` | the next section's `enter` — where the square is handed on |
+
+`enter`..`leave` is **the box's own passage for an ordinary section** — its top
+edge to its bottom edge crossing the top of the window — and **the pinned
+stretch for a section that holds a sticky child**: the track's top, to the point
+`viewport` short of the track's bottom, which is the last moment the child is
+still pinned. Those are the two shapes a section has, and they are the same two
+`src/lib/scrollSpan.ts` branches on, so the marker and anything else scrubbing
+on the same section agree to the pixel.
+
+**Whether a section is pinned is read off computed style, not off the markup.**
+`[data-scroll-span]` says a section *can* pin. `Install` carries a track at
+every window size and drops the pin — `position: static` on the sticky child —
+whenever the frame is too short for its four steps, and the stargazers and the
+voice section drop theirs below their breakpoints. Believe the attribute and
+that section's running length becomes `track − viewport`, which at the window
+where it has just stopped pinning is about a dozen pixels: the square crosses
+the whole section in one wheel notch and then sits in the corner. That was "it
+does not work at all in How to install Jarvis".
+
+**`leave` to `hand` is a gap, and the square walks it.** Boxes do not tile the
+document, however much the old note here claimed they did: a band is held
+`--section-inset` inside its section, a pinned frame stops a whole viewport
+before its track does, and the hero's box ends 80px above the logo strip's
+opening rule. Left alone the square reaches a corner, waits the gap out and then
+jumps to wherever the next box starts. Instead it slides from one section's exit
+corner to the next one's entry corner over exactly that stretch of scrolling.
+Both ends are on the **same rail** — that is precisely what the serpentine
+guarantees — so the slide is vertical, and it reads as the square carrying on
+down a line that is already drawn there.
+
+That is also what keeps it on the screen at the end of a pinned section: the
+frame leaves upwards, the next section's box arrives from below, and the square
+crosses from one to the other in view the whole way.
+
+`hand` for the last tracked section is the end of the document. Its bottom edge
+can never reach the top of the window — the page runs out first — so on its own
+height the square would stop somewhere in the middle and never finish the page.
 
 #### The box it walks
 
@@ -554,7 +617,7 @@ the `<section>` element:
 |---|---|---|
 | ordinary | the `<section>` — its top edge *is* its rule, its bottom edge the next one | itself |
 | hero | everything **under the nav**, not the section: the section's top edge is the top of an opaque sticky band, and a square starting there starts out of sight | itself |
-| sticky (`VoiceSwitch`) | the pinned frame, one viewport tall | the tall track, `[data-scroll-span]` |
+| sticky (`VoiceSwitch`, `Stargazers`, `Install`) | the pinned frame, one viewport tall | the tall track — `[data-scroll-span]`, but only while it is really pinning its child |
 
 The box is found as the element `SectionTrack` was dropped into, never as
 `closest("section")` — those differ for the hero, and measuring progress against
@@ -576,29 +639,34 @@ that means "whatever the parent is".
 #### The rest
 
 - 8×8px, filled `var(--ink)`, no rounding, moved with `translate3d`
-- **Position from `getBoundingClientRect()` every frame, never a stored
-  `offsetTop`.** An offset captured once is wrong after the first image that
-  lands, island that hydrates or window that changes size, and a marker placed
-  from a stale one drifts off its rail with no event to blame
+- **The corners come from `getBoundingClientRect()` on the current section,
+  every frame — never a stored `offsetTop`.** An offset captured once is wrong
+  after the first image that lands, island that hydrates or window that changes
+  size, and a square placed from a stale one drifts off its rail with no event
+  to blame. It is one box a frame, two while the square is crossing a gap, and
+  never the whole page: **which** section it is comes from the schedule, and the
+  schedule is arithmetic on `window.scrollY`
 - **`transform`, never `top`/`left`** — a transform is a compositor move, `top`
   is a layout change on every frame of every scroll
 - **No CSS transition on the position.** The movement *is* the scrolling; a
   transition makes the square chase the reader down the page and land after they
   have stopped, which reads as lag rather than as animation. This is also why
   `prefers-reduced-motion` needs no case here — there is no animation to reduce
-- Recomputed on `resize`, and through a `ResizeObserver` on the driver: a resize
-  moves every corner at once, and a section that grows makes the same scroll
-  position a different fraction of it
+- **A still page costs one comparison a frame.** Nothing that decides the
+  square's position changes without the page scrolling or the layout going
+  stale, so an unchanged `scrollY` writes nothing
+- Rebuilt on `resize`, on `load` — the pinned sections settle their own pinning
+  there — and through a `ResizeObserver` on every tracked box, every track, and
+  the body: a section that grows makes the same scroll position a different
+  fraction of it, and a section growing *above* another one moves it down the
+  document without changing its size at all
 - Centred on the 1px lines, which lie just *inside* the box on its left and
   right and just below it at the bottom. Both corrections are linear in the
   point's own coordinate — the x nudge runs +0.5 to −0.5 across the box, the y
   nudge is +0.5 everywhere — so they are one term each and not a case per corner
-- Progress comes from `spanProgress` in `src/lib/scrollSpan.ts`, shared with
-  everything else that scrubs on scroll, measured inside a
-  `requestAnimationFrame` — `getBoundingClientRect` forces layout, and doing
-  that per scroll event ties the page's frame rate to the wheel
-- **One rAF for the whole page**, and nothing measures while its section is off
-  screen
+- **One rAF for the whole page**, and the measuring that forces layout happens
+  outside it — `getBoundingClientRect` in a scroll handler ties the page's frame
+  rate to the wheel
 - `z-index: 20`: above the cards, which have surfaces of their own and would
   bury it, and below the nav at 30, which is opaque — a marker passing *through*
   the nav would read as a bug rather than as chrome
