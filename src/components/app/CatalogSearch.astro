@@ -1,0 +1,170 @@
+---
+/**
+ * The toolbar over a catalog listing: one search field, one chip per group.
+ *
+ * ## The list is complete before this runs, and that is the design
+ *
+ * Every row is server-rendered markup. This component filters what is already
+ * on the page by setting `hidden` — it never builds a row, fetches one or owns
+ * the list. Three things fall out of that and all three were the point:
+ *
+ *   - the page is whole with JavaScript off, and whole to a search engine;
+ *   - the rows are selectable, linkable text rather than a scaled picture;
+ *   - a filter over seventy-six rows costs no hydration and no framework.
+ *
+ * The toolbar itself is `display: none` until `[data-js]` lands on the root
+ * element, because a search box that does nothing is worse than no search box.
+ * The attribute is written by an inline script before first paint, so nothing
+ * flashes. See src/styles/app.css § "The toolbar".
+ *
+ * ## Why it is a plain script and not an island
+ *
+ * The same reason `SiteNav` is: this reads three DOM properties and toggles an
+ * attribute. A React island would ship a runtime, hydrate, and then have to own
+ * the markup it is filtering — which would mean building the rows on the client
+ * and losing all three properties above.
+ */
+
+export interface Chip {
+  /** Matched against a row's `data-group`. `all` is added here, not by callers. */
+  id: string;
+  label: string;
+  count: number;
+}
+
+interface Props {
+  /** What the field says when empty. The app's own placeholder wording. */
+  placeholder: string;
+  /** What the toolbar is called, for a screen reader — "Search plugins". */
+  label: string;
+  chips: Chip[];
+  /** How many rows there are in total, for the "n of m" readout. */
+  total: number;
+}
+
+const { placeholder, label, chips, total } = Astro.props;
+---
+
+{
+  /*
+   * Before the first paint, and that is the whole reason it is inline.
+   *
+   * An Astro `<script>` is a module and therefore deferred: it runs after the
+   * first frame, so the toolbar would be painted and then hidden — or, on the
+   * other ordering, missing for a frame and then popped in. Two lines inline
+   * are cheaper than either flash.
+   *
+   * It is idempotent, so several catalogs on one page cost nothing.
+   */
+}
+<script is:inline>
+  document.documentElement.dataset.js = "on";
+</script>
+
+<div class="app-toolbar" role="search" aria-label={label}>
+  <input
+    class="app-search"
+    type="search"
+    placeholder={placeholder}
+    aria-label={label}
+    data-catalog-search
+    autocomplete="off"
+  />
+
+  <div class="app-chips">
+    {
+      /*
+        `aria-pressed` and not `aria-selected`: these are toggle buttons, not
+        options in a listbox. The selected one is also the one the stylesheet
+        inverts, so the state is read from the same attribute the eye reads.
+      */
+    }
+    <button type="button" class="app-chip" data-catalog-filter="all" aria-pressed="true">
+      All <span class="app-chip__count">{total}</span>
+    </button>
+    {
+      chips.map((chip) => (
+        <button type="button" class="app-chip" data-catalog-filter={chip.id} aria-pressed="false">
+          {chip.label} <span class="app-chip__count">{chip.count}</span>
+        </button>
+      ))
+    }
+  </div>
+</div>
+
+<script>
+  /*
+   * One handler per catalog on the page. Written to find its own rows rather
+   * than to be told about them: the markup is generated from the committed
+   * catalog and a hand-maintained id list is a list that goes stale the next
+   * time an entry is added to the product.
+   */
+  for (const scope of document.querySelectorAll<HTMLElement>("[data-catalog]")) {
+    const search = scope.querySelector<HTMLInputElement>("[data-catalog-search]");
+    const chips = [...scope.querySelectorAll<HTMLButtonElement>("[data-catalog-filter]")];
+    const groups = [...scope.querySelectorAll<HTMLElement>("[data-catalog-group]")];
+    const rows = [...scope.querySelectorAll<HTMLElement>("[data-catalog-row]")];
+    const panel = scope.querySelector<HTMLElement>("[data-catalog-panel]");
+    const readout = scope.querySelector<HTMLElement>("[data-catalog-count]");
+
+    if (!search || rows.length === 0) continue;
+
+    let filter = "all";
+
+    const apply = () => {
+      /* Lower-cased once per keystroke rather than once per row. `trim` so a
+       * stray space at the end of a pasted word does not empty the list. */
+      const query = search.value.trim().toLowerCase();
+      let shown = 0;
+
+      for (const row of rows) {
+        /* `data-search` is built at build time (see `searchText` in
+         * src/lib/catalog.ts) and holds more than the row prints — an id, a
+         * binary name, a tag that did not fit — so a row stays findable by
+         * what it is rather than only by what it shows. */
+        const haystack = row.dataset.search ?? "";
+        const inGroup = filter === "all" || row.dataset.group === filter;
+        const matches = inGroup && (query === "" || haystack.includes(query));
+        row.hidden = !matches;
+        if (matches) shown += 1;
+      }
+
+      /* A group heading over nothing is worse than no heading: it reads as a
+       * category the product has and this list forgot. */
+      for (const group of groups) {
+        const any = [...group.querySelectorAll<HTMLElement>("[data-catalog-row]")].some(
+          (row) => !row.hidden,
+        );
+        group.hidden = !any;
+      }
+
+      if (panel) panel.toggleAttribute("data-empty", shown === 0);
+      if (readout) readout.textContent = String(shown);
+    };
+
+    search.addEventListener("input", apply);
+
+    for (const chip of chips) {
+      chip.addEventListener("click", () => {
+        filter = chip.dataset.catalogFilter ?? "all";
+        for (const other of chips) {
+          other.setAttribute("aria-pressed", String(other === chip));
+        }
+        apply();
+      });
+    }
+
+    /* Escape clears the field the way a native search field's own clear button
+     * does — the app does this too, and a filtered list with no way back is a
+     * dead end on a page whose whole point is the full list. */
+    search.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || search.value === "") return;
+      search.value = "";
+      apply();
+    });
+
+    /* A field restored by the browser on a back-navigation already has text in
+     * it, and the list behind it does not know. */
+    apply();
+  }
+</script>

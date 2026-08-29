@@ -1,0 +1,1708 @@
+{
+  "generator": "scripts/extract-app-catalog.mjs",
+  "generated": "2026-08-29",
+  "sources": {
+    "plugins": "jarvis/marketplace/seed_catalog.json",
+    "clis": "jarvis/clis/catalog/seed_catalog.json",
+    "skills": "jarvis/skills/builtin/*/SKILL.md"
+  },
+  "plugins": [
+    {
+      "id": "github",
+      "name": "GitHub",
+      "description": "Repos, issues, pull requests and Actions runs",
+      "category": "Developer",
+      "auth": "pat_paste",
+      "longevity": "permanent",
+      "via": "mcp",
+      "featured": true
+    },
+    {
+      "id": "vercel",
+      "name": "Vercel",
+      "description": "Deployments, runtime logs, domains and env-vars",
+      "category": "Developer",
+      "auth": "pat_paste",
+      "longevity": "permanent",
+      "via": "native",
+      "featured": true
+    },
+    {
+      "id": "supabase",
+      "name": "Supabase",
+      "description": "Projects, SQL, Edge Functions, advisors and logs",
+      "category": "Developer",
+      "auth": "pat_paste",
+      "longevity": "permanent",
+      "via": "mcp",
+      "featured": false
+    },
+    {
+      "id": "notion",
+      "name": "Notion",
+      "description": "Pages, databases and comments — multi-workspace",
+      "category": "Knowledge & Reading",
+      "auth": "hosted_mcp_oauth_dcr",
+      "longevity": "self_renewing",
+      "via": "mcp",
+      "featured": true
+    },
+    {
+      "id": "slack",
+      "name": "Slack",
+      "description": "Channels, DMs, search and Canvas drafts",
+      "category": "Messaging",
+      "auth": "oauth_pkce_loopback",
+      "longevity": "self_renewing",
+      "via": "mcp",
+      "featured": true
+    },
+    {
+      "id": "linear",
+      "name": "Linear",
+      "description": "Issues, projects, cycles and roadmap for software teams",
+      "category": "Developer",
+      "auth": "hosted_mcp_oauth_dcr",
+      "longevity": "self_renewing",
+      "via": "mcp",
+      "featured": true
+    },
+    {
+      "id": "stripe",
+      "name": "Stripe",
+      "description": "Payments, customers, invoices and balance — read-first",
+      "category": "Developer",
+      "auth": "pat_paste",
+      "longevity": "permanent",
+      "via": "mcp",
+      "featured": false
+    },
+    {
+      "id": "cloudflare",
+      "name": "Cloudflare",
+      "description": "Workers, observability logs, analytics and Radar insights",
+      "category": "Developer",
+      "auth": "hosted_mcp_oauth_dcr",
+      "longevity": "self_renewing",
+      "via": "mcp",
+      "featured": false
+    },
+    {
+      "id": "discord",
+      "name": "Discord",
+      "description": "Chat with Jarvis from Discord (your bot)",
+      "category": "Messaging",
+      "auth": "pat_paste",
+      "longevity": "permanent",
+      "via": "channel",
+      "featured": false
+    },
+    {
+      "id": "telegram",
+      "name": "Telegram",
+      "description": "Chat with Jarvis from Telegram (your bot)",
+      "category": "Messaging",
+      "auth": "pat_paste",
+      "longevity": "permanent",
+      "via": "channel",
+      "featured": false
+    },
+    {
+      "id": "asana",
+      "name": "Asana",
+      "description": "Tasks, projects and workspaces",
+      "category": "Lists & Tasks",
+      "auth": "oauth_pkce_loopback",
+      "longevity": "self_renewing",
+      "via": "mcp",
+      "featured": false
+    },
+    {
+      "id": "google_drive",
+      "name": "Google Drive",
+      "description": "Search, read, create, share and delete your Drive files",
+      "category": "Files & Photos",
+      "auth": "oauth_pkce_loopback",
+      "longevity": "provider_limited",
+      "via": "native",
+      "featured": false
+    },
+    {
+      "id": "gmail",
+      "name": "Gmail",
+      "description": "Read, send, organize and delete mail in your inbox",
+      "category": "Calendar & Mail",
+      "auth": "oauth_pkce_loopback",
+      "longevity": "provider_limited",
+      "via": "native",
+      "featured": false
+    },
+    {
+      "id": "google_calendar",
+      "name": "Google Calendar",
+      "description": "See your schedule and create, move or delete events by voice",
+      "category": "Calendar & Mail",
+      "auth": "oauth_pkce_loopback",
+      "longevity": "provider_limited",
+      "via": "native",
+      "featured": true
+    },
+    {
+      "id": "todoist",
+      "name": "Todoist",
+      "description": "Tasks, projects and due dates by voice",
+      "category": "Lists & Tasks",
+      "auth": "hosted_mcp_oauth_dcr",
+      "longevity": "self_renewing",
+      "via": "mcp",
+      "featured": true
+    },
+    {
+      "id": "clickup",
+      "name": "ClickUp",
+      "description": "Tasks, lists and docs across your spaces",
+      "category": "Lists & Tasks",
+      "auth": "hosted_mcp_oauth_dcr",
+      "longevity": "permanent",
+      "via": "mcp",
+      "featured": false
+    },
+    {
+      "id": "dropbox",
+      "name": "Dropbox",
+      "description": "Find, read and share files in your Dropbox",
+      "category": "Files & Photos",
+      "auth": "hosted_mcp_oauth_dcr",
+      "longevity": "self_renewing",
+      "via": "mcp",
+      "featured": false
+    },
+    {
+      "id": "canva",
+      "name": "Canva",
+      "description": "Create, search and export designs",
+      "category": "Media & Creativity",
+      "auth": "hosted_mcp_oauth_dcr",
+      "longevity": "self_renewing",
+      "via": "mcp",
+      "featured": false
+    },
+    {
+      "id": "airtable",
+      "name": "Airtable",
+      "description": "Records, tables and views in your bases",
+      "category": "Knowledge & Reading",
+      "auth": "hosted_mcp_oauth_dcr",
+      "longevity": "self_renewing",
+      "via": "mcp",
+      "featured": false
+    },
+    {
+      "id": "cal_com",
+      "name": "Cal.com",
+      "description": "Bookings, availability and event types",
+      "category": "Calendar & Mail",
+      "auth": "hosted_mcp_oauth_dcr",
+      "longevity": "self_renewing",
+      "via": "mcp",
+      "featured": false
+    },
+    {
+      "id": "home_assistant",
+      "name": "Home Assistant",
+      "description": "Lights, heating, doors and scenes in your own smart home",
+      "category": "Home & Devices",
+      "auth": "pat_paste",
+      "longevity": "permanent",
+      "via": "native",
+      "featured": true
+    },
+    {
+      "id": "spotify",
+      "name": "Spotify",
+      "description": "Play music, skip tracks and hear what is playing",
+      "category": "Media & Creativity",
+      "auth": "oauth_pkce_loopback",
+      "longevity": "provider_limited",
+      "via": "native",
+      "featured": true
+    },
+    {
+      "id": "youtube_music",
+      "name": "YouTube Music",
+      "description": "Play songs, albums and your playlists, pause, skip, like — and hear what is playing",
+      "category": "Media & Creativity",
+      "auth": "oauth_pkce_loopback",
+      "longevity": "provider_limited",
+      "via": "native",
+      "featured": true
+    },
+    {
+      "id": "higgsfield",
+      "name": "Higgsfield",
+      "description": "Generate images, videos and characters with 30+ creative models",
+      "category": "Media & Creativity",
+      "auth": "hosted_mcp_oauth_dcr",
+      "longevity": "self_renewing",
+      "via": "mcp",
+      "featured": false
+    }
+  ],
+  "clis": [
+    {
+      "id": "gcloud",
+      "name": "Google Cloud CLI",
+      "description": "Google Cloud Platform CLI for Compute, Storage, IAM, GKE, Cloud Run.",
+      "category": "cloud",
+      "binary": "gcloud",
+      "homepage": "https://cloud.google.com/sdk",
+      "install": "winget",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "gcloud * delete *",
+          "gcloud projects delete *",
+          "gcloud compute instances delete *",
+          "gcloud iam service-accounts delete *",
+          "gcloud sql instances delete *",
+          "gcloud storage rm *"
+        ],
+        "allowed": [
+          "gcloud * list",
+          "gcloud * list *",
+          "gcloud * describe *",
+          "gcloud auth *",
+          "gcloud config *",
+          "gcloud projects list*",
+          "gcloud * list*",
+          "gcloud * describe*",
+          "gcloud config list*",
+          "gcloud auth list*",
+          "gcloud --version*"
+        ]
+      },
+      "examples": [
+        "gcloud storage ls gs://my-bucket",
+        "gcloud compute instances list",
+        "gcloud projects describe my-project",
+        "gcloud run services list --region=europe-west1",
+        "gcloud billing accounts list",
+        "gcloud billing projects list --billing-account=ACCOUNT_ID"
+      ]
+    },
+    {
+      "id": "az",
+      "name": "Azure CLI",
+      "description": "Microsoft Azure CLI — Resources, VMs, AKS, Functions.",
+      "category": "cloud",
+      "binary": "az",
+      "homepage": "https://learn.microsoft.com/cli/azure",
+      "install": "winget",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "az * delete *",
+          "az group delete *",
+          "az vm delete *",
+          "az aks delete *",
+          "az storage account delete *",
+          "az * delete*"
+        ],
+        "allowed": [
+          "az * list",
+          "az * show *",
+          "az account *",
+          "az config *",
+          "az * list*",
+          "az * show*",
+          "az account show*"
+        ]
+      },
+      "examples": [
+        "az group list",
+        "az vm list --output table",
+        "az aks get-credentials --resource-group rg --name cluster"
+      ]
+    },
+    {
+      "id": "aws",
+      "name": "AWS CLI v2",
+      "description": "Amazon Web Services CLI — S3, EC2, Lambda, IAM, and more.",
+      "category": "cloud",
+      "binary": "aws",
+      "homepage": "https://aws.amazon.com/cli",
+      "install": "winget",
+      "auth": "api_key",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "aws * delete-*",
+          "aws s3 rm * --recursive*",
+          "aws s3 rb *",
+          "aws iam delete-*",
+          "aws ec2 terminate-instances *",
+          "aws * delete*",
+          "aws * terminate-instances*"
+        ],
+        "allowed": [
+          "aws * list-*",
+          "aws * describe-*",
+          "aws * get-*",
+          "aws s3 ls*",
+          "aws sts get-caller-identity*",
+          "aws * list*",
+          "aws * describe*"
+        ]
+      },
+      "examples": [
+        "aws s3 ls",
+        "aws ec2 describe-instances --region eu-central-1",
+        "aws lambda list-functions"
+      ]
+    },
+    {
+      "id": "wrangler",
+      "name": "Cloudflare Wrangler",
+      "description": "Cloudflare Workers, Pages, R2, D1 CLI.",
+      "category": "cloud",
+      "binary": "wrangler",
+      "homepage": "https://developers.cloudflare.com/workers/wrangler",
+      "install": "npm",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "wrangler delete *",
+          "wrangler r2 bucket delete *",
+          "wrangler d1 delete *",
+          "wrangler delete*",
+          "wrangler kv:key delete*"
+        ],
+        "allowed": [
+          "wrangler whoami*",
+          "wrangler * list*",
+          "wrangler tail*",
+          "wrangler deployments list*",
+          "wrangler pages project list*"
+        ]
+      },
+      "examples": [
+        "wrangler deploy",
+        "wrangler tail --format=json",
+        "wrangler r2 bucket list"
+      ]
+    },
+    {
+      "id": "vercel",
+      "name": "Vercel CLI",
+      "description": "Vercel deployments, projects, env variables.",
+      "category": "paas",
+      "binary": "vercel",
+      "homepage": "https://vercel.com/cli",
+      "install": "npm",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "vercel remove *",
+          "vercel rm *",
+          "vercel project rm *",
+          "vercel domains rm *",
+          "vercel env rm *"
+        ],
+        "allowed": [
+          "vercel whoami*",
+          "vercel ls*",
+          "vercel list*",
+          "vercel inspect*",
+          "vercel project ls*",
+          "vercel logs*"
+        ]
+      },
+      "examples": [
+        "vercel ls",
+        "vercel inspect my-app",
+        "vercel env ls"
+      ]
+    },
+    {
+      "id": "netlify",
+      "name": "Netlify CLI",
+      "description": "Netlify Sites, Deployments, Functions, Env.",
+      "category": "paas",
+      "binary": "netlify",
+      "homepage": "https://docs.netlify.com/cli/get-started/",
+      "install": "npm",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "netlify sites:delete *",
+          "netlify env:unset *",
+          "netlify sites:delete*"
+        ],
+        "allowed": [
+          "netlify status*",
+          "netlify sites:list*",
+          "netlify env:list*",
+          "netlify api listSiteDeploys*"
+        ]
+      },
+      "examples": [
+        "netlify status --json",
+        "netlify sites:list",
+        "netlify deploy --prod"
+      ]
+    },
+    {
+      "id": "heroku",
+      "name": "Heroku CLI",
+      "description": "Heroku Apps, Dynos, Addons, Releases.",
+      "category": "paas",
+      "binary": "heroku",
+      "homepage": "https://devcenter.heroku.com/articles/heroku-cli",
+      "install": "winget",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "heroku apps:destroy *",
+          "heroku addons:destroy *",
+          "heroku pg:reset *",
+          "heroku apps:destroy*",
+          "heroku addons:destroy*"
+        ],
+        "allowed": [
+          "heroku apps*",
+          "heroku logs*",
+          "heroku config*",
+          "heroku ps*",
+          "heroku releases*"
+        ]
+      },
+      "examples": [
+        "heroku apps",
+        "heroku logs --tail --app myapp",
+        "heroku ps --app myapp"
+      ]
+    },
+    {
+      "id": "railway",
+      "name": "Railway CLI",
+      "description": "Railway Projects, Services, Deployments.",
+      "category": "paas",
+      "binary": "railway",
+      "homepage": "https://docs.railway.app/develop/cli",
+      "install": "npm",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "railway down *",
+          "railway delete *",
+          "railway delete*"
+        ],
+        "allowed": [
+          "railway whoami*",
+          "railway status*",
+          "railway list*",
+          "railway logs*"
+        ]
+      },
+      "examples": [
+        "railway status",
+        "railway logs",
+        "railway variables"
+      ]
+    },
+    {
+      "id": "flyctl",
+      "name": "Fly.io CLI",
+      "description": "Fly.io Apps, Machines, Volumes, Secrets.",
+      "category": "paas",
+      "binary": "flyctl",
+      "homepage": "https://fly.io/docs/flyctl",
+      "install": "scoop",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "flyctl apps destroy *",
+          "flyctl volumes destroy *",
+          "flyctl machine destroy *",
+          "flyctl apps destroy*",
+          "flyctl machine destroy*"
+        ],
+        "allowed": [
+          "flyctl status*",
+          "flyctl apps list*",
+          "flyctl logs*",
+          "flyctl auth whoami*",
+          "flyctl machine list*"
+        ]
+      },
+      "examples": [
+        "flyctl apps list",
+        "flyctl status --app myapp",
+        "flyctl logs --app myapp"
+      ]
+    },
+    {
+      "id": "render",
+      "name": "Render CLI",
+      "description": "Render.com Services, Deploys, Logs.",
+      "category": "paas",
+      "binary": "render",
+      "homepage": "https://render.com/docs/cli",
+      "install": null,
+      "auth": "api_key",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "render services delete *",
+          "render services delete*"
+        ],
+        "allowed": [
+          "render services list*",
+          "render logs*",
+          "render whoami*",
+          "render services*",
+          "render deploys list*"
+        ]
+      },
+      "examples": [
+        "render services list",
+        "render logs srv-xxxxx"
+      ]
+    },
+    {
+      "id": "supabase",
+      "name": "Supabase CLI",
+      "description": "Supabase Projects, DB, Edge Functions, Migrations.",
+      "category": "baas",
+      "binary": "supabase",
+      "homepage": "https://supabase.com/docs/guides/cli",
+      "install": "scoop",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "supabase projects delete *",
+          "supabase db reset*",
+          "supabase migration repair*",
+          "supabase projects delete*"
+        ],
+        "allowed": [
+          "supabase projects list*",
+          "supabase status*",
+          "supabase functions list*",
+          "supabase migration list*",
+          "supabase --version*"
+        ]
+      },
+      "examples": [
+        "supabase projects list",
+        "supabase functions list --project-ref abc",
+        "supabase db diff"
+      ]
+    },
+    {
+      "id": "firebase",
+      "name": "Firebase CLI",
+      "description": "Firebase Projects, Hosting, Functions, Firestore.",
+      "category": "baas",
+      "binary": "firebase",
+      "homepage": "https://firebase.google.com/docs/cli",
+      "install": "npm",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "firebase projects:delete *",
+          "firebase firestore:delete *",
+          "firebase hosting:disable*"
+        ],
+        "allowed": [
+          "firebase projects:list*",
+          "firebase login:list*",
+          "firebase apps:list*",
+          "firebase hosting:sites:list*"
+        ]
+      },
+      "examples": [
+        "firebase projects:list",
+        "firebase apps:list --project myproj"
+      ]
+    },
+    {
+      "id": "pscale",
+      "name": "PlanetScale CLI",
+      "description": "PlanetScale MySQL-Branches, Deploy-Requests.",
+      "category": "baas",
+      "binary": "pscale",
+      "homepage": "https://planetscale.com/docs/reference/planetscale-cli",
+      "install": "winget",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "pscale database delete *",
+          "pscale branch delete *",
+          "pscale deploy-request cancel*",
+          "pscale database delete*",
+          "pscale branch delete*"
+        ],
+        "allowed": [
+          "pscale database list*",
+          "pscale branch list*",
+          "pscale deploy-request list*",
+          "pscale org list*"
+        ]
+      },
+      "examples": [
+        "pscale database list",
+        "pscale branch list my-db"
+      ]
+    },
+    {
+      "id": "neonctl",
+      "name": "Neon CLI",
+      "description": "Neon Serverless Postgres — Projects, Branches, Roles.",
+      "category": "baas",
+      "binary": "neonctl",
+      "homepage": "https://neon.tech/docs/reference/neon-cli",
+      "install": "npm",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "neonctl projects delete *",
+          "neonctl branches delete *",
+          "neonctl projects delete*",
+          "neonctl branches delete*"
+        ],
+        "allowed": [
+          "neonctl projects list*",
+          "neonctl branches list*",
+          "neonctl me*"
+        ]
+      },
+      "examples": [
+        "neonctl projects list",
+        "neonctl branches list --project-id abc"
+      ]
+    },
+    {
+      "id": "gh",
+      "name": "GitHub CLI",
+      "description": "GitHub Repos, PRs, Issues, Actions, Releases.",
+      "category": "git",
+      "binary": "gh",
+      "homepage": "https://cli.github.com",
+      "install": "winget",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "gh repo delete *",
+          "gh release delete *",
+          "gh secret delete *",
+          "gh secret set *"
+        ],
+        "allowed": [
+          "gh auth status*",
+          "gh repo view*",
+          "gh pr list*",
+          "gh issue list*",
+          "gh run list*",
+          "gh pr view*",
+          "gh pr status*",
+          "gh issue view*",
+          "gh repo list*",
+          "gh run view*",
+          "gh release list*",
+          "gh --version*"
+        ]
+      },
+      "examples": [
+        "gh pr list --state open",
+        "gh issue view 123",
+        "gh run list --limit 5"
+      ]
+    },
+    {
+      "id": "glab",
+      "name": "GitLab CLI",
+      "description": "GitLab Repos, MRs, Issues, CI/CD, Snippets.",
+      "category": "git",
+      "binary": "glab",
+      "homepage": "https://gitlab.com/gitlab-org/cli",
+      "install": "scoop",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "glab repo delete *",
+          "glab issue delete *",
+          "glab mr close *",
+          "glab repo delete*"
+        ],
+        "allowed": [
+          "glab auth status*",
+          "glab mr list*",
+          "glab issue list*",
+          "glab repo view*",
+          "glab pipeline list*"
+        ]
+      },
+      "examples": [
+        "glab mr list",
+        "glab issue list --state opened"
+      ]
+    },
+    {
+      "id": "stripe",
+      "name": "Stripe CLI",
+      "description": "Stripe Webhooks, Events, Products, Subscriptions.",
+      "category": "payments",
+      "binary": "stripe",
+      "homepage": "https://docs.stripe.com/stripe-cli",
+      "install": "winget",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "ask",
+        "blocked": [
+          "stripe charges * --live*",
+          "stripe subscriptions cancel *",
+          "stripe * delete *",
+          "stripe customers delete *",
+          "stripe * delete*",
+          "stripe refunds create*"
+        ],
+        "allowed": [
+          "stripe listen*",
+          "stripe logs tail*",
+          "stripe events list*",
+          "stripe products list*",
+          "stripe customers list*",
+          "stripe charges list*",
+          "stripe invoices list*",
+          "stripe balance retrieve*"
+        ]
+      },
+      "examples": [
+        "stripe listen --forward-to localhost:3000/webhook",
+        "stripe events list --limit 10"
+      ]
+    },
+    {
+      "id": "twilio",
+      "name": "Twilio CLI",
+      "description": "Twilio Numbers, Messages, Voice, Verify, Flex.",
+      "category": "payments",
+      "binary": "twilio",
+      "homepage": "https://www.twilio.com/docs/twilio-cli",
+      "install": null,
+      "auth": "api_key",
+      "risk": {
+        "tier": "ask",
+        "blocked": [
+          "twilio api:core:messages:create *",
+          "twilio * delete *",
+          "twilio api:core:*:remove*"
+        ],
+        "allowed": [
+          "twilio profiles*",
+          "twilio api:core:messages:list*",
+          "twilio phone-numbers:list*",
+          "twilio api:core:calls:list*"
+        ]
+      },
+      "examples": [
+        "twilio phone-numbers:list",
+        "twilio api:core:messages:list --limit 10"
+      ]
+    },
+    {
+      "id": "docker",
+      "name": "Docker CLI",
+      "description": "Docker Container, Images, Volumes, Networks.",
+      "category": "container",
+      "binary": "docker",
+      "homepage": "https://docs.docker.com/engine/reference/commandline/cli/",
+      "install": "winget",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "docker rm *",
+          "docker rmi *",
+          "docker volume rm *",
+          "docker system prune*",
+          "docker container prune*",
+          "docker network rm *"
+        ],
+        "allowed": [
+          "docker ps*",
+          "docker images*",
+          "docker logs*",
+          "docker info*",
+          "docker inspect *",
+          "docker inspect*",
+          "docker version*"
+        ]
+      },
+      "examples": [
+        "docker ps -a",
+        "docker logs my-container --tail 50",
+        "docker images"
+      ]
+    },
+    {
+      "id": "kubectl",
+      "name": "Kubernetes CLI",
+      "description": "Kubernetes Cluster-Management: Pods, Deployments, Services.",
+      "category": "container",
+      "binary": "kubectl",
+      "homepage": "https://kubernetes.io/docs/reference/kubectl/",
+      "install": "winget",
+      "auth": "config_file",
+      "risk": {
+        "tier": "ask",
+        "blocked": [
+          "kubectl delete *",
+          "kubectl drain *",
+          "kubectl cordon *",
+          "kubectl replace --force*",
+          "kubectl * --all-namespaces* delete*"
+        ],
+        "allowed": [
+          "kubectl get *",
+          "kubectl describe *",
+          "kubectl logs *",
+          "kubectl config get-*",
+          "kubectl config current-context*",
+          "kubectl top *",
+          "kubectl version*"
+        ]
+      },
+      "examples": [
+        "kubectl get pods -A",
+        "kubectl describe deployment my-app",
+        "kubectl logs my-pod --tail=100"
+      ]
+    },
+    {
+      "id": "gws",
+      "name": "Google Workspace CLI",
+      "description": "Google Workspace: Gmail, Drive, Docs, Sheets, Calendar, Tasks, Chat, Slides.",
+      "category": "workspace",
+      "binary": "gws",
+      "homepage": "https://github.com/googleworkspace/cli",
+      "install": "npm",
+      "auth": "oauth_cli",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "gws * delete*",
+          "gws * * delete*",
+          "gws * * * delete*",
+          "gws * trash*",
+          "gws * * trash*",
+          "gws gmail * send*",
+          "gws gmail * * send*",
+          "gws chat * create*",
+          "gws chat * * create*",
+          "gws auth export*",
+          "gws auth logout*"
+        ],
+        "allowed": [
+          "gws * list*",
+          "gws * * list*",
+          "gws * * * list*",
+          "gws * get*",
+          "gws * * get*",
+          "gws * * * get*",
+          "gws schema *",
+          "gws auth status*",
+          "gws --version*"
+        ]
+      },
+      "examples": [
+        "gws gmail users messages list --params '{\"userId\": \"me\", \"q\": \"is:unread\", \"maxResults\": 10}'",
+        "gws calendar events list --params '{\"calendarId\": \"primary\", \"maxResults\": 10}'",
+        "gws drive files list --params '{\"pageSize\": 10}'"
+      ]
+    },
+    {
+      "id": "jarvisctl",
+      "name": "Jarvis Control CLI",
+      "description": "Control this running Jarvis via its own CLI: switch the brain / sub-agent provider, read or change config, search the wiki, list missions / sessions / outputs, manage skills. Reads run free; destructive / recursive commands (dispatch, restart, delete, outbound, …) are blocked.",
+      "category": "self",
+      "binary": "jarvisctl",
+      "homepage": "https://github.com/PersonalJarvis/PersonalJarvis",
+      "install": "pip",
+      "auth": "none",
+      "risk": {
+        "tier": "monitor",
+        "blocked": [
+          "jarvisctl * delete *",
+          "jarvisctl * delete*",
+          "jarvisctl auth *",
+          "jarvisctl api * secrets*",
+          "jarvisctl api * keys*",
+          "jarvisctl * dispatch*",
+          "jarvisctl * restart*",
+          "jarvisctl * kill*",
+          "jarvisctl * rerun*",
+          "jarvisctl * cancel*",
+          "jarvisctl * outbound*"
+        ],
+        "allowed": [
+          "jarvisctl version*",
+          "jarvisctl --version*",
+          "jarvisctl * status*",
+          "jarvisctl * list*",
+          "jarvisctl * show*",
+          "jarvisctl * get*",
+          "jarvisctl config get*",
+          "jarvisctl wiki recall*",
+          "jarvisctl wiki page*",
+          "jarvisctl wiki tree*",
+          "jarvisctl docs *",
+          "jarvisctl * pending*",
+          "jarvisctl * --dry-run*"
+        ]
+      },
+      "examples": [
+        "jarvisctl brain status",
+        "jarvisctl brain switch openai",
+        "jarvisctl brain subagent-switch openai",
+        "jarvisctl --json missions list",
+        "jarvisctl config get brain.primary",
+        "jarvisctl wiki recall \"insurance policy\""
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "name": "cli-gcloud",
+      "version": "1.0.0",
+      "description": "Drive Google Cloud through the connected gcloud CLI (the cli_gcloud tool) —\nbilling/costs, projects, compute, storage, IAM — instead of opening the Cloud\nConsole in a browser via Computer-Use (which stalls on the login page).\nRead-first; treat resource-changing commands as consequential.",
+      "whenToUse": "Use when the user asks about their Google Cloud — billing/costs, projects, VMs, buckets, IAM roles — and gcloud is connected. Reach for the cli_gcloud tool, never the browser console.",
+      "category": "meta",
+      "tags": [
+        "gcloud",
+        "google-cloud",
+        "cli",
+        "billing"
+      ],
+      "author": "builtin",
+      "license": "Apache-2.0",
+      "plugin": null,
+      "risk": "ask",
+      "triggers": [],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "control-api",
+      "version": "1.0.0",
+      "description": "Change Jarvis's own configuration through the local Control API instead of\nclicking the desktop UI or driving Computer-Use. Lets a local coding agent\n(Codex CLI, Claude Code) read and change settings, switch brain/STT/TTS\nproviders, switch the reply language, and rotate API keys — all over HTTP on\nthe loopback interface.",
+      "whenToUse": "Use when a coding agent must change a Jarvis setting on this machine — switch a provider, change the reply language, adjust TTS speed, or rotate an API key — without driving the desktop UI.",
+      "category": "meta",
+      "tags": [
+        "self-config",
+        "control-api",
+        "agent",
+        "settings"
+      ],
+      "author": "builtin",
+      "license": "Apache-2.0",
+      "plugin": null,
+      "risk": "ask",
+      "triggers": [],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "deep-work-mode",
+      "version": "2.1.0",
+      "description": "Activates a distraction-free focus sprint: quiet notifications where possible, focus music if Spotify is connected, and a clear spoken start signal with the sprint duration. Use when the user wants to focus, start deep work, or enter concentration mode.",
+      "whenToUse": "Use when the user says \"fokusmodus\", \"starte fokus\", \"deep work mode\", \"konzentrationsmodus\", \"aktiviere deep work\", or presses the focus hotkey. Not for a casual \"ich muss mich konzentrieren\" remark without a clear activation intent.",
+      "category": "productivity",
+      "tags": [
+        "focus",
+        "dnd",
+        "timer",
+        "slack"
+      ],
+      "author": "builtin",
+      "license": "Apache-2.0",
+      "plugin": null,
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "hotkey",
+          "pattern": "ctrl+alt+d",
+          "languages": [
+            "de",
+            "en"
+          ]
+        },
+        {
+          "type": "voice",
+          "pattern": "^(deep[-\\s]?work([-\\s]?mode| modus)?|fokus[-\\s]?modus|konzentrations[-\\s]?modus|starte (deep work|fokus(modus)?|konzentration(smodus)?)|aktiviere (deep work|fokus(modus)?))$",
+          "languages": [
+            "de",
+            "en"
+          ]
+        }
+      ],
+      "config": [
+        "duration_minutes",
+        "spotify_playlist"
+      ],
+      "state": "enabled"
+    },
+    {
+      "name": "jarvis-doc-author",
+      "version": "1.0.0",
+      "description": "Authoritative skill for writing internal Personal-Jarvis docs under ``docs/`` and sibling directories. Enforces a Diataxis-compliant classification (concept/how-to/tutorial/reference/troubleshooting/adr), a uniform YAML frontmatter schema, a style canon (active voice, imperative instructions, English prose), and hard anti-patterns (no quadrant mixing, no filler intros, no \"Click here\"). Use when writing or fundamentally reworking any Markdown doc under ``docs/``.",
+      "whenToUse": "Use when the user or a worker creates a new Jarvis doc, reworks an existing one, writes an ADR, or produces a phase/test report — even without the word \"doc\" (\"dokumentier mal X\", \"schreib eine Anleitung\", \"fass das als ADR zusammen\", \"write me a Phase 7 report\"). Not for code comments, commit messages, PR descriptions, memory entries, or skill authoring (skill-creator owns that).",
+      "category": "meta",
+      "tags": [
+        "meta",
+        "docs",
+        "authoring",
+        "diataxis",
+        "documentation",
+        "style-guide"
+      ],
+      "author": "builtin",
+      "license": "Apache-2.0",
+      "plugin": null,
+      "risk": "monitor",
+      "triggers": [],
+      "config": [
+        "docs_root",
+        "default_diataxis",
+        "default_status",
+        "default_owner",
+        "review_cadence_days_default",
+        "review_cadence_days_tutorial",
+        "review_cadence_days_howto",
+        "review_cadence_days_reference",
+        "review_cadence_days_explanation",
+        "review_cadence_days_troubleshooting",
+        "review_cadence_days_adr"
+      ],
+      "state": "enabled"
+    },
+    {
+      "name": "memory-save",
+      "version": "2.0.0",
+      "description": "DEPRECATED since B5 (2026-05-13) and disabled. Long-term-memory writes go through the wiki pipeline (Awareness layer, SessionRollupWorker, WikiCurator). Use when nothing — this skill must not be re-enabled; \"merk dir\" phrases belong to the normal brain pipeline.",
+      "whenToUse": "Use when never — kept on disk only as a reference until the B4 hard-cut deletes it. Re-enabling it would hijack the B5 wiki path.",
+      "category": "memory",
+      "tags": [
+        "memory",
+        "notes",
+        "recall",
+        "deprecated"
+      ],
+      "author": "builtin",
+      "license": "Apache-2.0",
+      "plugin": null,
+      "risk": "safe",
+      "triggers": [],
+      "config": [
+        "namespace",
+        "max_length_chars",
+        "auto_tag_language"
+      ],
+      "state": "disabled"
+    },
+    {
+      "name": "morning-routine",
+      "version": "2.0.0",
+      "description": "Delivers the user's spoken morning briefing: today's calendar, unread email summary, weather, and anything urgent. Use when the user asks for a morning briefing or day overview, says good morning, starts their day, or asks \"what's on today\" / \"wie sieht mein Tag aus\".",
+      "whenToUse": "Use when the user says \"starte die Morgenroutine\", \"guten Morgen\", \"good morning\", \"morning briefing\", \"Tagesueberblick\", \"what's my day looking like\", or asks for their schedule first thing in the day.",
+      "category": "productivity",
+      "tags": [
+        "daily",
+        "routine",
+        "mail",
+        "calendar",
+        "weather"
+      ],
+      "author": "builtin",
+      "license": "Apache-2.0",
+      "plugin": null,
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(morgenroutine|morgen[-\\s]?briefing|morning routine|morning briefing|start day|tages(ue|ü)berblick)",
+          "languages": [
+            "de",
+            "en"
+          ]
+        },
+        {
+          "type": "voice",
+          "pattern": "^(guten morgen|good morning)[.!\\s]*$",
+          "languages": [
+            "de",
+            "en"
+          ]
+        },
+        {
+          "type": "schedule",
+          "pattern": "0 7 * * *",
+          "languages": [
+            "de",
+            "en"
+          ]
+        }
+      ],
+      "config": [
+        "email_limit",
+        "calendar_days_ahead",
+        "weather_location",
+        "weather_format"
+      ],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-airtable",
+      "version": null,
+      "description": "Read and edit records in the user's Airtable bases.",
+      "whenToUse": "Use when the user mentions Airtable, a base, a table or records kept there.",
+      "category": "productivity",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "airtable",
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(airtable|air table)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-asana",
+      "version": null,
+      "description": "Manage the user's Asana tasks and projects.",
+      "whenToUse": "Use when the user mentions Asana or wants to view, create, assign, or close Asana tasks and projects.",
+      "category": "productivity",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "asana",
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(asana|asana-task|asana-projekt|in asana)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-cal_com",
+      "version": null,
+      "description": "Read and manage the user's Cal.com bookings and availability.",
+      "whenToUse": "Use when the user mentions Cal.com, a booking, a meeting slot or their availability.",
+      "category": "productivity",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "cal_com",
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(cal[\\s.]?com|buchungslink|booking link)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-canva",
+      "version": null,
+      "description": "Create, search and export the user's Canva designs.",
+      "whenToUse": "Use when the user mentions Canva, or asks for a design, poster, presentation or graphic.",
+      "category": "creativity",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "canva",
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(canva)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-clickup",
+      "version": null,
+      "description": "Read and manage the user's ClickUp tasks, lists and docs.",
+      "whenToUse": "Use when the user mentions ClickUp, or a task, list, space or doc that lives there.",
+      "category": "productivity",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "clickup",
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(clickup|click up)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-cloudflare",
+      "version": null,
+      "description": "Manage the user's Cloudflare DNS records, zones, and Workers.",
+      "whenToUse": "Use when the user mentions Cloudflare or wants to inspect or change DNS records, zones, or Workers.",
+      "category": "developer",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "cloudflare",
+      "risk": "ask",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(cloudflare|cloudflare-dns|cloudflare-zone|in cloudflare)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-discord",
+      "version": null,
+      "description": "Read and post messages in the user's Discord server.",
+      "whenToUse": "Use when the user mentions Discord or wants to read or post messages in their Discord server.",
+      "category": "communication",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "discord",
+      "risk": "ask",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(discord|discord-server|discord-channel|auf discord)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-dropbox",
+      "version": null,
+      "description": "Find, read and share the user's Dropbox files.",
+      "whenToUse": "Use when the user mentions Dropbox or asks for a file, folder or document stored there.",
+      "category": "productivity",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "dropbox",
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(dropbox|drop box)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-github",
+      "version": null,
+      "description": "Work with the user's GitHub repositories, issues, and pull requests.",
+      "whenToUse": "Use when the user mentions GitHub, a repo, an issue, or a pull request and wants to inspect or act on it.",
+      "category": "developer",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "github",
+      "risk": "ask",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "\\b(github|pull[-\\s]?request(?:s)?|pr|repo(?:s|sitor(?:y|ies))?)\\b",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-gmail",
+      "version": null,
+      "description": "Read and send email from the user's connected Gmail inbox.",
+      "whenToUse": "Use when the user mentions Gmail, their inbox, or mail and wants to read, search, send, or answer email.",
+      "category": "communication",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "gmail",
+      "risk": "ask",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(gmail|postfach|posteingang|meine? mails?|neue mails?)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-google_calendar",
+      "version": null,
+      "description": "Read and manage events in the user's Google Calendar.",
+      "whenToUse": "Use when the user mentions Google Calendar or wants to check, create, move, or delete calendar events or appointments.",
+      "category": "productivity",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "google_calendar",
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(google.?(kalender|calendar)|gcal|(in )?(meine[nm]? )?\\b(kalender|termin(?!al)\\w*|meeting)s?\\b)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-google_drive",
+      "version": null,
+      "description": "Search, read, and manage files in the user's Google Drive.",
+      "whenToUse": "Use when the user mentions Google Drive or wants to search, read, share, or manage Drive files.",
+      "category": "productivity",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "google_drive",
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(google.?drive|gdrive|in (meinem )?drive)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-higgsfield",
+      "version": null,
+      "description": "Generate images, videos and characters with the user's Higgsfield account.",
+      "whenToUse": "Use when the user mentions Higgsfield, or asks to generate an image, a video or a character with its models.",
+      "category": "creativity",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "higgsfield",
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(higgsfield|higgs field)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-home_assistant",
+      "version": null,
+      "description": "Read and control the user's Home Assistant smart home.",
+      "whenToUse": "Use when the user asks about or wants to change something physical at home — lights, heating, doors, blinds, sockets, scenes or a room sensor.",
+      "category": "home",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "home_assistant",
+      "risk": "ask",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(home ?assistant|smart ?home|hausautomation|dom[oó]tica)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-linear",
+      "version": null,
+      "description": "Manage the user's Linear issues, projects, and cycles.",
+      "whenToUse": "Use when the user mentions Linear or wants to view, create, update, or close Linear issues and cycles.",
+      "category": "developer",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "linear",
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(linear|linear-issue|linear-ticket|in linear)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-notion",
+      "version": null,
+      "description": "Read and edit the user's Notion pages and databases.",
+      "whenToUse": "Use when the user mentions Notion or wants to read, search, or edit Notion pages and databases.",
+      "category": "productivity",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "notion",
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(notion|notion-seite|notion-datenbank)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-slack",
+      "version": null,
+      "description": "Read and post messages in the user's Slack workspace and channels.",
+      "whenToUse": "Use when the user mentions Slack or wants to read or post messages in their Slack workspace.",
+      "category": "communication",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "slack",
+      "risk": "ask",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(slack|slack-channel|slack-kanal|auf slack)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-spotify",
+      "version": null,
+      "description": "Play and control the user's music on Spotify.",
+      "whenToUse": "Use when the user wants music — start a song, artist, album or playlist, pause, skip, go back, change the volume, queue something up, or ask what is playing right now.",
+      "category": "media",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "spotify",
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(spotify|musik|music|música)",
+          "languages": []
+        },
+        {
+          "type": "voice",
+          "pattern": "(spiel\\w*|play|abspielen|pon|reproduce).{0,48}(lied|song|titel|track|playlist|album|canción)|(lied|song|titel|track|playlist|album|canción).{0,24}(spiel\\w*|play|abspielen|pon|reproduce)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-stripe",
+      "version": null,
+      "description": "Look up Stripe customers, payments, invoices, and account balance.",
+      "whenToUse": "Use when the user mentions Stripe, payments, invoices, customers, or their account balance.",
+      "category": "developer",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "stripe",
+      "risk": "ask",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "\\b(stripe|zahlung(?:en)?|payment(?:s)?|rechnung(?:en)?|invoice(?:s)?|guthaben|kunde(?:n)?)\\b",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-supabase",
+      "version": null,
+      "description": "Query and manage the user's Supabase database, tables, and projects.",
+      "whenToUse": "Use when the user mentions Supabase or wants to query tables, run migrations, or inspect projects.",
+      "category": "developer",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "supabase",
+      "risk": "ask",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(supabase|supabase-datenbank|supabase-tabelle|in supabase)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-todoist",
+      "version": null,
+      "description": "Read and manage the user's Todoist tasks and projects.",
+      "whenToUse": "Use when the user mentions Todoist, a task, a to-do, a shopping list, or asks what is due.",
+      "category": "productivity",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "todoist",
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "\\b(todoist|aufgabenliste|einkaufsliste|to-dos?|to\\sdos|to[-\\s]do[-\\s]list\\w*|todo[-\\s]?list\\w*|shopping list|lista de tareas)\\b",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-vercel",
+      "version": null,
+      "description": "Inspect the user's Vercel projects and deployments.",
+      "whenToUse": "Use when the user mentions Vercel or asks about deployment status, projects, or build results.",
+      "category": "developer",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "vercel",
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(vercel|vercel-deployment|deployment|auf vercel)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "plugin-youtube_music",
+      "version": null,
+      "description": "Play and control the user's music on YouTube Music.",
+      "whenToUse": "Use when the user wants music on YouTube Music — start a song, artist, album, one of their playlists or their liked songs, pause, resume, skip, go back, like a song, add a song to a playlist, or ask what is playing right now.",
+      "category": "media",
+      "tags": [],
+      "author": "builtin",
+      "license": null,
+      "plugin": "youtube_music",
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "(youtube ?music|yt ?music|ytmusic)",
+          "languages": []
+        }
+      ],
+      "config": [],
+      "state": "enabled"
+    },
+    {
+      "name": "skill-creator",
+      "version": "1.2.0",
+      "description": "Creates a new Jarvis skill from the user's description — the assistant writes\nthe whole skill (name, trigger phrase, schedule, steps, spoken answer format)\nand files it as a draft. Use when the user wants to build a new skill,\nroutine or automation (\"erstell mir einen Skill, der …\" / \"create a skill\nthat …\" / \"mach aus diesem Workflow einen Skill\").",
+      "whenToUse": "Use when the user asks to create, build, or set up a new skill, routine, or recurring automation — including when the request names other services that are the CONTENT of the new skill, not commands to run now.",
+      "category": "meta",
+      "tags": [
+        "meta",
+        "authoring",
+        "developer",
+        "skill-creator"
+      ],
+      "author": "builtin (Anthropic skill-creator guide kept in references/)",
+      "license": "Apache-2.0",
+      "plugin": null,
+      "risk": "monitor",
+      "triggers": [
+        {
+          "type": "voice",
+          "pattern": "([e]rstell\\w*|b[a]u\\w*|m[a]ch\\w*|schr[e]ib\\w*|gener[i]er\\w*|[a]nleg\\w*)\\s+(mir\\s+)?(bitte\\s+)?(doch\\s+)?(mal\\s+)?einen?\\s+(neuen?\\s+)?skill|einen?\\s+(neuen?\\s+)?skill\\s+(\\w+\\s+){0,3}([e]rstell\\w*|[b]au\\w*|[a]nleg\\w*|[s]chreib\\w*|[g]enerier\\w*)|aus\\s+(diesem|dem|meinem)\\s+\\w+\\s+einen\\s+skill|(cre[a]te|b[u]ild|m[a]ke|s[e]t\\s+up)\\s+(me\\s+)?an?\\s+(new\\s+)?skill|t[u]rn\\s+(this|that|it)\\s+into\\s+a\\s+skill|(cre[a]\\w*|h[a]z|constr[u]\\w*)\\s+(me\\s+)?una?\\s+(nuevo\\s+|nueva\\s+)?skill",
+          "languages": [
+            "de",
+            "en",
+            "es"
+          ]
+        }
+      ],
+      "config": [
+        "target_dir",
+        "default_category"
+      ],
+      "state": "enabled"
+    }
+  ],
+  "exampleSkill": {
+    "name": "morning-routine",
+    "source": "jarvis/skills/builtin/morning-routine/SKILL.md",
+    "frontmatter": "schema_version: \"1\"\nname: morning-routine\nversion: \"2.0.0\"\ndescription: >-\n  Delivers the user's spoken morning briefing: today's calendar, unread\n  email summary, weather, and anything urgent. Use when the user asks for\n  a morning briefing or day overview, says good morning, starts their day,\n  or asks \"what's on today\" / \"wie sieht mein Tag aus\".\nwhen_to_use: >-\n  Use when the user says \"starte die Morgenroutine\", \"guten Morgen\",\n  \"good morning\", \"morning briefing\", \"Tagesueberblick\", \"what's my day\n  looking like\", or asks for their schedule first thing in the day.\ncategory: productivity\ntags: [daily, routine, mail, calendar, weather]\nauthor: builtin\nlicense: Apache-2.0\ntriggers:\n  - type: voice\n    pattern: \"(morgenroutine|morgen[-\\\\s]?briefing|morning routine|morning briefing|start day|tages(ue|ü)berblick)\"\n    language: [de, en]\n  - type: voice\n    pattern: \"^(guten morgen|good morning)[.!\\\\s]*$\"\n    language: [de, en]\n  - type: schedule\n    cron: \"0 7 * * *\"\n    language: [de, en]\nrequires_tools: []\nrisk_policy:\n  default_tier: monitor\nconfig:\n  email_limit: 5\n  calendar_days_ahead: 1\n  weather_location: \"Berlin\"\n  weather_format: metric\ntoken_budget_estimate: 3000\nexecution: inline",
+    "body": "# Morning Routine\n\nDeliver a short spoken morning briefing — an overview of the day in under\n30 seconds. No walls of text, no reading out 20 emails. Work through the\nsteps below with the tools you actually have; skip a step gracefully\n(one short clause, e.g. \"calendar is not connected yet\") when its\nintegration is unavailable. Never invent data.\n\n## Steps\n\n1. **Calendar.** If a calendar plugin or tool is connected (e.g. a\n   `google-calendar/...` tool), fetch today's events\n   ({{ config.calendar_days_ahead }} day ahead).\n   - 0 events: say the calendar is free today.",
+    "bodyLines": 38
+  }
+}

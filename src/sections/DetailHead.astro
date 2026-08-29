@@ -1,0 +1,185 @@
+---
+/**
+ * The head of a detail page — the shape all three share.
+ *
+ * A detail page has no hero. The front page opens on a painting and a headline
+ * at `display-mega`; these open on a sentence, because a visitor arrives here
+ * having already clicked something specific and wants the answer, not another
+ * pitch. So the largest line on a detail page is its `h1` at `display-xl` —
+ * half a step down from the hero, which keeps the site's rule that a page has
+ * exactly ONE largest line while letting each page have its own.
+ *
+ * THE HEADLINE SITS BESIDE ITS STANDFIRST, not above it. `VoiceSwitch.astro`
+ * settled that shape on the front page and the reason carries: a `display-xl`
+ * line with body text under it reads as a caption to whatever comes next; set
+ * beside it, the two read as one statement. See docs/design.md § Typography.
+ *
+ * The band and its two rules are the ordinary section shell — `.section-inset`
+ * on the Container, `.section-bounds` on the band, `SectionTrack` `nested`
+ * inside it. Detail pages take the shell as it comes; the front page's three
+ * feature sections are the one run allowed to opt out of it, and that exception
+ * is theirs alone (docs/layout.md § "A run of sections may opt out — together").
+ *
+ * See docs/detail-pages.md.
+ */
+import Container from "@/components/Container.astro";
+import SectionTrack from "@/components/SectionTrack.astro";
+
+export interface Fact {
+  /** The number. Set in ink, at the size of a sub-section head. */
+  value: string;
+  /** What it counts. */
+  label: string;
+}
+
+interface Props {
+  /** Where this page sits, as one word. Doubles as the breadcrumb's last step. */
+  eyebrow: string;
+  title: string;
+  /** The standfirst. One or two sentences — it is beside the headline, not under it. */
+  lede: string;
+  /** Three or four counts. Each one has to be true of the list below. */
+  facts: Fact[];
+}
+
+const { eyebrow, title, lede, facts } = Astro.props;
+---
+
+{
+  /*
+    NO `id="top"`, and that is deliberate rather than an omission.
+    `SiteNav`'s script drives the rails and the veil off the hero's floor —
+    "how far out of the first screen is the reader" — and it takes the element
+    with that id as the hero. A detail page has no hero: it opens on this band,
+    which is a few hundred pixels tall, so the chrome would arrive at some
+    fraction of the way through a heading. With no such element the script
+    settles both at 1 on its first measurement and the page simply has its
+    chrome from the top, which is the case it already documents.
+  */
+}
+<section class="relative">
+  <Container width="content" class="section-inset">
+    <div class="section-bounds detail-head">
+      <SectionTrack nested />
+
+      {/*
+        The breadcrumb, and the way back. On a page reached from one link in the
+        middle of the front page, the fastest way back is the way in — so the
+        first step is a real link home and not a decorative "/".
+      */}
+      <nav class="detail-head__crumbs" aria-label="Breadcrumb">
+        <a href="/">Personal Jarvis</a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{eyebrow}</span>
+      </nav>
+
+      <div class="detail-head__split">
+        <h1 class="detail-head__title">{title}</h1>
+        <div class="detail-head__aside">
+          <p class="detail-head__lede">{lede}</p>
+
+          {/*
+            The counts. A `dl` because that is what they are — a term and the
+            number that answers it — and because it is the one shape a screen
+            reader reads as pairs rather than as six loose words.
+          */}
+          <dl class="detail-head__facts">
+            {
+              facts.map((fact) => (
+                <div>
+                  <dt>{fact.value}</dt>
+                  <dd>{fact.label}</dd>
+                </div>
+              ))
+            }
+          </dl>
+        </div>
+      </div>
+    </div>
+  </Container>
+</section>
+
+<style>
+  .detail-head__crumbs {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-body-sm);
+    color: var(--muted);
+  }
+
+  .detail-head__crumbs a {
+    color: var(--muted);
+    text-underline-offset: 4px;
+  }
+
+  .detail-head__crumbs a:hover {
+    color: var(--ink);
+    text-decoration: underline;
+  }
+
+  .detail-head__crumbs [aria-current] {
+    color: var(--ink);
+  }
+
+  .detail-head__split {
+    margin-top: var(--space-xl);
+    display: grid;
+    gap: var(--space-xl);
+  }
+
+  /* Beside, not under — but only once there is room for both to be read. Below
+   * this width the two stack and the headline is simply the first thing on the
+   * page, which is the right reading order either way. */
+  @media (min-width: 1024px) {
+    .detail-head__split {
+      grid-template-columns: 6fr 5fr;
+      gap: var(--space-xxl);
+      align-items: end;
+    }
+  }
+
+  .detail-head__title {
+    font-size: var(--text-display-xl);
+    letter-spacing: var(--tracking-display-xl);
+    line-height: 1.1;
+    text-wrap: balance;
+  }
+
+  .detail-head__lede {
+    font-size: var(--text-body);
+    line-height: 1.6;
+    color: var(--body);
+    text-wrap: pretty;
+  }
+
+  .detail-head__facts {
+    margin-top: var(--space-lg);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-lg) var(--space-xl);
+  }
+
+  .detail-head__facts dt {
+    font-size: var(--text-display-sm);
+    letter-spacing: var(--tracking-display-sm);
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .detail-head__facts dd {
+    margin: 0;
+    font-size: var(--text-caption-upper);
+    font-weight: 600;
+    letter-spacing: var(--tracking-caption-upper);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  @media (max-width: 640px) {
+    .detail-head__title {
+      font-size: var(--text-display-lg);
+      letter-spacing: var(--tracking-display-lg);
+    }
+  }
+</style>

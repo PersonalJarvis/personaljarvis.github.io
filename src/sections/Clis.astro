@@ -20,7 +20,7 @@
  */
 import Container from "@/components/Container.astro";
 import SectionTrack from "@/components/SectionTrack.astro";
-import { DOCS_URL } from "@/lib/nav";
+import { detailHref } from "@/lib/nav";
 import { ClisDemo } from "@/components/clis-demo/ClisDemo";
 ---
 
@@ -60,8 +60,17 @@ import { ClisDemo } from "@/components/clis-demo/ClisDemo";
           >
         </p>
 
+        <!--
+          The one focusable thing in this section — the demo beside it is
+          aria-hidden and every control in it is tabIndex -1.
+
+          It used to point at DOCS_URL, which is a directory listing on GitHub:
+          a reader who clicked this landed in a source tree and had to go
+          looking. It now opens a page of ours that answers the sentence it is
+          written on. See Plugins.astro and docs/detail-pages.md.
+        -->
         <a
-          href={DOCS_URL}
+          href={detailHref("clis")}
           class="mt-6 inline-flex items-center gap-2 text-[16px] font-medium text-ink underline-offset-4 hover:underline"
         >
           See every command-line tool

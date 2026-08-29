@@ -1,0 +1,96 @@
+/*
+ * The prose furniture the three detail pages share.
+ *
+ * Not a component and not a page's own scoped block: three pages set a heading,
+ * a standfirst and a term/description list exactly the same way, and three
+ * copies of the same six rules is two copies that drift. Anything only ONE page
+ * needs stays in that page's `<style>`, where it can be read next to the markup
+ * it dresses.
+ *
+ * Everything here is the SITE's palette. The window in the middle of each page
+ * is the application's, and `app.css` owns that; the line between the two is the
+ * window's border. See docs/detail-pages.md.
+ */
+
+/* The head of a block inside a detail page. `display-lg` is the section head in
+ * this system — `display-xl` is the page's own `h1` and belongs to it alone, so
+ * that each page still has exactly one largest line. */
+.detail-h2 {
+  font-size: var(--text-display-lg);
+  letter-spacing: var(--tracking-display-lg);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.detail-h3 {
+  margin-top: var(--space-xxl);
+  font-size: var(--text-display-sm);
+  letter-spacing: var(--tracking-display-sm);
+}
+
+/* The standfirst under a `.detail-h2`.
+ *
+ * `max-width` in `ch` and not one of the three width steps: this is a measure —
+ * how many characters fit on a line before the eye loses the next one — and the
+ * steps are a COLUMN width. layout.md forbids a bespoke max-width on a section,
+ * which this is not: the section is already on the content column and this is
+ * one paragraph inside it. */
+.detail-lede {
+  margin-top: var(--space-base);
+  max-width: 62ch;
+  color: var(--body);
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+/* A term and what it means, one per row, separated by a line rather than by a
+ * card each. Cards would be five boxes in a column saying five short things,
+ * which is the shape the front page's feature run was rebuilt to avoid. */
+.fact-list {
+  margin-top: var(--space-lg);
+}
+
+.fact-list > div {
+  display: grid;
+  gap: var(--space-xxs) var(--space-lg);
+  padding: var(--space-base) 0;
+  border-top: 1px solid var(--hairline);
+}
+
+@media (min-width: 768px) {
+  .fact-list > div {
+    grid-template-columns: 15rem minmax(0, 1fr);
+    align-items: baseline;
+  }
+}
+
+.fact-list dt {
+  font-size: var(--text-title-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.fact-list dd {
+  margin: 0;
+  color: var(--body);
+  line-height: 1.6;
+}
+
+/* The count that backs a row up — "9 plugins", "4 tools". Set as a label rather
+ * than as prose so it reads as evidence for the sentence above it. */
+.fact-list__count {
+  display: block;
+  margin-top: var(--space-xxs);
+  font-size: var(--text-caption-upper);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caption-upper);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* A monospace fragment in running prose — a file name, a binary, a pattern. */
+.detail-code {
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+  color: var(--ink);
+}

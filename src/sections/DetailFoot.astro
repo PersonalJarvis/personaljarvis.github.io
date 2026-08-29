@@ -1,0 +1,153 @@
+---
+/**
+ * The foot of a detail page: where to go next, and where the list came from.
+ *
+ * Two jobs, and the second is the one that matters. A page that lists
+ * seventy-six entries out of a product is making a claim about that product,
+ * and the honest way to make it is to name the files the entries were read from
+ * and the day they were read. `docs/footer.md` holds the same rule for the
+ * legal foot: no claim without a source.
+ *
+ * The install line is here rather than a "Download" button because the button
+ * is already in the nav, four rems above, and repeating it would be the second
+ * of two primary actions on one screen. What this offers instead is the thing
+ * the nav button cannot: the actual command, printed, to read before running.
+ */
+import Container from "@/components/Container.astro";
+import InstallCommand from "@/components/InstallCommand.astro";
+import SectionTrack from "@/components/SectionTrack.astro";
+import { CATALOG_DATE, CATALOG_SOURCES } from "@/lib/catalog";
+import { DETAIL_PAGES, type DetailPageId } from "@/lib/nav";
+import { REPO } from "@/lib/install";
+
+interface Props {
+  /** Which page this is, so it is not offered as somewhere to go next. */
+  current: DetailPageId;
+  /** Which catalog file backs this page — the key in `CATALOG_SOURCES`. */
+  source: keyof typeof CATALOG_SOURCES;
+}
+
+const { current, source } = Astro.props;
+
+const elsewhere = DETAIL_PAGES.filter((page) => page.id !== current);
+const sourcePath = CATALOG_SOURCES[source];
+---
+
+<section id="install" class="relative">
+  <Container width="content" class="section-inset">
+    <div class="section-bounds detail-foot">
+      <SectionTrack nested />
+
+      <div class="detail-foot__split">
+        <div>
+          <h2 class="detail-foot__title">Everything on this page ships in the app.</h2>
+          <p class="detail-foot__lede">
+            One line installs it. Nothing here is an add-on, a paid tier or a
+            waiting list.
+          </p>
+          <InstallCommand />
+        </div>
+
+        <div class="detail-foot__aside">
+          <p class="detail-foot__label">The rest of it</p>
+          <ul class="detail-foot__links">
+            {
+              elsewhere.map((page) => (
+                <li>
+                  <a href={page.href}>
+                    {page.label}
+                    <span aria-hidden="true">&#8594;</span>
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+
+          {/*
+            Where the list came from, with the day it was read. A listing this
+            long is a claim with a date on it, and hiding the date does not make
+            it fresher.
+          */}
+          <p class="detail-foot__source">
+            Read from the application's own catalog — <a
+              href={`${REPO}/blob/main/${sourcePath}`}
+              class="detail-foot__path">{sourcePath}</a
+            > — on {CATALOG_DATE}.
+          </p>
+        </div>
+      </div>
+    </div>
+  </Container>
+</section>
+
+<style>
+  .detail-foot__split {
+    display: grid;
+    gap: var(--space-xxl);
+  }
+
+  @media (min-width: 1024px) {
+    .detail-foot__split {
+      grid-template-columns: 7fr 4fr;
+    }
+  }
+
+  .detail-foot__title {
+    font-size: var(--text-display-lg);
+    letter-spacing: var(--tracking-display-lg);
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+
+  .detail-foot__lede {
+    margin-top: var(--space-sm);
+    margin-bottom: var(--space-lg);
+    color: var(--body);
+  }
+
+  .detail-foot__label {
+    font-size: var(--text-caption-upper);
+    font-weight: 600;
+    letter-spacing: var(--tracking-caption-upper);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .detail-foot__links {
+    margin: var(--space-sm) 0 var(--space-lg);
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .detail-foot__links a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-title-md);
+    color: var(--ink);
+    text-underline-offset: 4px;
+  }
+
+  .detail-foot__links a:hover {
+    text-decoration: underline;
+  }
+
+  .detail-foot__source {
+    font-size: var(--text-caption);
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  .detail-foot__path {
+    font-family: var(--font-mono);
+    color: var(--body);
+    text-underline-offset: 3px;
+  }
+
+  .detail-foot__path:hover {
+    color: var(--ink);
+    text-decoration: underline;
+  }
+</style>

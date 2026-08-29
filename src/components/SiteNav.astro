@@ -45,7 +45,42 @@
  * Astro's scope attribute never reaches it.
  */
 import Container from "@/components/Container.astro";
-import { DOCS_URL, INSTALL_ID, NAV_LINKS, TOP_ID } from "@/lib/nav";
+import {
+  DETAIL_PAGES,
+  DOCS_URL,
+  INSTALL_ID,
+  NAV_LINKS,
+  sectionHref,
+  TOP_ID,
+} from "@/lib/nav";
+
+/*
+ * THE NAV IS RENDERED ON EVERY ROUTE, AND ITS LINKS POINT AT THE FRONT PAGE.
+ *
+ * Five of the six entries are sections of `/`. Rendered on `/plugins` they
+ * would be `#features` — an id that page does not carry — and every one of them
+ * would be a control that does nothing when pressed. That is the exact defect
+ * `src/lib/nav.ts` was written to record about `#docs`, so it is fixed at the
+ * source: `sectionHref` gives a same-page anchor on the front page and an
+ * absolute one everywhere else.
+ *
+ * The wordmark follows the same rule and goes one step further: from a detail
+ * page the way back is the front page itself, not a fragment of it.
+ */
+const { pathname } = Astro.url;
+const onHome = pathname === "/";
+const markHref = onHome ? `#${TOP_ID}` : "/";
+
+/*
+ * Which nav entry to light on a detail page.
+ *
+ * The scroll-spy resolves this on the front page by measuring; on a detail page
+ * there is nothing to measure, and the answer is a fact about the route. Each
+ * detail page names the section it belongs to, so `/plugins` lights "Plugins"
+ * even though the link leads back to the front page's section — which is what
+ * the reader wants to be told: this is where you are.
+ */
+const activeSection = DETAIL_PAGES.find((page) => pathname.startsWith(page.href))?.section;
 ---
 
 {
@@ -70,12 +105,17 @@ import { DOCS_URL, INSTALL_ID, NAV_LINKS, TOP_ID } from "@/lib/nav";
   <div class="site-nav__veil" aria-hidden="true"></div>
 
   <Container width="content" class="site-nav__row">
-    <a class="site-nav__mark" href={`#${TOP_ID}`}>Personal Jarvis</a>
+    <a class="site-nav__mark" href={markHref}>Personal Jarvis</a>
 
     <nav class="site-nav__links" aria-label="Sections">
       {
         NAV_LINKS.map(({ id, label }) => (
-          <a class="site-nav__link" href={`#${id}`} data-nav-link={id}>
+          <a
+            class="site-nav__link"
+            href={sectionHref(id, pathname)}
+            data-nav-link={id}
+            aria-current={id === activeSection ? "true" : undefined}
+          >
             {/*
               The current-section mark. A small square, because the page already
               has one — the section marker walking the rails — and a second
@@ -96,6 +136,15 @@ import { DOCS_URL, INSTALL_ID, NAV_LINKS, TOP_ID } from "@/lib/nav";
       <a class="site-nav__link" href={DOCS_URL}>Docs</a>
     </nav>
 
+    {
+      /*
+        `#install` and not `/#install` even on a detail page: every detail page
+        carries a section with that id of its own (`DetailFoot.astro`), so the
+        button always scrolls to an install command on the page the reader is
+        already on. A jump back to the front page would throw away the page they
+        came to read.
+      */
+    }
     <a class="site-nav__cta" href={`#${INSTALL_ID}`}>Download</a>
   </Container>
 </header>
@@ -153,11 +202,24 @@ import { DOCS_URL, INSTALL_ID, NAV_LINKS, TOP_ID } from "@/lib/nav";
    */
   const links = new Map<HTMLElement, HTMLElement>();
   for (const { id } of NAV_LINKS) {
-    const link = document.querySelector<HTMLElement>(`[data-nav-link="${id}"]`);
+    const link = document.querySelector<HTMLAnchorElement>(`[data-nav-link="${id}"]`);
     if (!link) continue;
     const section = document.getElementById(id);
-    if (section) links.set(section, link);
-    else link.hidden = true;
+    if (section) {
+      links.set(section, link);
+      continue;
+    }
+    /*
+     * ONLY A SAME-PAGE ANCHOR IS TAKEN OFF THE NAV.
+     *
+     * On a detail page every one of these points at `/#…` — the section is on
+     * the front page and is SUPPOSED to be absent here, and the link works
+     * exactly as written. Hiding it would empty the nav on three of the four
+     * routes. What the rule is actually for is a `#…` link whose section has
+     * been renamed or retired out from under it, which is a control that does
+     * nothing when pressed and has no other symptom.
+     */
+    if ((link.getAttribute("href") ?? "").startsWith("#")) link.hidden = true;
   }
 
   /* The fraction of a screen the hero's floor travels up before the chrome is

@@ -1,0 +1,454 @@
+/*
+ * The product's own window, drawn at page size.
+ *
+ * The homepage shows the app three times as a picture: a fixed 1440-wide canvas
+ * scaled down inside a well, every measurement in design pixels (see
+ * docs/feature-section.md). That technique buys a perfect miniature and costs
+ * everything a miniature costs — the text is unreadable, unselectable and
+ * invisible to a search engine, and the list has to stop at the seven rows that
+ * fit.
+ *
+ * The detail pages want the opposite trade. They ARE the list: twenty-four
+ * plugins, twenty-two command-line tools, thirty skills, in full, searchable,
+ * selectable, and complete before any JavaScript runs. So the window here is
+ * real markup at real size — the same product, drawn rather than photographed.
+ *
+ * ## Why it is painted in the `--app-*` tokens and not the page palette
+ *
+ * Those tokens are the running application's own dark theme, read out of it
+ * value for value (see tokens.css § "App mockup"). The hero uses them for the
+ * same reason: a window painted in the site's palette is an illustration of the
+ * product, and one painted in the product's palette is the product. The two
+ * palettes are close — the site's floor was taken FROM the app — but they are
+ * not the same, and the difference is exactly what makes the window read as a
+ * thing sitting on the page rather than as part of it.
+ *
+ * The rest of the page — heads, prose, cards, the closing band — is the site's
+ * own palette as usual. The line between the two is the window's border.
+ *
+ * See docs/detail-pages.md.
+ */
+
+/* ---------------------------------------------------------------------------
+ * The window
+ * ------------------------------------------------------------------------ */
+
+/*
+ * `--hairline-strong` on the edge and not `--app-border`, and that is the one
+ * place this file deliberately leaves the app's palette.
+ *
+ * The window's fill is `--app-bg`, which is four points off the page's own
+ * `--canvas` — the site's floor was taken from the app's, so the two are within
+ * a shade of each other. A border in the app's own `--app-border` is then a
+ * hairline of one near-black against another, and the window has no edge at
+ * all. design.md § Depth settles this for the hero and the rule is the same
+ * here: the mockup is read by its EDGE, so the edge gets the page's strong
+ * hairline. Nothing INSIDE the window uses it.
+ */
+.app-window {
+  overflow: hidden;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-lg);
+  background: var(--app-bg);
+  color: var(--app-fg);
+}
+
+.app-window__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  position: relative;
+  padding: 0 var(--space-base);
+  height: 38px;
+  border-bottom: 1px solid var(--app-border);
+  background: var(--app-card);
+}
+
+.app-window__dots {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.app-window__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--app-border);
+}
+
+/* Centred on the WINDOW, not after the dots, which is where the app's own
+ * title sits. Absolute so the dots do not push it off centre. */
+.app-window__title {
+  position: absolute;
+  inset-inline: 0;
+  text-align: center;
+  font-size: var(--text-caption-upper);
+  letter-spacing: var(--tracking-caption-upper);
+  text-transform: uppercase;
+  color: var(--app-fg-muted);
+  pointer-events: none;
+}
+
+.app-window__body {
+  padding: var(--space-lg);
+}
+
+@media (max-width: 640px) {
+  .app-window__body {
+    padding: var(--space-sm);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * The view header inside the window — name, counts, one action
+ * ------------------------------------------------------------------------ */
+
+.app-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-base);
+  margin-bottom: var(--space-base);
+}
+
+/* The name and the counts. `min-width: 0` so a long subtitle wraps instead of
+ * pushing the action pill off the window's right edge. */
+.app-head__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-head__title {
+  display: block;
+  font-size: var(--text-display-sm);
+  letter-spacing: var(--tracking-display-sm);
+  line-height: 1.2;
+  color: var(--app-fg);
+}
+
+.app-head__subtitle {
+  margin-top: var(--space-xxs);
+  font-size: var(--text-caption);
+  color: var(--app-fg-muted);
+}
+
+/* The app puts a row of icon buttons here. One pill instead: at this size a row
+ * of 16px glyphs is a row of smudges, and what the header is about is the name
+ * and the number. */
+.app-head__action {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 var(--space-sm);
+  border-radius: var(--radius-md);
+  background: var(--app-fg);
+  color: var(--app-bg);
+  font-size: var(--text-body-sm);
+  font-weight: 500;
+}
+
+/* ---------------------------------------------------------------------------
+ * The toolbar: search, and one chip per group
+ *
+ * IT IS NOT RENDERED UNTIL JAVASCRIPT HAS RUN. A search box that does nothing
+ * is worse than no search box, and the list underneath is complete either way —
+ * that is the whole reason it is server-rendered markup. `[data-js]` lands on
+ * the root element from an inline script before first paint, so nothing flashes.
+ * ------------------------------------------------------------------------ */
+
+.app-toolbar {
+  display: none;
+}
+
+:root[data-js] .app-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-base);
+}
+
+.app-search {
+  flex: 1 1 220px;
+  min-width: 0;
+  height: 36px;
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-md);
+  background: var(--app-card);
+  color: var(--app-fg);
+  font: inherit;
+  font-size: var(--text-body-sm);
+}
+
+.app-search::placeholder {
+  color: var(--app-fg-muted);
+}
+
+.app-search:focus-visible {
+  outline: 1px solid var(--app-fg-muted);
+  outline-offset: 1px;
+}
+
+.app-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xxs);
+}
+
+.app-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xxs);
+  height: 36px;
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--app-fg-muted);
+  font-size: var(--text-body-sm);
+  cursor: pointer;
+}
+
+.app-chip:hover {
+  background: var(--app-muted);
+  color: var(--app-fg);
+}
+
+/* The selected chip inverts, which is the one action colour this system has and
+ * the same treatment the primary CTA gets. */
+.app-chip[aria-pressed="true"] {
+  border-color: var(--app-fg);
+  background: var(--app-fg);
+  color: var(--app-bg);
+}
+
+.app-chip__count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+/* ---------------------------------------------------------------------------
+ * The list
+ * ------------------------------------------------------------------------ */
+
+.app-panel {
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  background: var(--app-card);
+  overflow: hidden;
+}
+
+/* A group heading inside the panel — the category the rows under it belong to.
+ * `--app-muted` rather than a second border: the app separates a group with a
+ * well, not with a line, and a line here would collide with the row dividers. */
+.app-group__label {
+  padding: var(--space-xs) var(--space-base);
+  background: var(--app-muted);
+  font-size: var(--text-caption-upper);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caption-upper);
+  text-transform: uppercase;
+  color: var(--app-fg-muted);
+}
+
+.app-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-base);
+}
+
+/*
+ * A divider BETWEEN two rows, and nowhere else.
+ *
+ * The adjacent-sibling selector does the whole job on its own: a group's first
+ * row has the heading before it, not a row, so it never matches — and the
+ * heading's own well is already the separation. A rule to switch that first
+ * border back off would be a rule that never fires.
+ */
+.app-row + .app-row {
+  border-top: 1px solid var(--app-border);
+}
+
+.app-row:hover {
+  background: var(--app-muted);
+}
+
+/*
+ * `hidden` has to be spelled out, and this is not belt-and-braces.
+ *
+ * The attribute is implemented by the user-agent rule `[hidden] { display:
+ * none }`, at specificity (0,1,0) — exactly what `.app-row` scores, and the
+ * author sheet comes later, so `display: grid` wins and a hidden row stays on
+ * screen. The filter would appear to do nothing at all. Two selectors take it
+ * to (0,2,0), which settles it without an `!important`.
+ */
+.app-row[hidden],
+.app-group[hidden] {
+  display: none;
+}
+
+.app-row__tile {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-md);
+  background: var(--app-muted);
+  color: var(--app-fg);
+}
+
+.app-row__tile img,
+.app-row__tile svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* A single-colour glyph is painted as a mask over the row's ink, so one file
+ * works on any ground — the same two render paths the app's own CliLogo has,
+ * and the reason the site could go dark without re-cutting a mark. */
+.app-row__glyph {
+  width: 20px;
+  height: 20px;
+  background: currentcolor;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+.app-row__name {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  font-size: var(--text-title-sm);
+  font-weight: 500;
+  color: var(--app-fg);
+}
+
+.app-row__id {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption-upper);
+  color: var(--app-fg-muted);
+}
+
+.app-row__desc {
+  margin-top: 2px;
+  font-size: var(--text-caption);
+  line-height: 1.45;
+  color: var(--app-fg-muted);
+}
+
+.app-row__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  /* The right-hand column drops under the name rather than squeezing it: three
+   * columns in 320px is three ellipses. */
+  .app-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .app-row__meta {
+    grid-column: 2;
+    flex-wrap: wrap;
+  }
+}
+
+/* A badge on a row: the sign-in mode, the risk tier, the trigger kind. Quiet by
+ * default — the row's subject is its name, not its metadata. */
+.app-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xxs);
+  padding: 2px var(--space-xs);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-caption-upper);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caption-upper);
+  text-transform: uppercase;
+  color: var(--app-fg-muted);
+  white-space: nowrap;
+}
+
+/*
+ * The one badge that carries colour, and only in one direction.
+ *
+ * `ask` is the tier that stops and waits for a person, and `block` is the one
+ * that refuses outright — the two the reader has to be able to find by scanning.
+ * `safe` and `monitor` stay grey on purpose: design.md reserves colour for
+ * meaning, and "this ran and was written down" is not a warning. Nothing in the
+ * app's own risk styles is green either.
+ */
+.app-badge[data-tier="ask"],
+.app-badge[data-tier="block"] {
+  border-color: color-mix(in srgb, var(--error) 45%, transparent);
+  color: var(--error);
+}
+
+/* The round button at the end of a plugin row — the app's connect control. It
+ * is not a control here: this page lists a catalog, it does not connect to
+ * anything. Drawn because the row is incomplete without it and the reader is
+ * being shown what the app looks like. */
+.app-row__connect {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-pill);
+  color: var(--app-fg-muted);
+}
+
+/* What the filter shows when nothing matched. Hidden until the script says so,
+ * so it never appears on a page with no JavaScript — where nothing is filtered
+ * and the list is always complete. */
+.app-empty {
+  display: none;
+  padding: var(--space-xl) var(--space-base);
+  text-align: center;
+  font-size: var(--text-body-sm);
+  color: var(--app-fg-muted);
+}
+
+.app-panel[data-empty] .app-empty {
+  display: block;
+}
+
+/* ---------------------------------------------------------------------------
+ * A code surface inside the window — a SKILL.md, a shell command
+ * ------------------------------------------------------------------------ */
+
+.app-code {
+  margin: 0;
+  padding: var(--space-base);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  background: var(--app-card);
+  color: var(--app-fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+  line-height: 1.6;
+  /* Wide content scrolls inside its own box; the page never scrolls sideways. */
+  overflow-x: auto;
+  tab-size: 2;
+}
+
+/* The frontmatter keys, so the shape of the file is readable at a glance
+ * without a syntax highlighter and its stylesheet. */
+.app-code b {
+  font-weight: 400;
+  color: var(--app-fg);
+}
+
+.app-code span {
+  color: var(--app-fg-muted);
+}

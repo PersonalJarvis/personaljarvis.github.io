@@ -92,3 +92,69 @@ export const INSTALL_ID = "install";
  * has to change.
  */
 export const DOCS_URL = "https://github.com/PersonalJarvis/PersonalJarvis/tree/main/docs";
+
+/* ---------------------------------------------------------------------------
+ * The detail pages
+ *
+ * Three routes, one per feature section on the front page. They exist because
+ * those three sections each ended in a link that left the site: "See every
+ * plugin" went to a directory listing on GitHub, which is a source tree and not
+ * an answer. The maintainer asked on 2026-08-29 for the three to lead to pages
+ * of our own, in our own branding, drawn as the application draws them.
+ *
+ * They are ROUTES on this domain, not subdomains. A subdomain needs its own DNS
+ * record, its own certificate and its own deploy; a route ships with the site,
+ * keeps the nav, the rails and the footer, and can be linked to from the middle
+ * of a sentence. Nothing about the pages would be better on a host of their own.
+ *
+ * See docs/detail-pages.md.
+ * ------------------------------------------------------------------------ */
+
+export type DetailPageId = "plugins" | "skills" | "clis";
+
+export interface DetailPage {
+  id: DetailPageId;
+  /** The route. Trailing-slash-free, matching Astro's default output. */
+  href: string;
+  /** What a link to it says when it is one of several. */
+  label: string;
+  /** The section of the front page it belongs to. */
+  section: string;
+}
+
+export const DETAIL_PAGES: readonly DetailPage[] = [
+  { id: "plugins", href: "/plugins", label: "Every plugin", section: "features" },
+  { id: "skills", href: "/skills", label: "How a skill is written", section: "skills" },
+  { id: "clis", href: "/clis", label: "Every command-line tool", section: "clis" },
+];
+
+/**
+ * The route of one detail page, by id.
+ *
+ * A function and not three exported constants, because the caller is a feature
+ * section that already knows which page it belongs to and the point is that the
+ * href is never typed twice. A typo in an id is a compile error here; a typo in
+ * a string literal is a 404 nobody notices until someone clicks it.
+ */
+export function detailHref(id: DetailPageId): string {
+  const page = DETAIL_PAGES.find((entry) => entry.id === id);
+  /* Unreachable while the id is typed — which is the point of typing it. The
+   * throw is what makes that true at build time rather than at read time: Astro
+   * renders these pages statically, so a missing entry fails the build instead
+   * of shipping an `undefined` href. */
+  if (!page) throw new Error(`no detail page with id ${id}`);
+  return page.href;
+}
+
+/**
+ * An anchor that works from wherever it is rendered.
+ *
+ * The nav lists sections of the FRONT page. On the front page those are
+ * `#features`; on `/plugins` the same link has to be `/#features`, or it points
+ * at an id that page does not have and the click does nothing — which is the
+ * exact defect `DOCS_URL` above exists to record. One helper, called by the nav
+ * with its own pathname, so neither the list nor the markup has to know.
+ */
+export function sectionHref(id: string, pathname: string): string {
+  return pathname === "/" ? `#${id}` : `/#${id}`;
+}

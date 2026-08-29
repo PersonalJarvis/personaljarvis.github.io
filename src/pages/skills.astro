@@ -1,0 +1,520 @@
+---
+/**
+ * /skills — what a skill is, shown as the file it actually is.
+ *
+ * Reached from "See how a skill is written" on the front page, and that link's
+ * wording is the brief: the page has to SHOW one. A listing answers "what can
+ * it do"; nothing in a listing answers "what am I writing if I write one". So
+ * the middle of this page is a real `SKILL.md`, verbatim, with the fields named
+ * beside it — and the listing of all thirty comes after it, not before.
+ *
+ * See docs/detail-pages.md.
+ */
+import Base from "@/layouts/Base.astro";
+import Container from "@/components/Container.astro";
+import SectionTrack from "@/components/SectionTrack.astro";
+import AppWindow from "@/components/app/AppWindow.astro";
+import CatalogSearch from "@/components/app/CatalogSearch.astro";
+import TriggerGlyph from "@/components/app/TriggerGlyph.astro";
+import DetailHead from "@/sections/DetailHead.astro";
+import DetailFoot from "@/sections/DetailFoot.astro";
+import Legal from "@/sections/Legal.astro";
+import catalog from "@/data/app-catalog.json";
+import {
+  groupBy,
+  RISK_WORDING,
+  searchText,
+  SKILLS,
+  TRIGGER_WORDING,
+  type TriggerType,
+} from "@/lib/catalog";
+
+const example = catalog.exampleSkill;
+
+/**
+ * The frontmatter, with its keys set in ink and its values left quiet — the
+ * shape of the file at a glance, without a syntax highlighter and the
+ * stylesheet one drags in.
+ *
+ * ## Why this is a STRING and not a list of elements
+ *
+ * The obvious spelling is a `.map()` returning one fragment per line inside the
+ * `<pre>`. It renders wrong, and wrong in a way that is invisible until you
+ * look at it: Astro preserves the whitespace between elements in its own
+ * template, so every line of the file came out with THIS file's indentation and
+ * line breaks injected into it — a forty-line listing spread over four screens,
+ * each key on one line and its value on the next. Inside a `<pre>` there is no
+ * such thing as insignificant whitespace, so the markup has to be exact, and
+ * the only way to be exact is to build it here and hand it over with `set:html`.
+ *
+ * Which is why `escape` exists two lines down. This is a file read off disk
+ * going into markup: it already contains `>-`, `[de, en]` and a good deal of
+ * punctuation, and one unescaped `<` in some future skill would be a silent
+ * injection of whatever followed it.
+ *
+ * The regular expression only ever wraps a KEY. It anchors at the start of the
+ * line, allows a list item's dash, and requires lower-case-and-underscores
+ * followed immediately by a colon — which is what a YAML key looks like and
+ * what a sentence inside a folded value does not. `description: >-` runs onto
+ * four indented lines of prose here, and none of them matches.
+ */
+const escape = (text: string) =>
+  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const frontmatterHtml = example.frontmatter
+  .split("\n")
+  .map((line) => {
+    const match = /^(\s*(?:- )?)([a-z_]+):(.*)$/.exec(line);
+    if (!match) return `<span>${escape(line)}</span>`;
+    return `${escape(match[1])}<b>${escape(match[2])}:</b><span>${escape(match[3])}</span>`;
+  })
+  .join("\n");
+
+/**
+ * The fields worth naming, in the order they appear in the file.
+ *
+ * Not every field — `schema_version` and `token_budget_estimate` are plumbing —
+ * but every field that decides what the skill DOES. Each line here is checked
+ * against the printed file beside it; a row naming a key the example does not
+ * carry is the one mistake this section can make and the one a reader would
+ * spot instantly.
+ */
+const FIELDS = [
+  {
+    key: "description",
+    text: "What it does, and the sentences that should reach it. This is the text the assistant itself reads when it is deciding which skill a request belongs to.",
+  },
+  {
+    key: "when_to_use",
+    text: "The same question answered a second time, in the user's own words. Two phrasings of one thing is deliberate — a single sentence is a single guess at how someone will ask.",
+  },
+  {
+    key: "triggers",
+    text: "What sets it off without being asked: a spoken phrase, a key chord, or a cron line. A skill can have several, and each one names the languages it is written for.",
+  },
+  {
+    key: "risk_policy",
+    text: "Where its commands start on the safe / monitor / ask / block ladder. A skill cannot lower its own tier at run time.",
+  },
+  {
+    key: "config",
+    text: "The settings it exposes. They are read back into the instructions below by name, so changing one changes the behaviour without editing the prose.",
+  },
+  {
+    key: "requires_tools",
+    text: "What has to be connected before it can run. An empty list means it works on a fresh install.",
+  },
+];
+
+/* Grouped by the category in each skill's own frontmatter, in the order the
+ * registry serves them — which is alphabetical by name, since no user ordering
+ * exists on a fresh install. */
+const byCategory = groupBy(SKILLS, (skill) => skill.category);
+
+const chips = [...byCategory]
+  .map(([category, rows]) => ({ id: category, label: category, count: rows.length }))
+  .sort((a, b) => b.count - a.count);
+
+const TRIGGER_ORDER: TriggerType[] = ["voice", "hotkey", "schedule"];
+const triggers = SKILLS.flatMap((skill) => skill.triggers);
+const byTriggerType = groupBy(triggers, (trigger) => trigger.type);
+
+/* How many speak for a plugin, and how many are the app's own. The first number
+ * is the interesting one: connecting a service is also what teaches Jarvis how
+ * to talk about it. */
+const pluginBacked = SKILLS.filter((skill) => skill.plugin).length;
+---
+
+<Base
+  title="How a skill is written — Personal Jarvis"
+  description="A skill is a plain text file with a switch. Here is a real one, field by field, and the thirty that ship with Personal Jarvis."
+>
+  <DetailHead
+    eyebrow="Skills"
+    title="A skill is a text file. That is the whole trick."
+    lede="Everything Jarvis knows how to do is a few lines of plain English in a file: what it is for, what sets it off, and how careful to be. The ones it ships with and the ones you write sit in the same list, in the same format, with the same switch."
+    facts={[
+      { value: String(SKILLS.length), label: "built in" },
+      { value: String(byCategory.size), label: "categories" },
+      { value: String(TRIGGER_ORDER.length), label: "ways to set one off" },
+    ]}
+  />
+
+  {/* The file itself. */}
+  <section id="anatomy" class="relative">
+    <Container width="content" class="section-inset">
+      <div class="section-bounds">
+        <SectionTrack nested />
+
+        <h2 class="detail-h2">One real file, field by field.</h2>
+        <p class="detail-lede">
+          This is <span class="detail-code">{example.name}</span>, exactly as it
+          ships — the top of the file, which is the part that decides everything.
+          Under it come {example.bodyLines} lines of instructions in plain English,
+          and nothing else. No build step, no plugin API, no code.
+        </p>
+
+        <div class="anatomy">
+          <AppWindow>
+            <div class="app-head">
+              <div class="app-head__body">
+                <span class="app-head__title">{example.name}</span>
+                <span class="app-head__subtitle">{example.source}</span>
+              </div>
+              <span class="app-head__action">Enabled</span>
+            </div>
+
+            <pre class="app-code"><code set:html={frontmatterHtml} /></pre>
+
+            <p class="anatomy__break">
+              — and then the instructions, in plain English —
+            </p>
+
+            <pre class="app-code"><code><span>{example.body}</span></code></pre>
+          </AppWindow>
+
+          <dl class="fact-list anatomy__fields">
+            {
+              FIELDS.map((field) => (
+                <div>
+                  <dt class="detail-code">{field.key}</dt>
+                  <dd>{field.text}</dd>
+                </div>
+              ))
+            }
+          </dl>
+        </div>
+      </div>
+    </Container>
+  </section>
+
+  {/* What sets a skill off. */}
+  <section id="triggers" class="relative">
+    <Container width="content" class="section-inset">
+      <div class="section-bounds">
+        <SectionTrack nested />
+
+        <h2 class="detail-h2">Three ways in, and one of them is the clock.</h2>
+        <p class="detail-lede">
+          A skill does not wait to be picked from a menu. It declares what should
+          reach it, and the app watches for exactly that — which is why a skill
+          you wrote this morning answers a sentence you say this afternoon
+          without you naming it.
+        </p>
+
+        <div class="trigger-grid">
+          {
+            TRIGGER_ORDER.map((type) => {
+              const rows = byTriggerType.get(type) ?? [];
+              const wording = TRIGGER_WORDING[type];
+              /* The longest pattern of its kind, because the short ones make
+               * the case look easier than it is. A spoken trigger really is a
+               * regular expression covering both languages at once. */
+              const sample = rows
+                .map((row) => row.pattern)
+                .sort((a, b) => b.length - a.length)[0];
+              return (
+                <article class="trigger-card">
+                  <p class="trigger-card__head">
+                    <TriggerGlyph type={type} />
+                    {wording.label}
+                    <span class="trigger-card__count">{rows.length}</span>
+                  </p>
+                  <p class="trigger-card__hint">{wording.hint}</p>
+                  {sample && <pre class="app-code trigger-card__sample"><code>{sample}</code></pre>}
+                </article>
+              );
+            })
+          }
+        </div>
+      </div>
+    </Container>
+  </section>
+
+  {/* The shelf: all thirty, as the app lists them. */}
+  <section id="catalog" class="relative">
+    <Container width="content" class="section-inset">
+      <div class="section-bounds">
+        <SectionTrack nested />
+
+        <div data-catalog>
+          <AppWindow>
+            <div class="app-head">
+              <div class="app-head__body">
+                <span class="app-head__title">Skills</span>
+                <span class="app-head__subtitle">
+                  <span data-catalog-count>{SKILLS.length}</span> of {SKILLS.length} built in
+                  · {pluginBacked} of them speak for a plugin
+                </span>
+              </div>
+              <span class="app-head__action">New skill</span>
+            </div>
+
+            <CatalogSearch
+              label="Search skills"
+              placeholder="Search skills"
+              total={SKILLS.length}
+              chips={chips}
+            />
+
+            <div class="app-panel" data-catalog-panel>
+              {
+                [...byCategory].map(([category, rows]) => (
+                  <div class="app-group" data-catalog-group={category}>
+                    <p class="app-group__label">{category}</p>
+                    {rows.map((skill) => (
+                      <div
+                        class="app-row"
+                        data-catalog-row
+                        data-group={category}
+                        data-search={searchText(
+                          skill.name,
+                          skill.description,
+                          skill.tags,
+                          category,
+                          skill.plugin,
+                        )}
+                      >
+                        {/*
+                          One glyph per trigger, in frontmatter order — the app's
+                          own rule, and it says at a glance how many ways there
+                          are into a skill. A skill with none is reached by being
+                          asked for, which is what the empty cell means.
+                        */}
+                        <span class="app-row__tile skill-row__triggers">
+                          {skill.triggers.length === 0 ? (
+                            <span class="skill-row__none" aria-hidden="true">—</span>
+                          ) : (
+                            skill.triggers.map((trigger) => (
+                              <TriggerGlyph type={trigger.type} />
+                            ))
+                          )}
+                        </span>
+
+                        <div>
+                          <p class="app-row__name">
+                            <span class="detail-code">{skill.name}</span>
+                            {skill.version && <span class="app-row__id">v{skill.version}</span>}
+                          </p>
+                          <p class="app-row__desc">{skill.description}</p>
+                        </div>
+
+                        <div class="app-row__meta">
+                          <span class="app-badge" data-tier={skill.risk}>
+                            {RISK_WORDING[skill.risk].label}
+                          </span>
+                          {/*
+                            The switch. Every built-in loads on: this is what a
+                            fresh install looks like, not a state anyone picked.
+                          */}
+                          <span class="skill-row__switch" aria-hidden="true"></span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))
+              }
+              <p class="app-empty">No skill matches that.</p>
+            </div>
+          </AppWindow>
+        </div>
+      </div>
+    </Container>
+  </section>
+
+  {/* Where they come from, and what writing one costs. */}
+  <section id="writing" class="relative">
+    <Container width="content" class="section-inset">
+      <div class="section-bounds">
+        <SectionTrack nested />
+
+        <h2 class="detail-h2">Yours sit in the same list as ours.</h2>
+        <p class="detail-lede">
+          There is no separate place for a skill you wrote. Same folder, same
+          format, same switch, same search — and the same ladder deciding what it
+          is allowed to run.
+        </p>
+
+        <dl class="fact-list">
+          <div>
+            <dt>{pluginBacked} of {SKILLS.length} speak for a plugin</dt>
+            <dd>
+              Connecting a service also teaches Jarvis how to talk about it: each
+              of those ships beside its plugin and is the reason "put that in
+              Notion" reaches Notion rather than a search engine.
+              <span class="fact-list__count">shipped in pairs</span>
+            </dd>
+          </div>
+          <div>
+            <dt>The rest are the app's own</dt>
+            <dd>
+              A morning briefing, a focus sprint, the one that writes new skills.
+              Those are the ones worth reading first if you are about to write
+              your own — they are the format's own worked examples.
+              <span class="fact-list__count">{SKILLS.length - pluginBacked} skills</span>
+            </dd>
+          </div>
+          <div>
+            <dt>A new one starts as a draft</dt>
+            <dd>
+              A skill the assistant writes for itself is created disabled and
+              stays that way until you read it and turn it on. Nothing writes
+              itself into the running set.
+              <span class="fact-list__count">never auto-enabled</span>
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </Container>
+  </section>
+
+  <DetailFoot current="skills" source="skills" />
+  <Legal />
+</Base>
+
+<style>
+  .anatomy {
+    margin-top: var(--space-xl);
+    display: grid;
+    gap: var(--space-xl);
+  }
+
+  /* The file first and the field notes beside it, once there is room for both to
+   * be read at once — the notes are captions to the file, and a caption under a
+   * 40-line listing has lost its subject by the time you reach it. */
+  @media (min-width: 1024px) {
+    .anatomy {
+      grid-template-columns: 7fr 5fr;
+      gap: var(--space-xxl);
+      align-items: start;
+    }
+  }
+
+  /*
+   * A GRID ITEM DOES NOT SHRINK BELOW ITS CONTENT unless it is told to. The
+   * default `min-width: auto` means a ninety-column line inside the code block
+   * sets the column's floor, the column pushes the grid past the container, and
+   * the whole PAGE grows a horizontal scrollbar. The `overflow-x: auto` on the
+   * block itself never gets a chance to act, because the box it would scroll
+   * inside was never allowed to be narrow.
+   */
+  .anatomy > * {
+    min-width: 0;
+  }
+
+  .anatomy__fields {
+    margin-top: 0;
+  }
+
+  /* The field notes stack even on a wide screen: they sit in the narrower of
+   * the two columns, and the shared two-column `.fact-list` would leave the
+   * description about twenty characters wide — a word per line. */
+  .anatomy__fields > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The gap in the file, marked rather than hidden. The page shows the whole
+   * frontmatter and the head of the body; saying so is cheaper than a reader
+   * wondering whether the file really is that short. */
+  .anatomy__break {
+    padding: var(--space-sm) 0;
+    text-align: center;
+    font-size: var(--text-caption);
+    color: var(--app-fg-muted);
+  }
+
+  .trigger-grid {
+    margin-top: var(--space-xl);
+    display: grid;
+    gap: var(--space-base);
+  }
+
+  @media (min-width: 768px) {
+    .trigger-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .trigger-card {
+    display: flex;
+    flex-direction: column;
+    /* Same reason as `.anatomy > *` above: the pattern printed inside is one
+     * long line, and a grid item defaults to not shrinking below it. */
+    min-width: 0;
+    padding: var(--space-lg);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    background: var(--surface-card);
+  }
+
+  .trigger-card__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-title-md);
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .trigger-card__count {
+    margin-left: auto;
+    font-size: var(--text-body-sm);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+  }
+
+  .trigger-card__hint {
+    margin-top: var(--space-xs);
+    font-size: var(--text-body-sm);
+    line-height: 1.6;
+    color: var(--body);
+  }
+
+  /* The pattern, verbatim. It scrolls inside its own box rather than wrapping:
+   * a regular expression broken across lines is a different expression to read,
+   * and this one is being shown precisely because it is dense. */
+  .trigger-card__sample {
+    margin-top: var(--space-base);
+    white-space: pre;
+  }
+
+  /* The trigger cell on a row. It reuses the row's tile — same 36px square as a
+   * vendor mark on the other two pages, so the three listings line up — but it
+   * holds up to three glyphs, so it is a row rather than a grid. */
+  .skill-row__triggers {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 0 var(--space-xxs);
+    width: auto;
+    min-width: 36px;
+  }
+
+  .skill-row__none {
+    color: var(--app-fg-muted);
+  }
+
+  /* The app's toggle, in its "on" position. Drawn, not wired — this page lists
+   * what ships, it does not switch anything on. */
+  .skill-row__switch {
+    position: relative;
+    display: inline-block;
+    width: 30px;
+    height: 18px;
+    border-radius: var(--radius-pill);
+    background: var(--app-fg);
+  }
+
+  .skill-row__switch::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 12px;
+    height: 12px;
+    border-radius: var(--radius-pill);
+    background: var(--app-bg);
+  }
+</style>

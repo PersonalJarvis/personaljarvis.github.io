@@ -1,0 +1,130 @@
+---
+/**
+ * The vendor mark on a row, at page size.
+ *
+ * Two render paths, ported from the application's own `CliLogo.tsx` — and the
+ * mapping below is a copy of that file's `CLI_VENDOR_LOGOS` and `CLI_VENDORS`,
+ * not a fresh judgement:
+ *
+ *  - **colour** — the vendor's full-colour icon, drawn as an `<img>` on a
+ *    neutral tile. Its own colours carry the brand.
+ *  - **mono** — a single-colour glyph drawn as a CSS mask over the row's ink.
+ *    One file then works on any ground, which is what let this site go dark
+ *    without re-cutting a mark.
+ *
+ * Every file is bundled at build time, so a mark renders offline and the page
+ * calls no third party. A CDN icon URL would be a request per row on a page
+ * with seventy-six of them, and a promise to a service we do not control that
+ * this page keeps working.
+ *
+ * Licensing: every mark belongs to its owner and is used solely to identify the
+ * service the row names. See src/assets/brands/LOGOS.md and
+ * src/assets/clis/LOGOS.md — a mark with no row in one of those ledgers is a
+ * licence gap, not a shortcut.
+ */
+
+/**
+ * Which CLI id belongs to which company, then which file that company's mark
+ * is in and how it has to be drawn.
+ *
+ * Exact ids, never substrings — `gh` and `glab` share no letters with their
+ * companies, and a substring rule would make `gws` a Google Cloud tool. A
+ * binary with no vendor here falls back to the category glyph, which is the
+ * honest answer for a tool the project has never heard of.
+ */
+const CLI_VENDOR: Record<string, string> = {
+  aws: "aws",
+  az: "azure",
+  docker: "docker",
+  firebase: "firebase",
+  flyctl: "fly",
+  gcloud: "google-cloud",
+  gh: "github",
+  glab: "gitlab",
+  gws: "google",
+  heroku: "heroku",
+  kubectl: "kubernetes",
+  neonctl: "neon",
+  netlify: "netlify",
+  pscale: "planetscale",
+  railway: "railway",
+  render: "render",
+  stripe: "stripe",
+  supabase: "supabase",
+  twilio: "twilio",
+  vercel: "vercel",
+  wrangler: "cloudflare",
+};
+
+/** The vendors whose file is a single-colour glyph and needs the mask path. */
+const CLI_MONO = new Set([
+  "aws",
+  "cloudflare",
+  "github",
+  "planetscale",
+  "railway",
+  "render",
+  "stripe",
+  "vercel",
+]);
+
+const BRAND_FILES = import.meta.glob<string>("../../assets/brands/*.svg", {
+  eager: true,
+  query: "?url",
+  import: "default",
+});
+
+const CLI_FILES = import.meta.glob<string>("../../assets/clis/*.svg", {
+  eager: true,
+  query: "?url",
+  import: "default",
+});
+
+interface Props {
+  /**
+   * Which catalog the id belongs to. The two never share a namespace — `stripe`
+   * is a plugin AND a CLI, and they are different files — so this is not
+   * derivable from the id.
+   */
+  kind: "plugin" | "cli";
+  id: string;
+}
+
+const { kind, id } = Astro.props;
+
+const vendor = kind === "cli" ? CLI_VENDOR[id] : id;
+const url = vendor
+  ? kind === "cli"
+    ? CLI_FILES[`../../assets/clis/${vendor}.svg`]
+    : BRAND_FILES[`../../assets/brands/${vendor}.svg`]
+  : undefined;
+const mono = kind === "cli" && vendor ? CLI_MONO.has(vendor) : false;
+---
+
+<span class="app-row__tile">
+  {
+    /*
+      No mark bundled for this id: the app draws a category glyph rather than
+      inventing a mark, and this is that glyph — a terminal, for a binary. The
+      only row that reaches it is the project's own control CLI, which has no
+      vendor by definition.
+    */
+    !url && (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <path d="m5 8 3.5 3.5L5 15" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M12 16h7" stroke-linecap="round" />
+      </svg>
+    )
+  }
+  {
+    /*
+      A mask, not an <img>. The quotes inside url() are load-bearing: Vite
+      inlines a small SVG as a data URI whose payload still contains the
+      source's own single quotes, and an UNQUOTED css url() token may not
+      contain a quote character — the browser then drops the whole declaration
+      and the tile paints solid in the ink colour.
+    */
+    url && mono && <span class="app-row__glyph" style={`mask-image: url("${url}")`} />
+  }
+  {url && !mono && <img src={url} alt="" width="20" height="20" loading="lazy" decoding="async" />}
+</span>

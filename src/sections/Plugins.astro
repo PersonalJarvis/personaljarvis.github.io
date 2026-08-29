@@ -41,7 +41,7 @@
  */
 import Container from "@/components/Container.astro";
 import SectionTrack from "@/components/SectionTrack.astro";
-import { DOCS_URL } from "@/lib/nav";
+import { detailHref } from "@/lib/nav";
 import { PluginsDemo } from "@/components/plugins-demo/PluginsDemo";
 ---
 
@@ -105,12 +105,17 @@ import { PluginsDemo } from "@/components/plugins-demo/PluginsDemo";
         </p>
 
         <!--
-          A real link, and the one thing in this section that is focusable — the
-          demo beside it is aria-hidden and every control in it is tabIndex -1.
-          Ink, not an accent: docs/design.md retired the borrowed hue.
+          THE ONE FOCUSABLE THING IN THIS SECTION — the demo beside it is
+          aria-hidden and every control in it is tabIndex -1.
+
+          It used to point at DOCS_URL, which is a directory listing on GitHub:
+          a reader who clicked "See every plugin" landed in a source tree and
+          had to go looking. It now opens a page of ours that answers the sentence it is
+          written on. Ink, not an accent: docs/design.md retired the borrowed
+          hue. See docs/detail-pages.md.
         -->
         <a
-          href={DOCS_URL}
+          href={detailHref("plugins")}
           class="mt-6 inline-flex items-center gap-2 text-[16px] font-medium text-ink underline-offset-4 hover:underline"
         >
           See every plugin

@@ -188,7 +188,13 @@ a px token here would freeze while the rem utilities around it grew.
   standfirst rather than above it, where `display-lg` reads as a caption next to
   the picture below. It is half a step down from the hero, so the page still has
   exactly one largest line. Two sections at `display-xl` means one of them
-  should not be. Currently: `VoiceSwitch.astro` only.
+  should not be. On the front page: `VoiceSwitch.astro` only.
+- **A page with no hero spends `display-xl` on its `h1`.** The rule above is
+  "one largest line per page", not "one per site". A detail page
+  (`/plugins`, `/skills`, `/clis`) opens on a sentence rather than a painting,
+  so its `h1` is the exception there and every heading under it is
+  `display-lg` — the same shape as the front page, one step down the whole way.
+  See [`detail-pages.md`](detail-pages.md).
 
 ---
 

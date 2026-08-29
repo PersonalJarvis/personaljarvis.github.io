@@ -1,0 +1,432 @@
+---
+/**
+ * /clis — every command-line tool it drives, and the gate in front of each one.
+ *
+ * Reached from "See every command-line tool" on the front page.
+ *
+ * THE SAFETY GATE IS THE POINT OF THIS PAGE, not the list. A page that says
+ * "it can run your cloud CLI" and stops there has described something nobody
+ * sensible would install. What makes it installable is that every tool arrives
+ * with a written list of commands that are refused before they start, and those
+ * lists are in the catalog — a hundred and thirteen patterns of them — so the
+ * page prints them rather than promising them.
+ *
+ * See docs/detail-pages.md.
+ */
+import Base from "@/layouts/Base.astro";
+import Container from "@/components/Container.astro";
+import SectionTrack from "@/components/SectionTrack.astro";
+import AppWindow from "@/components/app/AppWindow.astro";
+import AppMark from "@/components/app/AppMark.astro";
+import CatalogSearch from "@/components/app/CatalogSearch.astro";
+import DetailHead from "@/sections/DetailHead.astro";
+import DetailFoot from "@/sections/DetailFoot.astro";
+import Legal from "@/sections/Legal.astro";
+import {
+  CLI_AUTH_WORDING,
+  CLI_CATEGORY_LABEL,
+  CLIS,
+  groupBy,
+  RISK_WORDING,
+  searchText,
+  type RiskTier,
+} from "@/lib/catalog";
+
+/* The catalog is already sorted by (category, display name) — the order the
+ * app's own list serves — so grouping it keeps that order. */
+const byCategory = groupBy(CLIS, (cli) => cli.category);
+
+const chips = [...byCategory].map(([category, rows]) => ({
+  id: category,
+  label: CLI_CATEGORY_LABEL[category] ?? category,
+  count: rows.length,
+}));
+
+const blockedTotal = CLIS.reduce((sum, cli) => sum + cli.risk.blocked.length, 0);
+const allowedTotal = CLIS.reduce((sum, cli) => sum + cli.risk.allowed.length, 0);
+
+/* The four rungs, in order of how much they let through. `safe` and `block` are
+ * never a tool's DEFAULT — they are where a matched pattern lands a single
+ * command — which is exactly the thing the ladder is for and worth saying. */
+const LADDER: RiskTier[] = ["safe", "monitor", "ask", "block"];
+const defaults = groupBy(CLIS, (cli) => cli.risk.tier);
+
+/* One worked example, and it is the counter-intuitive one: `gh` defaults to
+ * `monitor`, but its own allow-list contains `gh pr list*`, so this exact
+ * command resolves to `safe` and runs without being written down as a change.
+ * The interesting claim is that the gate resolves PER COMMAND, not per tool. */
+const worked = CLIS.find((cli) => cli.id === "gh");
+---
+
+<Base
+  title="Every command-line tool — Personal Jarvis"
+  description="The twenty-two command-line tools Personal Jarvis drives, and the list of commands each one refuses before they start."
+>
+  <DetailHead
+    eyebrow="CLIs"
+    title="It drives the tools already on your machine — behind a gate."
+    lede="Ask in plain language. Jarvis picks the tool, runs the command, and shows you exactly what it ran and why that was allowed. Every tool carries its own written list of commands that are refused before they start."
+    facts={[
+      { value: String(CLIS.length), label: "tools" },
+      { value: String(blockedTotal), label: "refused patterns" },
+      { value: String(allowedTotal), label: "read-only patterns" },
+    ]}
+  />
+
+  {/* The catalog. */}
+  <section id="catalog" class="relative">
+    <Container width="content" class="section-inset">
+      <div class="section-bounds">
+        <SectionTrack nested />
+
+        <div data-catalog>
+          <AppWindow>
+            <div class="app-head">
+              <div class="app-head__body">
+                <span class="app-head__title">Command-line tools</span>
+                <span class="app-head__subtitle">
+                  <span data-catalog-count>{CLIS.length}</span> of {CLIS.length} known
+                  · it drives the ones you already have installed
+                </span>
+              </div>
+              <span class="app-head__action">Check</span>
+            </div>
+
+            <CatalogSearch
+              label="Search command-line tools"
+              placeholder="Search tools"
+              total={CLIS.length}
+              chips={chips}
+            />
+
+            <div class="app-panel" data-catalog-panel>
+              {
+                [...byCategory].map(([category, rows]) => (
+                  <div class="app-group" data-catalog-group={category}>
+                    <p class="app-group__label">
+                      {CLI_CATEGORY_LABEL[category] ?? category}
+                    </p>
+                    {rows.map((cli) => (
+                      <div
+                        class="app-row"
+                        data-catalog-row
+                        data-group={category}
+                        data-search={searchText(
+                          cli.name,
+                          cli.id,
+                          cli.binary,
+                          cli.description,
+                          CLI_CATEGORY_LABEL[category] ?? category,
+                          RISK_WORDING[cli.risk.tier].label,
+                        )}
+                      >
+                        <AppMark kind="cli" id={cli.id} />
+
+                        <div>
+                          <p class="app-row__name">
+                            {cli.name}
+                            <span class="app-row__id">{cli.binary}</span>
+                          </p>
+                          <p class="app-row__desc">{cli.description}</p>
+                        </div>
+
+                        <div class="app-row__meta">
+                          <span class="app-badge">
+                            {cli.risk.blocked.length} refused
+                          </span>
+                          <span class="app-badge" data-tier={cli.risk.tier}>
+                            {RISK_WORDING[cli.risk.tier].label}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))
+              }
+              <p class="app-empty">No tool in the catalog matches that.</p>
+            </div>
+          </AppWindow>
+        </div>
+      </div>
+    </Container>
+  </section>
+
+  {/* The gate. */}
+  <section id="gate" class="relative">
+    <Container width="content" class="section-inset">
+      <div class="section-bounds">
+        <SectionTrack nested />
+
+        <h2 class="detail-h2">Every command is resolved before it runs.</h2>
+        <p class="detail-lede">
+          A tool has a starting tier, and two lists that override it: what it
+          refuses outright, and what it lets straight through because the command
+          only reads. The refusal list wins over the allow list, and the allow
+          list wins over the starting tier — so a tool can be cautious in general
+          and still answer a read instantly.
+        </p>
+
+        <ol class="ladder">
+          {
+            LADDER.map((tier) => {
+              const count = defaults.get(tier)?.length ?? 0;
+              return (
+                <li class="ladder__step">
+                  <p class="ladder__label" data-tier={tier}>{RISK_WORDING[tier].label}</p>
+                  <p class="ladder__hint">{RISK_WORDING[tier].hint}</p>
+                  <p class="ladder__count">
+                    {count > 0
+                      ? `${count} of ${CLIS.length} tools start here`
+                      : "Never a starting tier — only where a matched pattern lands"}
+                  </p>
+                </li>
+              );
+            })
+          }
+        </ol>
+
+        {
+          worked && (
+            <div class="worked">
+              <p class="worked__label">Worked example</p>
+              <p class="worked__text">
+                <span class="detail-code">{worked.name}</span> starts at{" "}
+                <span class="detail-code">{worked.risk.tier}</span>. Its allow list
+                contains <span class="detail-code">gh pr list*</span>, so asking
+                "what pull requests are open" resolves to{" "}
+                <span class="detail-code">safe</span> and answers straight away —
+                while <span class="detail-code">gh repo delete</span> is on the
+                refusal list and never starts, whatever it is asked to do.
+              </p>
+              <pre class="app-code"><code>{worked.risk.blocked.join("\n")}</code></pre>
+            </div>
+          )
+        }
+      </div>
+    </Container>
+  </section>
+
+  {/* What each tool refuses, in full. */}
+  <section id="refused" class="relative">
+    <Container width="content" class="section-inset">
+      <div class="section-bounds">
+        <SectionTrack nested />
+
+        <h2 class="detail-h2">What each one refuses, in full.</h2>
+        <p class="detail-lede">
+          All {blockedTotal} patterns, verbatim from the catalog. A command
+          matching one of these is refused before the tool is started — not
+          asked about, not logged and run anyway. The list is per tool because
+          "delete" means something different in each of them.
+        </p>
+
+        <div class="refused">
+          {
+            CLIS.map((cli) => (
+              <details class="refused__tool">
+                <summary class="refused__summary">
+                  {/*
+                    The disclosure's own affordance. Hiding the native marker and
+                    drawing nothing in its place is how a row of twenty-two
+                    expandable things reads as a plain list nobody thinks to
+                    click — the arrow is what says "there is more under this".
+                  */}
+                  <svg
+                    class="refused__chevron"
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m9 6 6 6-6 6" />
+                  </svg>
+                  <AppMark kind="cli" id={cli.id} />
+                  <span class="refused__name">
+                    {cli.name}
+                    <span class="refused__binary">{cli.binary}</span>
+                  </span>
+                  <span class="app-badge">{cli.risk.blocked.length} refused</span>
+                  <span class="app-badge">{CLI_AUTH_WORDING[cli.auth].label}</span>
+                </summary>
+                <pre class="app-code refused__patterns"><code>{
+                  cli.risk.blocked.join("\n")
+                }</code></pre>
+              </details>
+            ))
+          }
+        </div>
+      </div>
+    </Container>
+  </section>
+
+  <DetailFoot current="clis" source="clis" />
+  <Legal />
+</Base>
+
+<style>
+  /* The ladder. A numbered list because the order is the whole content — how
+   * much each rung lets through, from all of it to none of it. The numbers
+   * themselves are hidden: they would be read as a sequence of steps to follow,
+   * and this is a scale, not a procedure. */
+  .ladder {
+    margin-top: var(--space-xl);
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: var(--space-base);
+  }
+
+  @media (min-width: 900px) {
+    .ladder {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .ladder__step {
+    padding: var(--space-lg);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    background: var(--surface-card);
+  }
+
+  .ladder__label {
+    font-size: var(--text-title-md);
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  /* The two rungs that stop a command get the one semantic colour this system
+   * spends on them; the two that let it through stay in ink. See app.css for
+   * the same rule on a row badge. */
+  .ladder__label[data-tier="ask"],
+  .ladder__label[data-tier="block"] {
+    color: var(--error);
+  }
+
+  .ladder__hint {
+    margin-top: var(--space-xs);
+    font-size: var(--text-body-sm);
+    line-height: 1.6;
+    color: var(--body);
+  }
+
+  .ladder__count {
+    margin-top: var(--space-base);
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--hairline);
+    font-size: var(--text-caption);
+    color: var(--muted);
+  }
+
+  .worked {
+    margin-top: var(--space-xl);
+    padding: var(--space-lg);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    background: var(--surface-card);
+  }
+
+  .worked__label {
+    font-size: var(--text-caption-upper);
+    font-weight: 600;
+    letter-spacing: var(--tracking-caption-upper);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .worked__text {
+    margin: var(--space-sm) 0 var(--space-base);
+    max-width: 62ch;
+    line-height: 1.65;
+    color: var(--body);
+  }
+
+  .refused {
+    margin-top: var(--space-xl);
+    border-top: 1px solid var(--hairline);
+  }
+
+  .refused__tool {
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  /*
+   * A `<details>` and not a script, and that is the accessible choice as well as
+   * the cheap one: twenty-two lists of patterns is a wall nobody reads, but
+   * every one of them has to be REACHABLE — a page that promises a refusal list
+   * and then shows four of them is worse than one that shows none. The element
+   * ships the disclosure behaviour, the keyboard handling and the announcement
+   * with no JavaScript at all, and search engines index the closed content.
+   */
+  .refused__summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) 0;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .refused__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .refused__summary:hover .refused__name {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .refused__chevron {
+    flex-shrink: 0;
+    color: var(--muted);
+    transition: transform 150ms ease;
+  }
+
+  [open] > .refused__summary .refused__chevron {
+    transform: rotate(90deg);
+  }
+
+  /* A reader who asked their system for less motion gets the two states and not
+   * the quarter-turn between them. */
+  @media (prefers-reduced-motion: reduce) {
+    .refused__chevron {
+      transition: none;
+    }
+  }
+
+  .refused__name {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-xs);
+    font-size: var(--text-title-sm);
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .refused__binary {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  .refused__patterns {
+    margin-bottom: var(--space-base);
+    white-space: pre;
+  }
+
+  @media (max-width: 640px) {
+    /* The two badges are the first thing to go: on a phone the name and the
+     * disclosure are what the row is for. */
+    .refused__summary .app-badge {
+      display: none;
+    }
+  }
+</style>

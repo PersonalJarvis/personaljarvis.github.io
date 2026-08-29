@@ -1,0 +1,308 @@
+---
+/**
+ * /plugins — the whole catalog, and what connecting one actually involves.
+ *
+ * Reached from "See every plugin" on the front page, which used to open a
+ * directory listing on GitHub. See docs/detail-pages.md for the shape all three
+ * detail pages share and the rule about where their content comes from.
+ *
+ * THE LIST IS THE PAGE. Everything else on it exists to answer the two
+ * questions a reader has after seeing the list: how do I sign one in, and what
+ * happens after I do. Both are answered from the catalog's own fields rather
+ * than from a paragraph someone wrote — `auth`, `longevity` and the presence of
+ * a server are facts each entry carries.
+ */
+import Base from "@/layouts/Base.astro";
+import Container from "@/components/Container.astro";
+import SectionTrack from "@/components/SectionTrack.astro";
+import AppWindow from "@/components/app/AppWindow.astro";
+import AppMark from "@/components/app/AppMark.astro";
+import CatalogSearch from "@/components/app/CatalogSearch.astro";
+import DetailHead from "@/sections/DetailHead.astro";
+import DetailFoot from "@/sections/DetailFoot.astro";
+import Legal from "@/sections/Legal.astro";
+import {
+  AUTH_WORDING,
+  groupBy,
+  LONGEVITY_WORDING,
+  PLUGINS,
+  ROUTE_WORDING,
+  searchText,
+  type AuthMode,
+} from "@/lib/catalog";
+
+/* Grouped by the catalog's own category, in the order the catalog serves them —
+ * which is the order the app's list shows, not alphabetical. */
+const byCategory = groupBy(PLUGINS, (plugin) => plugin.category);
+
+const chips = [...byCategory].map(([category, rows]) => ({
+  id: category,
+  label: category,
+  count: rows.length,
+}));
+
+/* One card per sign-in mode, ordered from the least work to the most. The
+ * counts are derived, so a catalog that gains a One-Click plugin moves the
+ * number here without anyone editing this file. */
+const AUTH_ORDER: AuthMode[] = ["hosted_mcp_oauth_dcr", "oauth_pkce_loopback", "pat_paste"];
+const authGroups = groupBy(PLUGINS, (plugin) => plugin.auth);
+---
+
+<Base
+  title="Every plugin — Personal Jarvis"
+  description="The twenty-four services Personal Jarvis connects to, how each one signs in, and how long that sign-in lasts."
+>
+  <DetailHead
+    eyebrow="Plugins"
+    title="Every service it can reach, and what signing in costs you."
+    lede="A plugin is a connection to something you already use. Sign in once and Jarvis can read your mail, find a file or start the music — by voice, in the same sentence as everything else."
+    facts={[
+      { value: String(PLUGINS.length), label: "plugins" },
+      { value: String(byCategory.size), label: "categories" },
+      { value: String(authGroups.size), label: "ways to sign in" },
+    ]}
+  />
+
+  {/*
+    The catalog, drawn as the application draws it: the product's own window,
+    its own near-black, its own row. Real markup at real size rather than the
+    scaled miniature the front page uses — this page IS the list, and a list you
+    cannot select, search or read aloud is a picture of a list.
+  */}
+  <section id="catalog" class="relative">
+    <Container width="content" class="section-inset">
+      <div class="section-bounds">
+        <SectionTrack nested />
+
+        <div data-catalog>
+          <AppWindow>
+            <div class="app-head">
+              <div class="app-head__body">
+                <span class="app-head__title">Plugins</span>
+                <span class="app-head__subtitle">
+                  <span data-catalog-count>{PLUGINS.length}</span> of {PLUGINS.length} available
+                  · none connected on a fresh install
+                </span>
+              </div>
+              <span class="app-head__action">Browse</span>
+            </div>
+
+            <CatalogSearch
+              label="Search plugins"
+              placeholder="Search plugins"
+              total={PLUGINS.length}
+              chips={chips}
+            />
+
+            <div class="app-panel" data-catalog-panel>
+              {
+                [...byCategory].map(([category, rows]) => (
+                  <div class="app-group" data-catalog-group={category}>
+                    <p class="app-group__label">{category}</p>
+                    {rows.map((plugin) => (
+                      <div
+                        class="app-row"
+                        data-catalog-row
+                        data-group={category}
+                        data-search={searchText(
+                          plugin.name,
+                          plugin.id,
+                          plugin.description,
+                          category,
+                          AUTH_WORDING[plugin.auth].label,
+                          ROUTE_WORDING[plugin.via].label,
+                        )}
+                      >
+                        <AppMark kind="plugin" id={plugin.id} />
+
+                        <div>
+                          <p class="app-row__name">
+                            {plugin.name}
+                            <span class="app-row__id">{plugin.id}</span>
+                          </p>
+                          <p class="app-row__desc">{plugin.description}</p>
+                        </div>
+
+                        <div class="app-row__meta">
+                          <span class="app-badge">{AUTH_WORDING[plugin.auth].label}</span>
+                          {/*
+                            The app's connect control. It is drawn and not wired:
+                            this page lists a catalog, it does not connect to
+                            anything, and a plus that opens a sign-in flow on a
+                            marketing site would be a lie about where the reader
+                            is. `aria-hidden` so it is never announced as a
+                            button that can be pressed.
+                          */}
+                          <span class="app-row__connect" aria-hidden="true">
+                            <svg
+                              viewBox="0 0 24 24"
+                              width="14"
+                              height="14"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                            >
+                              <path d="M12 6v12M6 12h12" />
+                            </svg>
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))
+              }
+              <p class="app-empty">Nothing in the catalog matches that.</p>
+            </div>
+          </AppWindow>
+        </div>
+      </div>
+    </Container>
+  </section>
+
+  {/* How signing in works — three modes, and how long each one lasts. */}
+  <section id="signing-in" class="relative">
+    <Container width="content" class="section-inset">
+      <div class="section-bounds">
+        <SectionTrack nested />
+
+        <h2 class="detail-h2">Three ways in, and none of them is a password.</h2>
+        <p class="detail-lede">
+          Jarvis never asks for the password to a service. Every connection is
+          either a token you create with the permissions it names, or a sign-in
+          that happens on the service's own page and comes back to the app on
+          your machine. What is stored is kept in your operating system's
+          keychain, never in a settings file.
+        </p>
+
+        <div class="auth-grid">
+          {
+            AUTH_ORDER.map((mode) => {
+              const rows = authGroups.get(mode) ?? [];
+              const wording = AUTH_WORDING[mode];
+              return (
+                <article class="auth-card">
+                  <p class="auth-card__count">
+                    {rows.length}
+                    <span> of {PLUGINS.length}</span>
+                  </p>
+                  <h3 class="auth-card__title">{wording.label}</h3>
+                  <p class="auth-card__hint">{wording.hint}</p>
+                  <p class="auth-card__names">{rows.map((row) => row.name).join(" · ")}</p>
+                </article>
+              );
+            })
+          }
+        </div>
+
+        <h3 class="detail-h3">And how long it lasts</h3>
+        <dl class="fact-list">
+          {
+            [...groupBy(PLUGINS, (plugin) => plugin.longevity)].map(([, rows]) => (
+              <div>
+                <dt>{LONGEVITY_WORDING[rows[0].longevity].label}</dt>
+                <dd>
+                  {LONGEVITY_WORDING[rows[0].longevity].hint}
+                  <span class="fact-list__count">{rows.length} plugins</span>
+                </dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+    </Container>
+  </section>
+
+  {/* How a plugin actually reaches its service. */}
+  <section id="how" class="relative">
+    <Container width="content" class="section-inset">
+      <div class="section-bounds">
+        <SectionTrack nested />
+
+        <h2 class="detail-h2">Three routes to the same sentence.</h2>
+        <p class="detail-lede">
+          What happens after you connect differs, and it is worth knowing which
+          one you are getting. Nothing about the way you ask changes: you say
+          the sentence, and Jarvis picks the route.
+        </p>
+
+        <dl class="fact-list">
+          {
+            [...groupBy(PLUGINS, (plugin) => plugin.via)].map(([, rows]) => (
+              <div>
+                <dt>{ROUTE_WORDING[rows[0].via].label}</dt>
+                <dd>
+                  {ROUTE_WORDING[rows[0].via].hint}
+                  <span class="fact-list__count">{rows.length} plugins</span>
+                </dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+    </Container>
+  </section>
+
+  <DetailFoot current="plugins" source="plugins" />
+  <Legal />
+</Base>
+
+<style>
+  /* Only what this page needs. The headings, the standfirst and the fact list
+   * are shared by all three detail pages and live in src/styles/detail.css. */
+  .auth-grid {
+    margin-top: var(--space-xl);
+    display: grid;
+    gap: var(--space-base);
+  }
+
+  @media (min-width: 768px) {
+    .auth-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .auth-card {
+    padding: var(--space-lg);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    background: var(--surface-card);
+  }
+
+  .auth-card__count {
+    font-size: var(--text-display-md);
+    letter-spacing: var(--tracking-display-md);
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .auth-card__count span {
+    font-size: var(--text-body-sm);
+    letter-spacing: normal;
+    color: var(--muted);
+  }
+
+  .auth-card__title {
+    margin-top: var(--space-sm);
+    font-size: var(--text-title-md);
+    font-weight: 600;
+  }
+
+  .auth-card__hint {
+    margin-top: var(--space-xs);
+    font-size: var(--text-body-sm);
+    line-height: 1.6;
+    color: var(--body);
+  }
+
+  /* The names of the plugins in this mode. Small and quiet: it is evidence for
+   * the count above it, not a second list to read. */
+  .auth-card__names {
+    margin-top: var(--space-sm);
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--hairline);
+    font-size: var(--text-caption);
+    line-height: 1.6;
+    color: var(--muted);
+  }
+</style>

@@ -13,6 +13,7 @@
     "check:style": "node scripts/check-style.mjs",
     "check:geocode": "node scripts/test-geocode.mjs",
     "data:stargazers": "node scripts/fetch-stargazers.mjs",
+    "data:app-catalog": "node scripts/extract-app-catalog.mjs",
     "data:repo-map": "node scripts/fetch-repo-map.mjs",
     "data:gazetteer": "node scripts/build-gazetteer.mjs",
     "data:land-mask": "node scripts/build-land-mask.mjs",
@@ -31,6 +32,7 @@
   "devDependencies": {
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "@types/three": "^0.185.4"
+    "@types/three": "^0.185.4",
+    "js-yaml": "^5.4.1"
   }
 }
