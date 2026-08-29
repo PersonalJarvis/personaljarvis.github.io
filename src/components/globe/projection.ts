@@ -1,5 +1,5 @@
 /**
- * The maths behind the globe: a sphere seen from one fixed viewpoint.
+ * The maths behind the globe: a sphere seen from a viewpoint the reader can move.
  *
  * There is no 3D engine here and no WebGL. The globe is a few thousand squares
  * whose positions are worked out per frame and drawn onto an ordinary 2D
@@ -26,25 +26,35 @@
  * Above roughly 30° the north pole swings toward the middle of the picture and
  * the continents crowd into the lower half; below about 10° the curve is too
  * slight to register. 18° is measured off the reference the maintainer chose.
+ *
+ * The tilt is a per-frame value rather than a constant, because dragging the
+ * globe moves it. It returns to 18° on its own once the reader lets go — see
+ * StarGlobe.tsx.
  */
 
-/** Camera latitude, degrees north. The viewpoint, and the one number to tune. */
+/** Camera latitude at rest, degrees north. The viewpoint, and the one number to tune. */
 export const TILT_DEGREES = 18;
 
+/**
+ * How far a drag may push the camera off the equator, in radians.
+ *
+ * Not a full quarter turn in either direction: at the pole the projection
+ * degenerates into a disc of latitude rings with no recognisable coastline,
+ * which reads as a broken graphic rather than as a globe seen from above.
+ */
+export const TILT_MIN = (-70 * Math.PI) / 180;
+export const TILT_MAX = (80 * Math.PI) / 180;
+
 const DEG = Math.PI / 180;
-const TILT = TILT_DEGREES * DEG;
-const SIN_TILT = Math.sin(TILT);
-const COS_TILT = Math.cos(TILT);
 
 /**
  * Where the light is, in the same space as the sphere.
  *
  * Overhead, a little to the left, and toward the viewer. Fixed in the world
- * while the globe
- * turns beneath it, so the bright side stays where it is and the continents
- * travel through it — the same rule the dither-relief recipe sets out for the
- * mark. A light that turned with the globe would light every continent
- * identically and the sphere would flatten out.
+ * while the globe turns beneath it, so the bright side stays where it is and
+ * the continents travel through it — the same rule the dither-relief recipe
+ * sets out for the mark. A light that turned with the globe would light every
+ * continent identically and the sphere would flatten out.
  */
 const LIGHT = normalise3(-0.25, 0.55, 0.8);
 
@@ -53,8 +63,26 @@ function normalise3(x: number, y: number, z: number) {
   return { x: x / l, y: y / l, z: z / l };
 }
 
+/**
+ * Everything that is the same for every dot in one frame.
+ *
+ * The sines and cosines are passed in rather than computed here because in the
+ * hot loop they are the same four values for each of twenty thousand points,
+ * and computing them per point is most of the frame.
+ */
+export interface View {
+  sinSpin: number;
+  cosSpin: number;
+  sinTilt: number;
+  cosTilt: number;
+  /** Centre of the sphere on the canvas, in device pixels. */
+  cx: number;
+  cy: number;
+  radius: number;
+}
+
 export interface Projected {
-  /** Screen x, in the same units as the radius passed in. */
+  /** Screen x, in the same units as the radius in the view. */
   x: number;
   /** Screen y. */
   y: number;
@@ -65,46 +93,45 @@ export interface Projected {
 }
 
 /**
- * Put one lat/lon on the screen.
+ * ONE object, reused by every call.
  *
- * `spin` is the rotation about the earth's own axis, in radians; feeding it a
- * clock is what makes the globe turn. The caller passes the sine and cosine of
- * the spin rather than the angle, because in the hot loop it is the same two
- * values for every one of several thousand points and computing them per point
- * is most of the frame.
+ * `project` runs about twenty thousand times a frame. Returning a fresh object
+ * each time would hand the garbage collector well over a million short-lived
+ * objects a second, and a collection pause is exactly the kind of stutter a
+ * slow, steady rotation makes obvious. The caller reads the result before
+ * calling again, which is the whole contract: DO NOT hold on to what `project`
+ * returns.
  */
+const OUT: Projected = { x: 0, y: 0, z: 0, light: 0 };
+
+/** Put one lat/lon on the screen. The result is reused — read it immediately. */
 export function project(
   sinLat: number,
   cosLat: number,
   sinLon: number,
   cosLon: number,
-  sinSpin: number,
-  cosSpin: number,
-  cx: number,
-  cy: number,
-  radius: number,
+  view: View,
 ): Projected {
   // Rotate about the polar axis: the angle-addition identities, so the
   // per-point sines and cosines can be precomputed once and reused forever.
-  const sl = sinLon * cosSpin + cosLon * sinSpin;
-  const cl = cosLon * cosSpin - sinLon * sinSpin;
+  const sl = sinLon * view.cosSpin + cosLon * view.sinSpin;
+  const cl = cosLon * view.cosSpin - sinLon * view.sinSpin;
 
   const x = cosLat * sl;
   const y = sinLat;
   const z = cosLat * cl;
 
   // Tilt the whole world so the camera's latitude lands in the middle.
-  const ty = y * COS_TILT - z * SIN_TILT;
-  const tz = y * SIN_TILT + z * COS_TILT;
+  const ty = y * view.cosTilt - z * view.sinTilt;
+  const tz = y * view.sinTilt + z * view.cosTilt;
 
-  return {
-    x: cx + x * radius,
-    y: cy - ty * radius,
-    z: tz,
-    // The surface normal of a unit sphere IS the point, so the diffuse term is
-    // one dot product and no square roots.
-    light: Math.max(0, x * LIGHT.x + ty * LIGHT.y + tz * LIGHT.z),
-  };
+  OUT.x = view.cx + x * view.radius;
+  OUT.y = view.cy - ty * view.radius;
+  OUT.z = tz;
+  // The surface normal of a unit sphere IS the point, so the diffuse term is
+  // one dot product and no square roots.
+  OUT.light = Math.max(0, x * LIGHT.x + ty * LIGHT.y + tz * LIGHT.z);
+  return OUT;
 }
 
 /**
@@ -173,8 +200,9 @@ export function strideFor(radius: number, latCells: number, dot: number) {
  * Turn the base64 land mask into flat arrays of trigonometry.
  *
  * Done once, at mount. Every value in here is constant for the life of the
- * page — only the spin changes — so the per-frame loop is four array reads and
- * a dozen multiplies per dot, and no calls to Math.sin at all.
+ * page — only the spin and the tilt change — so the per-frame loop is a handful
+ * of array reads and a dozen multiplies per dot, and no calls to Math.sin at
+ * all.
  */
 export function buildDotField(
   base64: string,

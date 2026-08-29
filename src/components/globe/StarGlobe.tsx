@@ -30,12 +30,43 @@
  * compositor and does not make the browser re-do layout sixty times a second.
  * Drawing them into the canvas would mean writing hit-testing and a tooltip by
  * hand, for something CSS already does.
+ *
+ * ## The globe can be dragged
+ *
+ * Press and move, and the world turns under the pointer. Let go and it carries
+ * the throw before easing back to its own slow rotation.
+ *
+ * Three decisions in that, and each one is a trade:
+ *
+ *  1. **A pixel of drag is a pixel of surface.** The rotation per pixel is
+ *     1/radius radians, which is the angle a point at the centre of the disc
+ *     actually moves through. Any other constant makes the sphere feel like it
+ *     is geared to the mouse rather than held by it.
+ *  2. **The spin keeps whatever it is given; the TILT comes home.** Where the
+ *     globe is pointing is the reader's business, but how far the camera sits
+ *     off the equator is the composition — 18° is the whole reason the graphic
+ *     reads as a ball and not as a disc. So the tilt eases back on release,
+ *     over about a second, while the spin keeps its momentum.
+ *  3. **`touch-action: pan-y`, set in the stylesheet.** On a phone the globe
+ *     fills most of the screen, and a section you cannot scroll past because
+ *     the graphic ate the gesture is a trap. Horizontal drags turn the globe;
+ *     vertical ones scroll the page, and the browser arbitrates, not us.
  */
 
 import { useEffect, useRef, useState } from "react";
 
 import { LAND_LAT_CELLS, LAND_LON_CELLS, LAND_MASK_BASE64 } from "@/data/land-mask";
-import { buildDotField, dotAlpha, project, strideFor, trigOf } from "./projection";
+import {
+  buildDotField,
+  dotAlpha,
+  project,
+  strideFor,
+  trigOf,
+  TILT_DEGREES,
+  TILT_MAX,
+  TILT_MIN,
+  type View,
+} from "./projection";
 import "./star-globe.css";
 
 export interface Cluster {
@@ -49,14 +80,26 @@ export interface Cluster {
 /** Seconds for one full turn. Slow enough that it never asks to be watched. */
 const TURN_SECONDS = 80;
 
+/** The same, as radians per second — what the spin actually carries. */
+const AUTO_RATE = (Math.PI * 2) / TURN_SECONDS;
+
 /**
- * Where the globe parks when it is not turning.
+ * Where the globe starts, and where a released throw settles back toward.
  *
  * Twenty degrees west puts the Atlantic in the middle, which is the one
  * longitude that has Europe and North America on the same side of the planet.
  * That is where the people are.
  */
 const RESTING_SPIN = (20 * Math.PI) / 180;
+
+const RESTING_TILT = (TILT_DEGREES * Math.PI) / 180;
+
+/** How fast a throw bleeds back to the idle rate, and the tilt back to 18°. */
+const SPIN_SETTLE = 1.6;
+const TILT_SETTLE = 3.2;
+
+/** A throw is capped so a flick across the trackpad cannot become a blur. */
+const MAX_THROW = 6;
 
 /** Shades of ink a dot can be drawn in. More is invisible, fewer is banded. */
 const SHADES = 7;
@@ -163,9 +206,7 @@ export function StarCount({ repo, value }: CountProps) {
     };
   }, [repo]);
 
-  return (
-    <span className="tabular-nums">{shown.toLocaleString("en-US")}</span>
-  );
+  return <span className="tabular-nums">{shown.toLocaleString("en-US")}</span>;
 }
 
 /* ------------------------------------------------------------------ globe */
@@ -211,6 +252,11 @@ export function StarGlobe({ clusters }: GlobeProps) {
     );
     const used = new Int32Array(SHADES);
 
+    // One view object, rewritten each frame and handed to every projection.
+    const view: View = {
+      sinSpin: 0, cosSpin: 1, sinTilt: 0, cosTilt: 1, cx: 0, cy: 0, radius: 0,
+    };
+
     let ratio = 1;
     let size = 0;
     let radius = 0;
@@ -228,7 +274,7 @@ export function StarGlobe({ clusters }: GlobeProps) {
       canvas.height = size * ratio;
       canvas.style.width = `${size}px`;
       canvas.style.height = `${size}px`;
-      radius = (size * ratio) / 2 * (RADIUS_SHARE * 2);
+      radius = ((size * ratio) / 2) * (RADIUS_SHARE * 2);
       // A whole number of device pixels. A 2.4px square lands on a pixel
       // boundary in one row and between two in the next, and the grid
       // shimmers as the globe turns.
@@ -251,23 +297,121 @@ export function StarGlobe({ clusters }: GlobeProps) {
     visibility.observe(host);
 
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    /* --- state the drag and the clock share ------------------------------ */
+
+    let spin = RESTING_SPIN;
+    let tilt = RESTING_TILT;
+    /** Radians per second. Starts at the idle rate and is what a throw sets. */
+    let spinRate = AUTO_RATE;
+
+    let dragging = false;
+    let pointer = -1;
+    let lastX = 0;
+    let lastY = 0;
+    let lastMove = 0;
+    /** The last few milliseconds of movement, which is what a throw is made of. */
+    let throwRate = 0;
+
+    /** Radians per pixel: the angle a point at the centre of the disc moves. */
+    const perPixel = () => (radius > 0 ? ratio / radius : 0);
+
+    const onPointerDown = (e: PointerEvent) => {
+      if (dragging || e.button !== 0) return;
+      dragging = true;
+      pointer = e.pointerId;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      lastMove = performance.now();
+      throwRate = 0;
+      host.classList.add("is-dragging");
+      // Capture, so a drag that leaves the globe — or the window — still ends
+      // with a pointerup we hear about, instead of a globe stuck to the mouse.
+      try {
+        host.setPointerCapture(e.pointerId);
+      } catch {
+        // Capture is a convenience; without it the listeners below still fire
+        // while the pointer is over the host, which is the common case.
+      }
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!dragging || e.pointerId !== pointer) return;
+      const k = perPixel();
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+
+      spin += dx * k;
+      // Down means looking from further north: raising the camera's latitude
+      // pushes the equator down the screen, so the surface follows the hand.
+      tilt = Math.min(TILT_MAX, Math.max(TILT_MIN, tilt + dy * k));
+
+      const now = performance.now();
+      const dt = (now - lastMove) / 1000;
+      lastMove = now;
+      // Guard the divide: two pointermove events can share a millisecond, and
+      // dt = 0 would make the throw infinite.
+      if (dt > 0.001) throwRate = (dx * k) / dt;
+    };
+
+    const endDrag = (e: PointerEvent) => {
+      if (!dragging || e.pointerId !== pointer) return;
+      dragging = false;
+      pointer = -1;
+      host.classList.remove("is-dragging");
+      // A pointer that stopped moving before it was released was not thrown.
+      const stale = performance.now() - lastMove > 90;
+      spinRate = stale
+        ? AUTO_RATE
+        : Math.max(-MAX_THROW, Math.min(MAX_THROW, throwRate));
+      try {
+        host.releasePointerCapture(e.pointerId);
+      } catch {
+        // Already released, or never captured. Nothing to undo.
+      }
+    };
+
+    host.addEventListener("pointerdown", onPointerDown);
+    host.addEventListener("pointermove", onPointerMove);
+    host.addEventListener("pointerup", endDrag);
+    host.addEventListener("pointercancel", endDrag);
+
+    /* --- the loop -------------------------------------------------------- */
+
     let running = true;
     let raf = 0;
-    const started = performance.now();
+    let previous = performance.now();
 
     const draw = (now: number) => {
       if (!running) return;
       raf = requestAnimationFrame(draw);
+      // Clamp the step. A tab that was in the background hands back a delta of
+      // several seconds on its first frame, and an unclamped one would snap the
+      // globe a third of the way round.
+      const dt = Math.min(0.05, Math.max(0, (now - previous) / 1000));
+      previous = now;
       if (!onScreen || size === 0) return;
 
-      const spin = motion.matches
-        ? RESTING_SPIN
-        : RESTING_SPIN + ((now - started) / (TURN_SECONDS * 1000)) * Math.PI * 2;
-      const sinSpin = Math.sin(spin);
-      const cosSpin = Math.cos(spin);
+      const idle = motion.matches ? 0 : AUTO_RATE;
 
-      const cx = (size * ratio) / 2;
-      const cy = (size * ratio) / 2;
+      if (!dragging) {
+        spin += spinRate * dt;
+        // Exponential settle, framed as a fraction of the remaining distance,
+        // so it is frame-rate independent rather than tuned for 60Hz.
+        spinRate += (idle - spinRate) * Math.min(1, dt * SPIN_SETTLE);
+        tilt += (RESTING_TILT - tilt) * Math.min(1, dt * TILT_SETTLE);
+      }
+
+      view.sinSpin = Math.sin(spin);
+      view.cosSpin = Math.cos(spin);
+      view.sinTilt = Math.sin(tilt);
+      view.cosTilt = Math.cos(tilt);
+      view.cx = (size * ratio) / 2;
+      view.cy = (size * ratio) / 2;
+      view.radius = radius;
+
       const half = dot >> 1;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -279,7 +423,7 @@ export function StarGlobe({ clusters }: GlobeProps) {
         ctx.strokeStyle = hairline;
         ctx.lineWidth = Math.max(1, Math.round(ratio * 0.75));
         ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.arc(view.cx, view.cy, radius, 0, Math.PI * 2);
         ctx.stroke();
       }
 
@@ -292,7 +436,7 @@ export function StarGlobe({ clusters }: GlobeProps) {
         const p = project(
           field.sinLat[i], field.cosLat[i],
           field.sinLon[i], field.cosLon[i],
-          sinSpin, cosSpin, cx, cy, radius,
+          view,
         );
         if (p.z <= 0) continue; // the far side of the world
         const alpha = dotAlpha(p.light, p.z);
@@ -328,10 +472,7 @@ export function StarGlobe({ clusters }: GlobeProps) {
         const el = markerRefs.current[i];
         if (!el) continue;
         const m = marks[i];
-        const p = project(
-          m.sinLat, m.cosLat, m.sinLon, m.cosLon,
-          sinSpin, cosSpin, cx, cy, radius,
-        );
+        const p = project(m.sinLat, m.cosLat, m.sinLon, m.cosLon, view);
         if (p.z <= 0.02) {
           // Gone round the back. Hidden rather than transparent, so a tooltip
           // cannot be opened on a marker the reader cannot see.
@@ -354,6 +495,10 @@ export function StarGlobe({ clusters }: GlobeProps) {
       cancelAnimationFrame(raf);
       observer.disconnect();
       visibility.disconnect();
+      host.removeEventListener("pointerdown", onPointerDown);
+      host.removeEventListener("pointermove", onPointerMove);
+      host.removeEventListener("pointerup", endDrag);
+      host.removeEventListener("pointercancel", endDrag);
     };
   }, [clusters]);
 

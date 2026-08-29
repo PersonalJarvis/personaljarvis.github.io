@@ -26,6 +26,28 @@
   aspect-ratio: 1;
   /* The tooltip and the outermost halo leave the square. */
   overflow: visible;
+
+  /* The globe is held, not clicked. */
+  cursor: grab;
+
+  /*
+   * VERTICAL DRAGS BELONG TO THE PAGE, HORIZONTAL ONES TO THE GLOBE.
+   *
+   * On a phone this graphic fills most of the screen. `touch-action: none`
+   * would take every gesture that starts on it, and a section a reader cannot
+   * scroll past because the picture ate the swipe is a trap. `pan-y` hands
+   * vertical movement to the browser and leaves the horizontal axis to us,
+   * which is the axis that spins the world anyway.
+   */
+  touch-action: pan-y;
+
+  /* A drag across a graphic should not paint the page blue behind it. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.star-globe.is-dragging {
+  cursor: grabbing;
 }
 
 .star-globe canvas {
@@ -133,6 +155,13 @@
 .star-globe-marker:hover .star-globe-tip,
 .star-globe-marker:focus-within .star-globe-tip {
   opacity: 1;
+}
+
+/* A tooltip that hangs on through a drag follows the mark around the sphere
+   like a label stuck to a spinning ball. The pointer is busy turning the
+   globe, not reading. */
+.star-globe.is-dragging .star-globe-tip {
+  opacity: 0;
 }
 
 /* The globe stands still under reduced motion (StarGlobe.tsx parks the spin),

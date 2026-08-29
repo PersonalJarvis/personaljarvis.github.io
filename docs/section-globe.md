@@ -9,6 +9,38 @@ colours from [`design.md`](design.md); this file governs the rest.
 
 ---
 
+## What came from the reference, and what did not
+
+The maintainer chose the effect from a section on meuze.ai and asked for the
+same viewpoint. On the record, because "where did this come from" is a question
+that deserves an answer that was written down at the time rather than
+reconstructed later:
+
+**Measured from their rendered page**, by reading computed styles and the
+canvas context in a browser:
+
+- the camera sits about 18° north — read off the projected position of the
+  equator, not off any source
+- it is a 2D canvas, not WebGL — `getContext('2d')` returned a context
+- the markers are DOM elements over the canvas, not painted into it
+- the marker is concentric squares, and roughly what size
+- `cursor: grab`, `touch-action: pan-y`, `user-select: none` on the draggable
+  globe — the last of which we had already settled on for the same reason
+
+**Written here, from scratch**: the projection, the lighting, the rim fade, the
+land mask and its rasteriser, the dot bucketing, the drag and its momentum, the
+gazetteer, the geocoder, the fetch, the workflow, and every line of copy.
+
+**Deliberately not carried over**: their accent colour (`design.md` rejects a
+borrowed accent outright), their typeface, their wordmark, their layout
+proportions, their wording, and any of their code — none of which was read.
+Two things here have no counterpart there at all: the halo that grows with the
+cluster, and the tilt that returns to its resting angle when a drag ends.
+
+The data is Natural Earth, public domain.
+
+---
+
 ## The claim the section makes
 
 **This many GitHub stars. These are the places the ones who say where they are
@@ -104,11 +136,27 @@ and the page scrolls; nothing is ever clipped. Measured: 1440x900, 1280x720,
 390x600 overshoots by 93px and scrolls, which is the intended fallback.
 
 The globe is what makes that work or not, because it is square and therefore as
-tall as it is wide. It is capped at `min(100%, 100svh - 14rem)`: on a wide
-screen the column governs, on a short one the screen does. The svh term is not
-the bare viewport width `layout.md` forbids — the container still governs
-through the `100%`, and this only stops the graphic outgrowing the screen it
-has to fit on.
+tall as it is wide. It is capped at `min(100%, 100svh - 14rem)` times
+`--globe-scale`: on a wide screen the column governs, on a short one the screen
+does. The svh term is not the bare viewport width `layout.md` forbids — the
+container still governs through the `100%`, and this only stops the graphic
+outgrowing the screen it has to fit on.
+
+`--globe-scale` is **0.75** (maintainer, 2026-08-29): at the column's full width
+the globe crowded the copy and left the section no air of its own. It is one
+number so the next adjustment is one edit.
+
+### The copy steps off the rail
+
+The rails stand on the edges of the `content` step and the container's padding
+starts exactly there, so text set flush in the column sits ON the hairline and
+reads as though it has fallen against the wall. The copy column carries
+`padding-inline-start: 2.5rem` from `lg` up.
+
+That is an inset within a column, not a second container padding — the width
+still comes from the one Container, which is what `layout.md` reserves. Below
+`lg` there is no inset: the column is the whole screen and every pixel of it is
+needed for the line length.
 
 ---
 
@@ -180,6 +228,33 @@ globe should look like. The stepping was deleted. **Do not reintroduce it.**
 Dots are sorted into seven alpha buckets and each bucket is drawn as one path
 with one `fill()`. Setting `globalAlpha` per dot costs more than all the
 geometry put together, and there are thousands of them.
+
+### The globe can be dragged
+
+Press and move and the world turns under the pointer; let go and it carries the
+throw before easing back into its own slow rotation. Three decisions, each a
+trade:
+
+1. **A pixel of drag is a pixel of surface.** The rotation per pixel is
+   `1/radius` radians — the angle a point at the centre of the disc actually
+   moves through. Any other constant makes the sphere feel geared to the mouse
+   rather than held by it.
+2. **The spin keeps whatever it is given; the tilt comes home.** Where the globe
+   is pointing is the reader's business. How far the camera sits off the equator
+   is the composition — 18° is the whole reason the graphic reads as a ball and
+   not as a disc — so the tilt eases back over about a second while the spin
+   keeps its momentum. The tilt is also clamped short of either pole, where the
+   projection degenerates into rings with no recognisable coastline.
+3. **`touch-action: pan-y`.** On a phone the globe fills most of the screen, and
+   a section the reader cannot scroll past because the graphic ate the swipe is
+   a trap. Horizontal drags turn the globe, vertical ones scroll the page, and
+   the browser arbitrates rather than us.
+
+Two things that are easy to get wrong and are already handled: the frame delta
+is clamped to 50ms, because a tab returning from the background hands back a
+delta of several seconds and would snap the globe a third of the way round; and
+the settle is written as a fraction of the remaining distance per second, so it
+behaves the same at 60Hz and at 120.
 
 ### The markers are DOM, the dots are canvas
 
@@ -266,6 +341,11 @@ part of `npm run verify`.
 - Guessing at an unresolved location, or defaulting it to a country
 - A count-up animation on page load. The number animates when it has *changed*,
   which is information; animating always is decoration
+- `touch-action: none` on the globe — it takes the reader's scroll on a phone
+- Snapping the spin back to a fixed angle after a drag. The reader turned it
+  there on purpose; only the tilt comes home
+- An unclamped frame delta in the rotation, which snaps the globe after the tab
+  has been in the background
 - Claiming in copy that the globe shows everyone, or omitting why most
   stargazers are not on it
 - Arithmetic in the copy that mixes the live count with the build-time
