@@ -27,11 +27,21 @@
  * four screens because they have a timeline to spend it on; a still picture
  * held that long is a page the reader thinks has stopped responding.
  *
- * THE MARKER IS WHAT SAYS THE PAGE IS STILL ALIVE. `[data-scroll-span]` on the
- * track hands `SectionTrack` the pinned span rather than the box, so the square
- * walks the frame while nothing else moves. Without it the one thing on screen
- * that could show the scroll is being received freezes in a corner, and a
- * deliberate pause is indistinguishable from a hang.
+ * AND THE PAUSE HAS TO ANSWER THE SCROLL. A held screen that answers nothing
+ * is a page that has stopped working, so `[data-scroll-span]` on the track
+ * hands the pinned span to the two things that read it:
+ *
+ *   the globe    turns half a revolution across the span — a function of the
+ *                scroll position, so it runs backwards on the way back and
+ *                stands still when the reader does. See `SCROLL_TURN` in
+ *                StarGlobe.tsx for why it is a second angle and not a faster
+ *                idle rotation: the globe already turns on its own, and motion
+ *                that happens anyway cannot report anything.
+ *   the marker   `SectionTrack` walks the square round the frame over the same
+ *                span, which is where the reader reads how much is left.
+ *
+ * Both read ONE attribute, so they cannot disagree about how far through the
+ * pause the reader is — the defect that would actually be noticed.
  *
  * IT KEEPS `.section-bounds`, unlike the other two pinned sections. They cannot
  * use those classes because their pinned box is a bespoke frame; this one's is
@@ -198,24 +208,40 @@ const places = placed === 1 ? "one place" : `${clusters.length} places`;
   }
 
   /*
-   * WHERE THE PIN IS DROPPED, and the conditions are the page's, not this
-   * section's — `VoiceSwitch` and `Install` fall out of their tracks on exactly
-   * these three, and a third set of numbers would mean the page changed
-   * behaviour at three window sizes instead of one.
+   * WHERE THE PIN IS DROPPED.
    *
    *   narrow    the grid has collapsed to one column, so the section is two
    *             screens of content and there is nothing to pin
-   *   short     the same section printed into a window that cannot hold it —
-   *             pinning it would hold the reader on a view that is already
-   *             running off the bottom
+   *   short     below the height at which the section still fits one screen
    *   calm      prefers-reduced-motion. A pause the reader did not ask for is
    *             motion in the sense that matters: the page not answering the
    *             gesture they just made.
    *
+   * THE HEIGHT IS 600 AND NOT THE 880 THE OTHER TWO TRACKS USE, and copying
+   * theirs is the bug this replaced. `VoiceSwitch` and `Install` give a
+   * PHOTOGRAPH whatever height is left over, so below about 880px that slot is
+   * a 4:1 letterbox and the picture stops surviving the crop — their number is
+   * a fact about a fixed-aspect image in a flex chain. Nothing here works that
+   * way: the globe is capped against `svh` and simply gets smaller, and the
+   * copy beside it is four short blocks.
+   *
+   * Measured on the built page at 1440 wide, forcing the un-pinned layout and
+   * reading the height the section actually wants: 600, 640, 680, 720, 760,
+   * 800, 840, 880, 940 and 1040 all come back fitting exactly one screen with
+   * zero overflow, the globe going 219px → 400px across that range. There is
+   * no height in it where the section stops fitting, so the borrowed 880 was
+   * not a floor — it was switching the pause off on every 1440x900 laptop for
+   * no reason anyone could have found in the layout.
+   *
+   * 600 is therefore the bottom of what was measured rather than a point where
+   * something breaks. Below it the section is a landscape phone or a window
+   * squashed to a letterbox, and holding a reader still on either is a worse
+   * bet than letting them past — `max-width` already takes most of that case.
+   *
    * The section is then exactly what it was before the track existed: one
    * ordinary full-height block. Nothing else in the file knows the difference.
    */
-  @media (max-width: 1023px), (max-height: 879px), (prefers-reduced-motion: reduce) {
+  @media (max-width: 1023px), (max-height: 599px), (prefers-reduced-motion: reduce) {
     [data-track] {
       height: auto;
     }

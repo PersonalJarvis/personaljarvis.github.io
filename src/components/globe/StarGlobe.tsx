@@ -51,11 +51,26 @@
  *     fills most of the screen, and a section you cannot scroll past because
  *     the graphic ate the gesture is a trap. Horizontal drags turn the globe;
  *     vertical ones scroll the page, and the browser arbitrates, not us.
+ *
+ * ## And it answers the scroll
+ *
+ * The section it lives in pins itself for the better part of a screen, so the
+ * reader scrolls and the page does not move. The globe is what tells them the
+ * scroll arrived: half a turn across that span, forwards and backwards, as a
+ * function of the scroll position rather than a rate.
+ *
+ * It is the second angle in the sum and not a change to the first, because the
+ * two are answering different questions. `spin` is where the globe is pointing
+ * — the idle drift and whatever the reader has thrown at it, which is theirs to
+ * keep. `SCROLL_TURN` is a reading of where they are in the section, which has
+ * to be reversible and has to stand still when they do. Folding the second into
+ * the first would make it neither. See `SCROLL_TURN` below.
  */
 
 import { useEffect, useRef, useState } from "react";
 
 import { LAND_LAT_CELLS, LAND_LON_CELLS, LAND_MASK_BASE64 } from "@/data/land-mask";
+import { spanProgress } from "@/lib/scrollSpan";
 import {
   buildDotField,
   dotAlpha,
@@ -82,6 +97,34 @@ const TURN_SECONDS = 80;
 
 /** The same, as radians per second — what the spin actually carries. */
 const AUTO_RATE = (Math.PI * 2) / TURN_SECONDS;
+
+/**
+ * How far the reader's own scroll turns the globe, across the whole of the
+ * section's pinned span.
+ *
+ * THIS IS THE SECTION'S ANSWER TO THE SCROLL, and it exists because the section
+ * holds the reader still for the better part of a screen (see Stargazers.astro
+ * § "AND IT HOLDS THE READER FOR A BEAT"). A pause that answers nothing is
+ * indistinguishable from a page that has stopped working — the wipe in
+ * `VoiceSwitch` is the same construction and the same reason: the reader's
+ * gesture has to move something, or they conclude the gesture was lost.
+ *
+ * THE IDLE ROTATION CANNOT DO THIS JOB, and that is the whole point of adding a
+ * second term rather than speeding the first one up. The globe already turns on
+ * its own, so its motion says nothing about whether the scroll arrived; a
+ * reader watching a globe that turns identically whether they scroll or not
+ * learns nothing from it. This term is a FUNCTION of the scroll position, so it
+ * runs backwards when they scroll back and stands still when they stop — which
+ * is what makes it a reading of their gesture rather than decoration.
+ *
+ * HALF A TURN, not a whole one and not a quarter. Over the pinned span it works
+ * out at about the same degrees-per-pixel as dragging the globe with the
+ * pointer, so the two gestures agree about how heavy the planet is. It is also
+ * the rotation that means something here: the globe faces the Atlantic at rest,
+ * so half a turn is exactly the trip from the people on one side of the planet
+ * to the people on the other.
+ */
+const SCROLL_TURN = Math.PI;
 
 /**
  * Where the globe starts, and where a released throw settles back toward.
@@ -298,6 +341,21 @@ export function StarGlobe({ clusters }: GlobeProps) {
 
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
+    /* The scroll span this globe is standing in, if it is standing in one.
+     *
+     * `closest`, and not a prop: which element carries the span is a fact about
+     * the section's markup, and a prop would be a hand-maintained copy of it
+     * that goes wrong silently the moment the section is restructured. The same
+     * attribute drives `SectionTrack`, so the marker walking the frame and the
+     * globe turning under the reader are reading ONE number — they cannot
+     * disagree about how far through the pause the reader is, which is the
+     * defect a reader actually notices.
+     *
+     * `null` outside a pinned section, and the globe then behaves exactly as it
+     * did before this existed: idle rotation and the drag. This component is
+     * not the section's, and must not need it. */
+    const span = host.closest<HTMLElement>("[data-scroll-span]");
+
     /* --- state the drag and the clock share ------------------------------ */
 
     let spin = RESTING_SPIN;
@@ -404,8 +462,27 @@ export function StarGlobe({ clusters }: GlobeProps) {
         tilt += (RESTING_TILT - tilt) * Math.min(1, dt * TILT_SETTLE);
       }
 
-      view.sinSpin = Math.sin(spin);
-      view.cosSpin = Math.cos(spin);
+      /* The reader's own scroll, as an angle. Read every frame rather than
+       * accumulated, because it is a POSITION and not a rate: scroll back up
+       * and it unwinds, stop and it stops. An accumulated version would drift
+       * away from the scroll it is meant to be reporting, and a globe that
+       * keeps turning after the reader stopped is back to saying nothing.
+       *
+       * One `getBoundingClientRect` per frame, next to the several thousand
+       * dots this loop is already projecting. `onScreen` guards it above, so a
+       * globe nobody is looking at reads nothing at all.
+       *
+       * Off under reduced motion, like every other scroll-driven thing on this
+       * site: `VoiceSwitch` drops its wipe there and the section drops its pin,
+       * so a globe still swinging half a turn would be the one piece of the
+       * page that ignored the request. */
+      const scrolled =
+        span && !motion.matches
+          ? spanProgress(span.getBoundingClientRect(), window.innerHeight) * SCROLL_TURN
+          : 0;
+
+      view.sinSpin = Math.sin(spin + scrolled);
+      view.cosSpin = Math.cos(spin + scrolled);
       view.sinTilt = Math.sin(tilt);
       view.cosTilt = Math.cos(tilt);
       view.cx = (size * ratio) / 2;
