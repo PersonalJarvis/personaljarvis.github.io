@@ -243,8 +243,29 @@ consumer one.
 
 ## Components
 
-**Top nav** — `--canvas` background, ink text, 64px tall. Wordmark left,
-horizontal menu centre, one primary CTA right. Hamburger below 768px.
+**Top nav** — **no ground, no border, no rule under it.** Lettering only, fixed
+over the whole document at 4rem tall (`--nav-height`), on the `content` step:
+wordmark left in ink, the section links centred in `--body` and lit to ink for
+the current one, one primary CTA right. It used to be a `--canvas` band with a
+hairline along its bottom, pinned inside the hero; it left the hero on
+2026-08-29 and lost both, because a band across the top of the page is the frame
+the first screen is meant not to have.
+
+What keeps the words legible over what passes beneath them is a **veil**: a
+gradient from `--canvas` to transparent, twice the nav's height, fading in as
+soon as the page moves. Twice the height so that it ends in nothing and has no
+bottom edge for the eye to read as the underside of a bar — the reader sees the
+top of the page deepen, not a surface appear. A shadow would do the same job and
+is not available here, and should not be: this system has no shadows at all (see
+"Don't", below, and `scripts/check-style.mjs` § no-shadow, which fails the build
+over one).
+
+**Below 768px the section links are hidden** and the wordmark and the CTA stay.
+**There is no hamburger, deliberately** — a menu button opens a panel, a panel
+needs a ground, and a ground is the one thing this nav is built not to have. The
+sections it lists are a few scroll gestures apart on a phone, which is a shorter
+journey than opening a menu to pick one. The layout, the veil's two timings and
+the current-section rule are in [`layout.md`](layout.md) § "The nav".
 
 **Primary CTA** — ink background, dark text, 14px/500, 12×20px padding, 44px
 tall, `--radius-md`. On this floor that is a pale button — the brightest thing
@@ -310,7 +331,7 @@ inverts to ink — a pale panel — instead of wearing a coloured ribbon.
 
 | Name | Width | Changes |
 |---|---|---|
-| Mobile | `< 640px` | Hero h1 → 32px; mockup collapses to one pane; grids 1-up; nav hamburger |
+| Mobile | `< 640px` | Hero h1 → 32px; mockup collapses to one pane; grids 1-up; the nav's section links are gone by 768px and there is no hamburger in their place |
 | Tablet | `640–1024px` | Hero h1 56px; mockup compresses; grids 2-up |
 | Desktop | `1024–1280px` | Hero h1 72px; full multi-pane mockup; grids 3-up |
 | Wide | `> 1280px` | Content caps at 1280px (`layout.md`), margins become visible |

@@ -216,8 +216,20 @@ Three rules come with it, and each one has already cost a defect:
   `min-height: 0`.** A flex item refuses to shrink below its content by default,
   so one missing link and the content leaves the bottom of the screen instead of
   the picture getting shorter.
-- **Subtract the nav.** It is `4rem`, sticky and opaque; a sticky child at
-  `top: 0` starts underneath it.
+- **Account for the nav, which is now over every section and not just the
+  hero.** It was `sticky` inside the hero until 2026-08-29 and had unstuck long
+  before any pinned section arrived, so a child at `top: 0` met a clear window
+  from the second section down. It is `fixed` now, so the top
+  `var(--nav-height)` of the window has lettering across it wherever the reader
+  is. What changed with it is the *kind* of failure: the nav has no ground any
+  more, so it does not hide what runs under it — the two simply overlap, which
+  is legible enough to look deliberate and wrong enough to read badly. Anything
+  that has to be **read** at the very top of the window takes
+  `var(--nav-height)` of clearance and gives the same figure back out of its
+  height. A pinned frame that already holds its own content an inset down from
+  the section's edge needs nothing extra, and should not have a nav-sized gap
+  bolted on top of the inset — that asymmetry is what made this boundary look
+  unlike every other one.
 - **Have a floor, and fall out of the pattern below it.** The element that gives
   gets whatever height is left, and on a short window that is a letterbox slot
   nothing survives. Below the floor the track collapses to `auto`, the child
@@ -291,11 +303,30 @@ something a section can declare.
 past the document's last scroll position; a snap point there could only pull
 the reader back off the end of the page.
 
-**No `scroll-padding-top` — today.** A snap point *is* the top of the window,
-so a bar pinned there would cover the very edge the reader was sent to, rule
-included. The nav is `sticky` inside the hero and stops at the hero's bottom
-edge, so every boundary below it meets a clear window. Move the nav out of the
-hero and this becomes `scroll-padding-block-start: 4rem`.
+**`scroll-padding-block-start: var(--nav-height)`, and it is not optional.**
+This paragraph used to say the opposite and end with the condition that has now
+happened: the nav left the hero on 2026-08-29 and is fixed over the whole
+document. A snap point *is* the top of the window, so without this every
+boundary the page rests on — and every heading a nav link sends the reader to —
+arrives underneath the nav, the section's own opening rule included.
+
+**It is `var(--nav-height)`, never a second `4rem` written out here.** The nav
+is laid out at that variable and the variable is `round(4rem, 1px)` against a
+root size that scales with the viewport, so a hand-written `4rem` in the
+scroll padding is not the same number as the nav's height on any screen where
+the root size has grown — it is off by the fraction `round()` takes away, and it
+drifts further the wider the window gets. Two spellings of one height is the
+kind of drift nothing reports: the page simply lands every clicked heading a
+few pixels under the lettering.
+
+**`scroll-behavior: smooth` lives here too, on `html` and not on the nav.** A
+fragment jump is the browser scrolling the *document*, so the document is what
+decides whether that scroll is instant or travelled; putting the declaration on
+the thing that happens to hold the links would leave every other anchor on the
+page jumping. Reduced motion turns it off along with the snap — a reader who
+asked not to be moved did not exclude the one movement they started themselves,
+but a page that vaults four screens in one animation is exactly what that
+setting is about.
 
 `prefers-reduced-motion: reduce` turns the snap off altogether: that reader has
 asked for exactly this — the page does not move on its own once their gesture
@@ -352,6 +383,71 @@ that edge *is* the rail at that height — see "Blocks that cross a rail" below.
 This layer holds the **rails only**. The marker has one of its own, in front of
 the content — see below.
 
+### The chrome arrives; it is not always drawn
+
+**The hero has no edges.** No rule across its top, no rails down its sides, no
+marker on them. The first screen is meant to read as open ground, and a framed
+field is a form. Everything the page frames itself with therefore starts at
+nothing and comes in as the reader leaves the hero — asked for on 2026-08-29.
+
+**It is scrubbed, not switched.** Chrome flipped on at some scroll position is
+worse than chrome that was always there: two full-height hairlines would snap
+down both sides of the window in a single frame, which is precisely the abrupt
+arrival being got rid of. Coupling the arrival to the gesture instead means the
+chrome is simply somewhere between absent and present at every scroll position,
+and it withdraws on the way back up at exactly the speed the reader is
+returning — which no timed animation can do, because a transition does not know
+the reader changed their mind.
+
+**Two numbers, written by the nav's script (`SiteNav.astro`) off one
+measurement:**
+
+| | Runs over | Read by | Asks |
+|---|---|---|---|
+| `--chrome-reveal` | 0.7 of a screen of the hero's floor travelling up | the rails, and `.section-marker`'s opacity | *is the hero over* |
+| `--nav-veil` | 0.12 of a screen of document scroll | the nav's veil alone | *is anything passing under the lettering* |
+
+**They are two because they are two questions, and that is not an
+inconsistency.** The rails belong to the page *below* the hero and have no
+business being drawn across the first screen, so they wait most of a screen.
+The veil is there to keep the nav's lettering legible over whatever has
+travelled up under it, and something has from the very first pixel of scrolling
+— the hero's own headline, before any other section exists. Put the veil on the
+rails' timing and the headline slides through the links unshaded for most of a
+screen. Arriving early costs the veil nothing, because it *is* the page's own
+ground colour: over the hero, which is that colour, there is nothing to see
+until something brighter reaches it, which is exactly when it is wanted.
+
+**The rails grow rather than fade, and upwards.** Fading a 1px line in leaves it
+momentarily grey, and a grey hairline reads as a rendering fault rather than as
+a fade; growing gives the eye an edge to follow. Upwards because the content the
+rails belong to is arriving from the bottom of the window — a rail drawn
+downwards would be moving against everything else on screen. It is a
+`mask-image` ramp and not a height or a `clip-path`: a height lays the page out
+twice, and a clip ends the line on a hard horizontal cut, which is the sliced
+hairline again. The ramp fades the line out over its last few per cent, so what
+the reader sees is a line being drawn.
+
+**The default is 1, not 0.** With no JavaScript nothing is ever written, and the
+page gets its chrome from the first frame — the site as it was, rather than one
+permanently missing its rails. `SiteNav.astro` stamps `data-chrome` on the root
+element from an **inline** script before the first paint, and that attribute is
+what switches the CSS to the driven `0`. Inline is the whole point: an Astro
+`<script>` is a module and therefore deferred, so it would run after the first
+frame and the reader would see the rails drawn across the hero for one frame and
+then wiped.
+
+**Reduced motion keeps the open hero and drops only the travel.** Both numbers
+step between 0 and 1 at the middle of their ramp instead of being scrubbed
+through every value on the way, so that reader gets the chrome switched on as
+they leave the hero rather than assembled around them. Pinning both at 1 is the
+obvious reading of the setting and the wrong one: the hero having no rails and
+no top rule is a decision about what the first screen looks like, not an
+animation, and pinning quietly hands the one reader who asked for less exactly
+the framed hero nobody asked for. It is spelled in the script rather than in a
+media query because a media query cannot beat an inline custom property the
+script has written on the root element.
+
 ### Blocks that cross a rail
 
 A block that is clearly **its own surface** — the CTA band on paper, the hero's
@@ -403,32 +499,42 @@ that edge. It dodges the overshoot the other way, by taking the container's
 padding box (`--w-content-inner`) as its width rather than a border box. See
 "A run of sections may opt out — together".
 
-**`.section-rule` is not how a section opens any more.** One user is left: the
-line under the sticky nav in `Hero.astro`, which is the nav band's bottom edge
-and not a section boundary at all. Reaching for it to open a section is what
-produced the doubled and tripled boundaries the maintainer reported on
-2026-08-29.
+**`.section-rule` is not how a section opens any more, and it now has no users
+at all.** The last one was the line under the sticky nav in `Hero.astro` — the
+nav band's bottom edge, never a section boundary — and that line went with the
+band when the nav left the hero on 2026-08-29. Reaching for the class to open a
+section is what produced the doubled and tripled boundaries the maintainer
+reported that same day.
 
-**That line is drawn INSIDE the nav band, not at the top of the hero's box.** It
-has to be: `h-16` is 4rem against a root size that scales with the viewport, so
-the band's bottom edge lands on a fraction of a device pixel (75.83px at 1.5x),
-and a sticky opaque band is a composited layer that snaps its own edge up to the
-next whole pixel — straight over a hairline beginning exactly where it ends. The
-line is present in the DOM, correct in the box model, and invisible on screen.
-Inside the band the same layer paints it and nothing can round over it. A
-vertical rail never shows this because its blur is spread down its whole length;
-a 1px horizontal line at a layer boundary is swallowed whole.
+**The class is kept anyway, and deleting it would be the mistake.** "One
+horizontal line spanning exactly the two rails, and stopping on them" is a thing
+this page will want again, and there is exactly one way to draw it correctly —
+on an element *inside* the container, for the overshoot reason at the top of
+this section. Left in place it is four lines of CSS nobody has to rediscover;
+deleted, the next line someone needs goes on the section or on the container and
+overshoots both rails, which is the failure this whole subsection exists to
+prevent. It is retired, not wrong.
 
-**And the band's height is snapped to a whole pixel** — `--nav-height` is
-`round(4rem, 1px)`, defined in `layout.css`. Moving the line inside the band was
-only half the fix: the layer still rounds its own bounds, so at a height of
-75.83 the rule sat at y=74.83 and 83% of it fell in the row the layer gave up.
-It reached the screen at a sixth of its colour, and the maintainer reported the
-divider as missing (2026-08-29). `round()` takes the fraction off the end and
-nothing else — the band still scales with the page, it is NOT back to a frozen
-64px nav — so the layer's bounds and the layout box agree and the line paints
-whole. A `@supports` fallback keeps a browser without `round()` on plain `4rem`,
-because a dropped `height` would collapse the band.
+**Why `--nav-height` is a rounded figure, which outlived the line.** The old
+band was 4rem against a root size that scales with the viewport, so its bottom
+edge landed on a fraction of a device pixel — 75.83px at 1.5x — and a sticky
+*opaque* band is a composited layer whose bounds are snapped to whole device
+pixels before it is painted. At 75.83 the snap ate the row the rule was on: the
+line sat at y=74.83, 83% of it fell in the row the layer gave up, and it reached
+the screen at a sixth of its colour. It was present in the DOM, correct in the
+box model, and reported as a missing divider (2026-08-29). Moving the line
+inside the band was only half the fix; `--nav-height` being `round(4rem, 1px)`
+was the other half. The band is gone and the rule with it, but the variable is
+still the height the nav is laid out at and still the figure the scroll padding
+and every sticky child measure against, so it stays rounded — one whole number
+of pixels that everything agrees on. `round()` only takes the fraction off the
+end: this is **not** a return to a frozen 64px nav. A `@supports` fallback keeps
+a browser without `round()` on plain `4rem`, because a dropped `height` would
+collapse the nav's row altogether.
+
+The general lesson survives its own bug and is in the Forbidden list below: a
+hairline that begins exactly where a composited layer ends is a hairline the
+layer paints over.
 
 ### Vertical dividers between columns
 
@@ -616,12 +722,16 @@ the `<section>` element:
 | Section | Box | Progress from |
 |---|---|---|
 | ordinary | the `<section>` — its top edge *is* its rule, its bottom edge the next one | itself |
-| hero | everything **under the nav**, not the section: the section's top edge is the top of an opaque sticky band, and a square starting there starts out of sight | itself |
+| hero | the hero's own box, which since 2026-08-29 runs the **full** height of the section: the nav used to be the first row of this grid and the box began under it, and now the nav is fixed over the document, out of the flow, and pays for its space with a `padding-top` inside the box instead. Nothing is lost to an opaque band at the top of it any more — and the marker is held at nothing across the hero regardless, because `--chrome-reveal` is 0 there | itself |
 | sticky (`VoiceSwitch`, `Stargazers`, `Install`) | the pinned frame, one viewport tall | the tall track — `[data-scroll-span]`, but only while it is really pinning its child |
 
 The box is found as the element `SectionTrack` was dropped into, never as
-`closest("section")` — those differ for the hero, and measuring progress against
-a box the square does not walk puts it off its own corners.
+`closest("section")`. They coincide for the hero again now that the nav is not a
+row of its grid, which is exactly why the rule has to be spelled out rather than
+inferred: it held for a reason that has since gone away, and a lookup written as
+`closest("section")` would be correct today and wrong the next time a section
+puts anything above the box the square actually walks. Measuring progress
+against a box the square does not walk puts it off its own corners.
 
 A three-screen section would otherwise put the marker's halfway point a screen
 and a half below the fold. A section that pins a child therefore has to **close
@@ -668,8 +778,14 @@ that means "whatever the parent is".
   outside it — `getBoundingClientRect` in a scroll handler ties the page's frame
   rate to the wheel
 - `z-index: 20`: above the cards, which have surfaces of their own and would
-  bury it, and below the nav at 30, which is opaque — a marker passing *through*
-  the nav would read as a bug rather than as chrome
+  bury it, and below the nav at 30. **That order used to be about an opaque
+  band** — the square would have passed *through* the nav's own ground, which
+  reads as a bug rather than as chrome. The nav has no ground any more, so the
+  square travels the top `--nav-height` of the rail in plain sight, and that is
+  correct: the rail is drawn there too, and a square that vanished for the first
+  4rem of every section would be the defect instead. The order still matters,
+  for a smaller reason — the wordmark starts exactly on the left rail, so the
+  two do meet, and when they do the lettering is what should be on top
 - `aria-hidden="true"` — decorative, with no navigation function
 - Hidden below 768px, where the rails are
 
@@ -686,6 +802,117 @@ box collapses to zero height, and the marker parks in a corner forever.
 `PageChrome` is rendered **once**, in the root layout. A rail assembled from one
 segment per section is a rail with seams, and the seams are the first thing the
 eye finds on a long page.
+
+---
+
+## The nav — lettering over the page, not a bar across it
+
+> `src/components/SiteNav.astro` holds the markup and the script,
+> `src/lib/nav.ts` holds the one list of links, and the boxes are in
+> `src/styles/layout.css` beside the height they are measured against.
+
+**It is `position: fixed`, `z-index: 30`, and rendered once from
+`Base.astro`.** Until 2026-08-29 it was a `sticky` band inside `Hero.astro`, and
+sticky pins a child only for as long as its own parent is on screen: the nav
+slid out of sight at the hero's bottom edge and the other ten sections had no
+nav at all. Sticky cannot be made to do this job, because it positions inside
+its own containing block and the containing block would have to be the whole
+document. Fixed takes the nav out of flow entirely, which is what "stays where
+it is while the page moves" actually means, and a nav that belongs to the whole
+document has to be rendered by the thing that owns the whole document.
+
+**It costs the page nothing.** The hero pays back the `--nav-height` the band
+used to occupy as `padding-top` on its own box, so nothing underneath it moved
+and every proportion in [`hero.md`](hero.md) is the figure it always was.
+
+**There is no band: no ground, no border, no rule under it — lettering only.**
+The ground and the line were two thirds of the frame the hero was asked to lose.
+What keeps the words legible over what passes beneath them — a lit painting, a
+globe, a wall of logos — is `.site-nav__veil`: a gradient from `--canvas` to
+transparent, **twice the nav's height**, so it has no bottom edge anywhere for
+the eye to read as the underside of a bar. What the reader sees is the top of
+the page quietly deepening, with the wordmark sitting in it. A shadow was never
+an option: [`design.md`](design.md) is hairlines only, and
+`scripts/check-style.mjs` § no-shadow fails the build over one.
+
+**The strip is `pointer-events: none` and the controls take them back.** A
+transparent 4rem strip across the window still swallows every click that lands
+in it, and the hero's stage frame reaches within a hair of it on a short screen.
+
+**Wordmark left, section links centre, one CTA right.** The links are the six
+places a reader might actually want to be sent to — Plugins, Skills, CLIs, What
+changes, Open source, plus Docs — and not all eleven sections: a nav that lists
+every band is a table of contents, and a table of contents in a 4rem row is
+unreadable at any width. The logo strip, the stargazer count and the gallery are
+things the reader passes *through*.
+
+**The list lives in `src/lib/nav.ts`, and its order is load-bearing.** The nav
+renders from it and the scroll-spy resolves against it, so a second hand-written
+copy is a copy that goes stale the moment a section is renamed, reordered or
+removed — silently, because a link to an id that no longer exists still renders
+and simply does nothing. That is not hypothetical here: `#docs` was linked from
+five places on this site and no element has ever carried that id. All five now
+point at `DOCS_URL`, the docs folder in the repository, which is one constant to
+change on the day this site grows a `/docs` route.
+
+**A link whose section is not on the page takes itself off the nav.** The script
+looks each id up on load and sets `hidden` on the ones it cannot find. This is
+not defensive coding: this page is edited by several hands at once and sections
+are added, renamed and retired constantly — `open-source` was pulled out from
+under the nav and put back within the hour on the day the nav shipped. Nothing
+else catches it. The markup stays valid, the link renders, the style gate and
+the build both pass, and the only symptom is a reader pressing something and the
+page not moving. `hidden` rather than a removal, so the element is still there
+on a route that does have the section — and it needs `.site-nav__link[hidden] {
+display: none }` spelled out, because the browser's own `[hidden]` rule loses to
+the link's `display: inline-flex` at the same specificity.
+
+### The scroll-spy's owner rule
+
+**The current link is the last one whose section has passed under the NAV** —
+`aria-current="true"`, plus a 3px square laid out at all times and revealed with
+opacity, so nothing shifts sideways as the reader crosses a boundary. A square,
+and not a dot or an underline, because the page already answers "where am I" in
+that shape on the rails; a second indicator in a second shape reads as a second
+system.
+
+**That line is one `--nav-height` lower than `SectionMarker`'s own, and the
+difference is deliberate.** The marker resolves its owner against the top of the
+*window*, because it walks the corners of a box and the corners are where the
+box is. A nav link is lit for the section the reader can actually **read**,
+which begins under the lettering — and which is also exactly where
+`scroll-padding-block-start` lands a section when its own link is clicked.
+Resolve the link against the window's top edge instead and a freshly clicked
+link goes dark for the 4rem it was itself responsible for.
+
+**The line is measured off the nav element, never read out of `--nav-height`.**
+A custom property is not resolved by `getComputedStyle` unless it has been
+registered with `@property`, so what comes back is the literal string
+`round(4rem, 1px)`; `parseFloat` of that is `NaN` and the fallback quietly puts
+the line at the top of the window — which is the failure above, and it shipped
+that way for an afternoon: clicking *Skills* scrolled Skills to 76px, the
+comparison used 0, and the link the reader had just pressed stayed dark. Asked
+of the element, the number is right by construction and follows the root font
+size as the viewport scales it.
+
+**No `requestAnimationFrame` loop.** `SectionMarker` runs one because it moves a
+square every frame for the life of the page; this writes two numbers and an
+attribute, and only when the document actually scrolls, so it hangs off a
+passive scroll listener with a frame's worth of coalescing. A `ResizeObserver`
+on the hero covers the case a scroll listener cannot see: the page grows as
+islands hydrate and images land, which moves the hero's floor without a scroll
+ever happening.
+
+### Below 768px
+
+**The section links are hidden; the wordmark and the Download button stay.**
+Same breakpoint as the rails, spelled the same way.
+
+**There is no hamburger, and that is a decision rather than an omission.** A
+menu button opens a panel, a panel needs a ground, and a ground is the one thing
+this nav is built not to have. The five sections it lists are five scroll
+gestures apart on a phone, which is a shorter journey than opening a menu to
+pick one.
 
 ---
 
@@ -1013,6 +1240,16 @@ nothing — test with a real one.)
 - An opaque background on a section, which paints over the rails. The page
   colour belongs on `<body>`
 - Scroll maths in the scroll handler with no `requestAnimationFrame`
+- **A layout figure read out of an unregistered custom property** with
+  `getComputedStyle`. Nothing resolves it, so what comes back is the literal
+  declaration — `round(4rem, 1px)` — and `parseFloat` of that is `NaN`, which
+  falls through to whatever the fallback was and puts the measurement silently
+  in the wrong place. Measure the element instead
+- **The nav's veil driven off `--chrome-reveal`.** That number waits for the
+  hero to be over, and the veil is answering the other question — whether
+  anything is passing under the lettering, which is true from the first pixel of
+  scrolling. On the rails' timing the hero's own headline slides through the
+  links unshaded for most of a screen
 - A bounded section whose `<SectionTrack />` still sits on the `<section>`.
   The marker then walks a box the reader cannot see, an inset outside both
   drawn lines

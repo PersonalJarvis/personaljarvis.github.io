@@ -15,20 +15,32 @@ changes height mid-animation. The section has `overflow: hidden`.
 **Why the 48px tail, and not a flat `100svh`.** A boundary on this page is one
 line and it belongs to the section BELOW, so the line that closes the hero is
 `LogoStrip`'s opening `.section-rule`. At exactly `100svh` that line lands on
-the fold's own pixel row and the window edge eats it: the first screen opened
-with a rule under the nav and had nothing answering it at the bottom. Ending
-the section one `--space-xxl` short pulls the same line up to ~96% of the
+the fold's own pixel row and the window edge eats it: the page simply ran out
+from under the reader, with no line anywhere on the first screen. (The defect
+was first written up as "opened with a rule under the nav and had nothing
+answering it at the bottom" — that top line went with the nav band on
+2026-08-29, and the bottom half of the complaint is the half that still bites.)
+Ending the section one `--space-xxl` short pulls the same line up to ~96% of the
 viewport, with air beneath it.
 
 The hero does **not** draw a closing rule of its own. It would sit a few dozen
 pixels above `LogoStrip`'s, and two lines at one boundary is what the
 single-rule convention exists to prevent (`layout.md` § "A bounded section").
 
-The section is a **three-row grid**, `grid-rows-[auto_auto_minmax(0,1fr)]`:
+The section is a **two-row grid**, `grid-rows-[auto_minmax(0,1fr)]`:
 
-1. Nav — 64px, sticky, `full` step for the background
-2. Copy — headline on `prose`, CTAs 28px under it
-3. Demo stage — `content` step, takes the remaining row **and fits inside it**
+1. Copy — headline on `prose`, CTAs 28px under it
+2. Demo stage — `content` step, takes the remaining row **and fits inside it**
+
+**There used to be a third row above them, for the nav.** The nav left the hero
+on 2026-08-29 and is fixed over the whole document (`layout.md` § "The nav"), so
+it is out of the flow entirely and no longer a row of anything. **The hero pays
+for it in padding instead** — `padding-top: var(--nav-height)` on its own box,
+the same figure the row used to be. That is what keeps every number in the table
+below exactly where it was: the headline still begins one nav-height plus 5svh
+down the screen, and nothing underneath it moved a pixel. Without the padding
+the headline would simply start behind the lettering, which is the one thing an
+out-of-flow nav cannot arrange for itself.
 
 **Not a flex column with `justify-end`.** That pushes the whole block to the
 bottom of the viewport and leaves a dead field above the headline — the copy
@@ -41,6 +53,28 @@ again — the exact failure this layout exists to prevent.
 
 Spacing above the copy is in `svh`, so the proportions hold on a short laptop
 and a tall monitor alike.
+
+### The hero has no edges, and that is the point of this screen
+
+**No rule across the top, no rails down the sides, no marker on them.** The page
+draws all three everywhere else; across the hero they are held at nothing and
+arrive as the reader scrolls out of it — `--chrome-reveal` runs 0 to 1 over
+0.7 of a screen, and the rails, the section marker and the veil under the nav
+all come in on it. The mechanism and the second number are in `layout.md`
+§ "The chrome arrives; it is not always drawn".
+
+**A framed field is a form.** The first screen has one job — make the argument —
+and it makes it with a headline, two buttons and a lit demo on open ground. Put
+a hairline down each side and a rule along the top and the same screen reads as
+a document with a header, which is a promise about paperwork rather than about
+speaking to a computer. Everywhere below the hero the rails are doing real work,
+because from there on the page *is* a document and the reader wants to know
+where a section starts and ends.
+
+**Nothing here is switched on at a scroll position.** The chrome is coupled to
+the gesture, so there is no frame at which two full-height lines appear down the
+window — see the same section of `layout.md` for why that distinction is the
+whole effect.
 
 ### Target proportions
 
@@ -347,29 +381,32 @@ known one.
 ## Skeleton
 
 ```astro
-<section class="grid min-h-svh grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden">
-  <header class="sticky top-0 z-30 h-16 border-b border-hairline bg-canvas">
-    <Container width="content" class="flex h-16 items-center justify-between">
-      …
-    </Container>
-  </header>
+<section id="top" class="grid min-h-svh grid-rows-[minmax(0,1fr)] overflow-hidden">
+  <div class="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] pt-[var(--nav-height)]">
+    <div class="pt-[5svh]">
+      <Container width="prose">
+        <h1 class="text-center text-balance leading-[1.08]">…</h1>
+        <div class="mt-7 flex flex-col justify-center gap-3 sm:flex-row">…</div>
+      </Container>
+    </div>
 
-  <div class="pt-[5svh]">
-    <Container width="prose">
-      <h1 class="text-center text-balance leading-[1.08]">…</h1>
-      <div class="mt-7 flex flex-col justify-center gap-3 sm:flex-row">…</div>
+    <Container width="content" class="min-h-0 pt-6 pb-[10svh]">
+      <div class="relative h-full min-h-[300px] overflow-hidden rounded-2xl border border-hairline">
+        <Image src={backdrop} alt="" loading="eager"
+               class="pointer-events-none absolute inset-0 h-full w-full object-cover" />
+        <DemoStage client:load className="relative h-full" />
+      </div>
     </Container>
   </div>
-
-  <Container width="content" class="min-h-0 pt-6 pb-[10svh]">
-    <div class="relative h-full min-h-[300px] overflow-hidden rounded-2xl border border-hairline">
-      <Image src={backdrop} alt="" loading="eager"
-             class="pointer-events-none absolute inset-0 h-full w-full object-cover" />
-      <DemoStage client:load className="relative h-full" />
-    </div>
-  </Container>
 </section>
 ```
+
+**There is no `<header>` in here any more.** It was the first row of this grid,
+`sticky top-0 z-30` on a `bg-canvas` band with a hairline along its bottom, and
+it is now `SiteNav.astro` rendered from `Base.astro` — fixed over the whole
+document, with neither the ground nor the line. What is left of it here is the
+`pt-[var(--nav-height)]` on the box and the `id="top"` on the section, which is
+where the wordmark sends the reader.
 
 The stage row is `minmax(0, 1fr)`, so it takes whatever height is left and the
 frame fills it exactly — `pb-[10svh]` is the air that keeps the frame off the
