@@ -170,15 +170,25 @@ cards. `z-index` on the flap cannot do that, because the cell's `perspective`
 makes it a stacking context nothing inside can paint outside of; the cell is
 lifted instead, for the moment its flaps are moving.
 
-One mark's turn is five seconds: 1.5s of change, then 3.5s holding. Seven marks
-make a 35-second cycle.
+One mark's turn is seven seconds: 2.4s of change, then 4.6s holding. Seven
+marks make a 49-second cycle.
+
+**The change is slow on purpose.** A station board snaps, and the first cut of
+this one did too — 0.75s a half, ending at 5.5 times the average speed and
+stopping dead. That reads as a flicker, not as a card turning over: the eye
+catches that something changed without ever seeing it change. Twice the
+duration, and a gentler pair of curves, buys the movement back. The two halves
+are separate elements but one continuous fall, so their easing is **matched at
+the seam** — the first ends at 2.6x the average speed and the second begins
+there. Retune one curve and the other has to follow, or the hand-off becomes
+two events again.
 
 - **Both halves are the same full card, clipped.** Each half draws the whole
   mark and hides the other half with `clip-path`. Laying out a separate top and
   bottom would drift by a pixel and the seam would stop lining up.
 - **There is no seam line.** A real board has a visible gap between its flaps,
   and drawing one did read as a split card — but it also struck a line through
-  every mark on a strip that stands still 3.5 seconds out of every 5, which is
+  every mark on a strip that stands still 4.6 seconds out of every 7, which is
   what a visitor actually looks at. The movement makes the split plain enough.
   The two halves overlap by three tenths of a percent rather than meeting at
   50%, because an exact cut leaves a sub-pixel gap on fractional card heights
@@ -199,7 +209,7 @@ make a 35-second cycle.
   fifty-six slots, so six marks appear twice per cycle. Padding from the start
   of the pool put a copy about one slot from its original, and a mark is on
   screen for a whole slot — two GitLabs, side by side. Taking the filler from
-  three rows back separates each pair by 15s, three times the window either is
+  three rows back separates each pair by 21s, three times the window either is
   on screen for.
 - **`prefers-reduced-motion` gets a still frame**, not a special case: the
   animation is switched off and the first mark's two halves stay visible.

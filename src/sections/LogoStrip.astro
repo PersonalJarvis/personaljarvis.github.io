@@ -30,10 +30,16 @@ const PER_CELL = 7;
  * One card's turn: it swings down, holds, then falls away. The next card's
  * turn begins exactly where this one ends, so the three add up to the slot and
  * two cards are never mid-swing at the same time.
+ *
+ * The fold is deliberately slow for a split-flap. A real board snaps, and at
+ * 0.75s a half it read as a snap here too — a flicker the eye registers as a
+ * jolt rather than as a card turning over. At 1.2s the same movement is
+ * legible: you see the flap leave, cross, and land. The hold grew with it, so
+ * the strip stands still far longer than it moves.
  */
-const FOLD_IN_S = 0.75;
-const HOLD_S = 3.5;
-const FOLD_OUT_S = 0.75;
+const FOLD_IN_S = 1.2;
+const HOLD_S = 4.6;
+const FOLD_OUT_S = 1.2;
 const SLOT_S = FOLD_IN_S + HOLD_S + FOLD_OUT_S;
 const CYCLE_S = SLOT_S * PER_CELL;
 
@@ -169,16 +175,16 @@ const visibility = [
    * There is deliberately no seam line. A real board has a visible gap between
    * its two flaps, and drawing one here did read as a split card — but it also
    * struck a line through every mark on a strip that is otherwise still, and
-   * that is what a visitor sees for 3.5 of every 5 seconds. The split is
+   * that is what a visitor sees for 4.6 of every 7 seconds. The split is
    * legible from the movement alone.
    */
 
   @keyframes cell-front {
     0%,
-    30% {
+    34.28% {
       z-index: 3;
     }
-    30.01%,
+    34.29%,
     100% {
       z-index: 1;
     }
@@ -237,7 +243,7 @@ const visibility = [
   }
 
   /*
-   * The change takes 1.5s of a 5s slot, in two halves that must not overlap.
+   * The change takes 2.4s of a 7s slot, in two halves that must not overlap.
    *
    * First half: the OLD top falls forward and down about the seam, uncovering
    * the NEW top, which has been lying flat underneath it the whole time.
@@ -245,8 +251,15 @@ const visibility = [
    * onto the seam and covers the OLD bottom.
    *
    * Both rotations carry the moving edge towards the viewer — that is the
-   * direction the whole thing turns on. Against the 35s cycle a slot is
-   * 14.286% and each half of the change is 2.143%.
+   * direction the whole thing turns on. Against the 49s cycle a slot is
+   * 14.286% and each half of the change is 2.449%.
+   *
+   * The two halves are separate elements but one movement, so their easing is
+   * matched at the seam: the first curve ends at 2.6x the average speed and
+   * the second starts there, which is why the hand-off does not read as two
+   * events. The pair used to be far more violent — the fall ended at 5.5x and
+   * stopped dead — and that peak, not the duration alone, is what made the
+   * change feel like a flicker. Change one curve and the other has to follow.
    */
   @keyframes flap-top {
     0% {
@@ -258,14 +271,14 @@ const visibility = [
       transform: rotateX(0deg);
       opacity: 1;
       z-index: 3;
-      animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.45);
+      animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0.35);
     }
-    16.42% {
+    16.73% {
       transform: rotateX(-90deg);
       opacity: 1;
       z-index: 3;
     }
-    16.43% {
+    16.74% {
       opacity: 0;
       z-index: 0;
     }
@@ -281,26 +294,26 @@ const visibility = [
       opacity: 1;
       z-index: 3;
     }
-    2.14% {
+    2.45% {
       transform: rotateX(90deg);
       opacity: 1;
       z-index: 3;
-      animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+      animation-timing-function: cubic-bezier(0.25, 0.65, 0.35, 1);
     }
-    4.28% {
+    4.9% {
       transform: rotateX(0deg);
       opacity: 1;
       z-index: 3;
     }
-    4.29% {
+    4.91% {
       z-index: 1;
     }
-    18.56% {
+    19.18% {
       transform: rotateX(0deg);
       opacity: 1;
       z-index: 1;
     }
-    18.57% {
+    19.19% {
       opacity: 0;
     }
     100% {
