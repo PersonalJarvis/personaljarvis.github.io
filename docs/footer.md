@@ -162,9 +162,10 @@ licence on the right.
   of context is a set of unlabelled links; the visible label is the `<ul>`'s
   `aria-labelledby`, so the accessible name and the printed one cannot drift.
 - **No handle is written in this file.** `socialCounts.ts` is where the site
-  states which account is which — the X account is a personal one and the
-  project-named profile is defunct, so a handle typed from memory points at a
-  dead page. The footer maps its ids to platform names and nothing more.
+  states which account is which — the X account is the project's
+  `@PersonalJarvis` and not the maintainer's personal one, so a handle typed
+  from memory points at the wrong profile. The footer maps its ids to platform
+  names and nothing more.
 - **GitHub is deliberately not in "Follow".** The repository is already the
   first entry under "Project", and the same destination twice in one footer
   reads as an oversight rather than as emphasis.

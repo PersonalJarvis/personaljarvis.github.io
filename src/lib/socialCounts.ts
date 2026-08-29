@@ -6,9 +6,11 @@
  * invite code of its own — those live here and in
  * `scripts/fetch-social-counts.mjs`, so the identity of an account is stated
  * in two files instead of scattered across markup. That matters for one of
- * them in particular: the X account is @Ruben_Luetke, not @PersonalJarvis.
- * The project-named account is defunct (maintainer directive, 2026-07-18) and
- * a link written from memory points at a dead profile.
+ * them in particular: the X account is @PersonalJarvis, not @Ruben_Luetke.
+ * Maintainer directive of 2026-08-29, superseding the 2026-07-18 one that
+ * sent every X link to the personal profile: the project-named account is
+ * live and verified, and the site follows the project rather than a person.
+ * The figure in the X cell is that account's own follower count.
  *
  * `value` and `readAt` come from `src/data/social-counts.json`, which the
  * fetcher writes and a daily workflow refreshes. `live` is present only for
@@ -59,7 +61,7 @@ export const SOCIAL_STATS: SocialStat[] = [
   {
     id: "x",
     label: "Followers",
-    href: "https://x.com/Ruben_Luetke",
+    href: "https://x.com/PersonalJarvis",
     value: counts.platforms.x.value,
     readAt: counts.platforms.x.readAt,
   },

@@ -474,11 +474,13 @@ What did **not** change, and is still binding:
   the profile header and `social-counts.json` says exactly that
   (`"source": "profile-header-read-by-hand"`) rather than dressing it up as an
   API read.
-- **The account is the one that exists.** X is `@Ruben_Luetke`, not
-  `@PersonalJarvis` — the project-named account is defunct (maintainer
-  directive, 2026-07-18) and a link written from memory points at a dead
-  profile. Every handle lives in `socialCounts.ts` and the fetch script, never
-  in the section's markup.
+- **The account is the project's.** X is `@PersonalJarvis`, not the
+  maintainer's personal `@Ruben_Luetke` — maintainer directive of 2026-08-29,
+  superseding the 2026-07-18 one that pointed every X link at the personal
+  profile. The project-named account is live and verified, so this cell counts
+  the project's followers and is smaller than the personal figure would be.
+  Every handle lives in `socialCounts.ts` and the fetch script, never in the
+  section's markup.
 
 One thing worth saying plainly, because it is a design risk and not a data
 problem: these are small numbers, and a count-up on "6" is over in three

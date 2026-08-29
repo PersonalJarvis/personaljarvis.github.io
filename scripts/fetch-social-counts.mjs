@@ -91,14 +91,15 @@ const YOUTUBE_HANDLE = "PersonalJarvis";
 /** Resolved once from the channel page; the Data API wants an id, not a handle. */
 const YOUTUBE_CHANNEL_ID = "UC5fU9pU6jeGchEbriUwQBBg";
 /**
- * The X account is @Ruben_Luetke, not @PersonalJarvis.
+ * The X account is @PersonalJarvis, not the maintainer's own @Ruben_Luetke.
  *
- * The project-named account is defunct. Maintainer directive of 2026-07-18:
- * every X link in this project points at the personal account. Changing this
- * back because the name looks wrong would point the front page at a dead
- * profile.
+ * Maintainer directive of 2026-08-29, which supersedes the 2026-07-18 one
+ * that sent every X link to the personal profile. The project-named account
+ * is live and verified again, and the site follows the project rather than a
+ * person. The count read here is that account's own, so it is the smaller of
+ * the two figures on purpose — never carry the personal one over.
  */
-const X_HANDLE = "Ruben_Luetke";
+const X_HANDLE = "PersonalJarvis";
 const GITHUB_REPO = "PersonalJarvis/PersonalJarvis";
 const DISCORD_INVITE = "x7USduHxbc";
 

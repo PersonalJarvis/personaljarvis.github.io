@@ -29,10 +29,11 @@ import { SOCIAL_STATS, type SocialId } from "@/lib/socialCounts";
  * The accounts, by platform name.
  *
  * The handles themselves are NOT written here. `socialCounts.ts` is the one
- * place the site states which account is which — the X account is a personal
- * one and the project-named profile is defunct, so a handle typed from memory
- * points at a dead page. This map only turns its ids into the words a reader
- * recognises, which is the one thing that file has no opinion about.
+ * place the site states which account is which — the X account is the
+ * project's @PersonalJarvis and not the maintainer's personal one, so a
+ * handle typed from memory points at the wrong profile. This map only turns
+ * its ids into the words a reader recognises, which is the one thing that
+ * file has no opinion about.
  *
  * GitHub is deliberately absent: the repository is already the first entry
  * under "Project", and the same destination twice in one footer reads as an
