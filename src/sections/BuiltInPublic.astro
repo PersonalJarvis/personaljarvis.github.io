@@ -571,12 +571,20 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
 
   /* The head seam — the first of the card's three internal separators.
    *
-   * All three are `--hairline-soft`, the quieter of the two hairline tokens,
-   * one pixel, and nothing else: no shadow (the style gate rejects one and
-   * this system's depth is hairlines anyway), no second background, no radius.
-   * They mark seams that were previously implied by spacing alone; at
-   * `--hairline` they would have read as three more borders inside a bordered
-   * card.
+   * All three are `--hairline-strong`, one pixel, and nothing else: no shadow
+   * (the style gate rejects one and this system's depth is hairlines anyway),
+   * no second background, no radius. They mark seams that were previously
+   * implied by spacing alone.
+   *
+   * They shipped at `--hairline-soft` first, on the reasoning that anything
+   * louder would read as three more borders inside an already bordered card.
+   * That reasoning failed on the maintainer's monitor exactly the way
+   * `--hairline` failed for the page rules (see tokens.css § "The page rule"):
+   * the soft hairline sits under one point of separation from `--surface-card`,
+   * so the seams were not there at all. The maintainer asked for them stronger on
+   * 2026-08-29, so they carry the panel-outline token now. It stays a long way
+   * under `--rule`, which is what keeps the card's own edge the loudest line in
+   * the box and the three seams a clear step inside it.
    *
    * There is a cautionary tale behind drawing any seam in this repo — commit
    * 51efb59 removed one from the connection strip, where it struck a line
@@ -593,7 +601,7 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
     gap: var(--space-base);
     block-size: 44px;
     margin-block-end: var(--space-sm);
-    border-block-end: 1px solid var(--hairline-soft);
+    border-block-end: 1px solid var(--hairline-strong);
     padding-inline: var(--space-xs);
   }
 
@@ -735,7 +743,7 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
     max-block-size: var(--stage-cap);
     gap: var(--space-xs);
     margin: 0;
-    border-inline-start: 1px solid var(--hairline-soft);
+    border-inline-start: 1px solid var(--hairline-strong);
     padding: 0 0 0 var(--space-sm);
     list-style: none;
   }
@@ -756,7 +764,7 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
     inset-inline: var(--space-xs);
     inset-block-start: calc(-1 * var(--space-xs) / 2 - 0.5px);
     block-size: 1px;
-    background: var(--hairline-soft);
+    background: var(--hairline-strong);
     pointer-events: none;
   }
 
@@ -1009,7 +1017,7 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
       grid-template-rows: none;
       grid-auto-rows: minmax(0, auto);
       border-inline-start: 0;
-      border-block-start: 1px solid var(--hairline-soft);
+      border-block-start: 1px solid var(--hairline-strong);
       padding: var(--space-sm) 0 0;
     }
 
