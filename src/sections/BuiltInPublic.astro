@@ -144,7 +144,7 @@ const MARKS: Record<SocialId, ComponentType<{ className?: string }>> = {
 /**
  * The platform's name, for the link's accessible text only.
  *
- * On screen the cell reads "12 / SUBSCRIBERS" beside a logo, which is legible
+ * On screen the cell reads "12 SUBSCRIBERS" on one line beside a logo, legible
  * because the logo is right there. To a screen reader the logo is
  * `aria-hidden` and the link would announce as "12 Subscribers" — four links
  * on the page that never say where they go. The name is added visually-hidden
@@ -229,12 +229,18 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
 
       {/*
         Headline and standfirst sit on `content`, not on the `prose` column.
-        Everything in this section shares ONE left edge — the card and the stat
-        row below are content-width, and prose is centred inside content, so a
-        prose headline would start 300px further in and the section would read
-        as having two different left margins. The standfirst keeps a prose
-        MEASURE instead, through a `ch` limit, which is what "max prose width"
-        is actually protecting.
+        The head is CENTRED on that column — eyebrow, headline and standfirst
+        alike — at the maintainer's instruction on 2026-08-29: set flush left it
+        started exactly on the card's own left edge one line below, and reading
+        as stuck to that boundary was the complaint. Centring is a head
+        treatment only; the card and the stat row keep the content column's left
+        edge, which is what stops the section growing a second left margin.
+
+        The column is still `content` and not `prose`, because prose is centred
+        INSIDE content and 300px narrower — a prose head would centre on a
+        different axis than the card it sits over. The standfirst keeps a prose
+        MEASURE instead, through a `ch` limit that is now centred with it, which
+        is what "max prose width" is actually protecting.
 
         TWO BLOCK SPANS, NOT A `<br />`. The break was hard-coded, which is a
         layout decision frozen at one width — at the content step the two
@@ -448,10 +454,12 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
    * "Passt die Karte nicht, wird ihre Höhe reduziert, nicht die Kanal-Karten
    * weggelassen." So the height leads and the width follows it.
    *
-   * `465px` is everything else the section owes at that viewport, INSIDE the
+   * `440px` is everything else the section owes at that viewport, INSIDE the
    * two boundary rules: the band's own padding, the eyebrow, the headline, the
    * standfirst, the card chrome and its new head seam, the disclosure line, the
-   * stat row and the gaps between all of them. The breakdown is itemised in
+   * stat row and the gaps between all of them. It was 465px until the stat row
+   * put its captions beside the figures instead of under them, which took the
+   * row from 64.1px to 39.6px and handed the difference to the video. The breakdown is itemised in
    * docs/section-6-youtube.md § "The one number to tune"; when one of those
    * parts changes, re-measure and change THIS number, not the individual rules.
    *
@@ -464,7 +472,7 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
   [data-bip] {
     --stage-cap: clamp(
       190px,
-      calc(100svh - 465px - 2 * var(--section-inset)),
+      calc(100svh - 440px - 2 * var(--section-inset)),
       460px
     );
   }
@@ -475,6 +483,15 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
    * VoiceSwitch and Install. It is not shared as a utility because each
    * section's block is scoped and this one is global; the values are the
    * tokens either way, so there is one place to change them. */
+  /* The whole head is centred on the content column — see the markup above
+   * for the instruction behind it. One rule for all three parts, so the head
+   * cannot drift into two alignments when one of them is edited later. */
+  [data-bip] .bip-eyebrow,
+  [data-bip] .bip-headline,
+  [data-bip] .bip-standfirst {
+    text-align: center;
+  }
+
   [data-bip] .bip-eyebrow {
     color: var(--muted);
     font-size: var(--text-caption-upper);
@@ -492,7 +509,6 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
     font-size: var(--text-display-lg);
     letter-spacing: var(--tracking-display-lg);
     line-height: 1.2;
-    text-align: left;
   }
 
   /* One line per sentence, produced by the box and not by a `<br />`. On a
@@ -510,7 +526,7 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
   }
 
   /* The invitation, a step quieter than the claim. Same size, same tracking,
-   * same left edge — the only difference is the text colour, which is the
+   * same centre line — the only difference is the text colour, which is the
    * smallest instrument this system has for saying "second". */
   [data-bip] .bip-headline__invite {
     color: var(--body);
@@ -523,6 +539,11 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
      * pixels of the 672px floor at the base font size and, unlike a pixel
      * value, stays a measure as the type scales. */
     max-inline-size: 62ch;
+    /* The measure is a BOX, so centring the text inside it is not enough: left
+       unset, the box stays flush left and only its lines centre inside it,
+       which puts the standfirst's centre axis left of the headline's on any
+       window wider than the measure. */
+    margin-inline: auto;
     color: var(--body);
     font-size: var(--text-body);
     line-height: 1.6;
@@ -827,13 +848,27 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
     border-inline-start: 1px solid var(--hairline);
   }
 
+  /* Number and caption sit SIDE BY SIDE, not stacked — the maintainer's
+   * instruction on 2026-08-29: a cell is around 300px wide and the caption is
+   * roughly 110px of it, so the width was there and stacking spent height the
+   * section has to buy back from the video.
+   *
+   * `wrap` is the escape hatch rather than a media query. Below the width where
+   * "SUBSCRIBERS" no longer fits beside its figure the caption drops under it
+   * again, which is the old shape and still correct — the row-gap keeps the
+   * `--space-xs` it had when that was the only shape.
+   *
+   * Baselines, not centres: the caption sits ON the figure's baseline, so the
+   * four cells read as one line of type rather than as four labels floating
+   * beside four numbers. */
   [data-bip] .bip-stats a {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-xs);
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-xs) var(--space-sm);
     /* Air around the divider, and none at the two ends of the row: the first
-     * number has to start exactly on the same left edge as the headline, the
-     * standfirst and the card, or the section grows a fourth left margin. */
+     * number has to start exactly on the same left edge as the card, or the
+     * section grows a third left margin. */
     padding-inline: var(--space-lg);
     color: inherit;
     text-decoration: none;
@@ -857,9 +892,16 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
     line-height: 1.1;
   }
 
+  /* `baseline` here as well, and it is doing something different from the rule
+   * on the cell: a flex container hands its own baseline up from the first item
+   * that takes part in baseline alignment. With the mark first and centred, the
+   * caption would hand up the SVG's bottom edge and the label would ride two or
+   * three pixels high against the figure. Aligning the text to the baseline and
+   * centring only the mark inside the line makes the label's own baseline the
+   * one the cell sees. */
   [data-bip] .bip-statcaption {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: var(--space-xs);
     color: var(--muted);
     font-size: var(--text-caption-upper);
@@ -886,6 +928,7 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
    * which fills its box corner to corner. */
   [data-bip] .bip-statmark {
     flex: none;
+    align-self: center;
     inline-size: auto;
     block-size: 13px;
   }
@@ -929,6 +972,20 @@ const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
 
     [data-bip] .bip-entry {
       grid-template-columns: minmax(0, 160px) minmax(0, 1fr);
+    }
+
+    /* The caption goes back UNDER the figure. Four cells across a window this
+     * narrow are about 165-220px each, which is the width where SOME captions
+     * still fit beside their figure and others do not: "STARS" stayed on the
+     * line while "SUBSCRIBERS" dropped below it, and a row with two cells
+     * stacked and two not reads as a fault rather than as a layout. The row
+     * switches shape together or not at all, and this is the width where it
+     * switches. The `wrap` on the cell stays underneath as a last resort for
+     * a reader who has scaled the type up. */
+    [data-bip] .bip-stats a {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-xs);
     }
   }
 

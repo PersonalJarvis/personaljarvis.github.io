@@ -100,11 +100,11 @@ moved to the band with the marker.
 
 ```css
 [data-bip] {
-  --stage-cap: clamp(190px, calc(100svh - 465px - 2 * var(--section-inset)), 460px);
+  --stage-cap: clamp(190px, calc(100svh - 440px - 2 * var(--section-inset)), 460px);
 }
 ```
 
-`465px` is everything in the section other than the video itself, measured
+`440px` is everything in the section other than the video itself, measured
 against the built page at 1440×900:
 
 | Part | Height |
@@ -120,10 +120,10 @@ against the built page at 1440×900:
 | Gap | 12px |
 | Disclosure line | 19.5px |
 | Gap | 24px |
-| Stat row | 64.1px |
+| Stat row, one line | 39.6px |
 | Band padding, bottom | 24px |
 | Bottom boundary rule | 1px |
-| **Total** | **464.7px → 465px** |
+| **Total** | **440.2px → 440px** |
 
 If any of those change, re-measure and change this number — not the individual
 rules.
@@ -158,20 +158,21 @@ built page:
 
 | Viewport | Section height | Inset per side | Video |
 |---|---|---|---|
-| 1440×900 | **900px exactly** | 63px | 549×309, **45.2%** of the card |
+| 1440×900 | **900px exactly** | 63px | 594×334, **48.8%** of the card |
 | 1920×1200 | **1200px exactly** | 80px | 804×452, **66.1%** of the card |
-| 1280×900 | 900px exactly | 63px | 549×309 |
-| 1024×900 | 900px exactly | 63px | 549×309 |
+| 1280×900 | 900px exactly | 63px | 594×334 |
+| 1024×900 | 900px exactly | 63px | 576×324 |
 
 The video is smaller than it was before the two rules existed — it was 53% of
-the card when the section had one rule and no inset. 126px of the height went
+the card when the section had one rule and no inset. The 25px the one-line stat
+row gave back went here, which is the 45.2% → 48.8% step. 126px of the height went
 to the frame the maintainer asked for, and the video is the part of this
 section that gives way. That is the trade, stated rather than hidden.
 
 **The one-screen guarantee has a floor.** `--stage-cap` bottoms out at 190px,
 below which the video stops shrinking, so the section fits a window down to
-about **762px** of viewport height and is taller than the window below that. At
-1440×700 it is 753px against a 700px window. A video that keeps shrinking is
+about **733px** of viewport height and is taller than the window below that. At
+1440×700 it is 728px against a 700px window. A video that keeps shrinking is
 worse than a section that scrolls by 50px.
 
 **The playlist must never decide the card's height.** It did once: the entry
@@ -188,9 +189,26 @@ rules still draw, still at `--section-inset` from the section's edges.
 
 ---
 
+## The head
+
+**The head is centred; the card and the stat row are not.** Set flush left, the
+eyebrow and the headline started on exactly the same x as the card's own left
+edge one line below, and the maintainer read that as the type being stuck to
+the boundary rather than as an alignment (2026-08-29). Centring is a head
+treatment only — eyebrow, headline and standfirst — and the boxes below keep
+the content column's left edge, so the section still has one left margin and
+not two.
+
+It is centred on `content`, not on `prose`: prose is centred inside content and
+300px narrower, so a prose head would centre on a different axis than the card
+it sits over. The standfirst keeps its 62ch measure and gets `margin-inline:
+auto` with it — centring the text inside a box that is still flush left would
+put the standfirst's centre axis left of the headline's on any window wider
+than the measure.
+
 ## The headline
 
-Two sentences, two lines, left-aligned. It is built from **two block spans**,
+Two sentences, two lines, centred. It is built from **two block spans**,
 never a `<br />`. The hard break was there and it was wrong for three reasons,
 each of which the block version fixes:
 
@@ -204,7 +222,7 @@ each of which the block version fixes:
   contribute one.
 - **Nothing led.** The two sentences were the same colour, so the eye had no
   order. The claim is now `--ink` and the invitation `--body`: same size, same
-  tracking, same left edge, one step of contrast between them. It is the
+  tracking, same centre line, one step of contrast between them. It is the
   smallest instrument this system has for saying "second".
 
 Each span carries `text-wrap: balance`, so a sentence forced to wrap on a
@@ -326,9 +344,15 @@ Styling reference is meuze.ai's stat row, and the whole of it is:
 - one horizontal row of **equal cells**, `repeat(4, minmax(0, 1fr))`
 - **thin vertical hairlines between them and nothing else** — no card, no
   fill, no border round a cell, no radius. The divider is the only chrome
-- a **large plain number on top**, `--text-display-lg`, tabular, `--ink`
-- a **tiny uppercase caption underneath**, `--text-caption-upper` with
-  `--tracking-caption-upper`, in `--muted`
+- a **large plain number**, `--text-display-lg`, tabular, `--ink`
+- a **tiny uppercase caption beside it**, `--text-caption-upper` with
+  `--tracking-caption-upper`, in `--muted`, sitting on the figure's baseline.
+  It was stacked under the figure until 2026-08-29, when the maintainer asked
+  for it alongside: a cell is around 300px wide and the caption is roughly
+  110px of it, so the width was there and the stack was spending height the
+  section has to buy back from the video. `flex-wrap` is the escape hatch
+  rather than a media query — where the caption no longer fits beside its
+  figure it drops back under it
 - where the reference puts a small square bullet before the caption, **ours
   puts the platform's own brand mark**
 
@@ -336,8 +360,8 @@ The dividers go on `li + li`, never as a border on every cell: the row's outer
 edges are the rails, and a second hairline a pixel beside a rail is exactly the
 rendering fault this page's chrome is careful to avoid. The first cell has no
 inline-start padding either, so the first number starts on the same left edge
-as the headline, the standfirst and the card. Four left margins in one section
-is three too many.
+as the card above it. Three left margins in one section is two too many — and
+the head, which is centred, is not one of them.
 
 ### The marks
 
@@ -503,6 +527,7 @@ does not rediscover it.
 | Stat figures in the server-rendered HTML | **12, 26, 31, 6** — never `0` |
 | First stat cell against the band's left edge | **0.0px** — one left margin |
 | Stat row at 420px wide | two columns, cells at the same two x positions |
+| Stat cell shape | one line at 1024px and up, stacked below it — never mixed within a row |
 | Requests to any Google host on load | 0 |
 | Requests after pressing play | 1, to `youtube-nocookie.com` |
 | Style gate | `103 files, no violations` |
