@@ -33,15 +33,23 @@ const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <
   <!--
     Nav sits on the `full` step: background edge to edge, content inside.
 
-    Its bottom edge is NOT a border on this band any more. That border ran the
-    full width of the window, which made it the one horizontal line on the page
-    that did not start and end on a rail — and the hero had no opening rule of
-    its own, so the marker had no corner to start from and the page's first
-    boundary was drawn to a different rule than all the others. The line is now
-    the hero's own `.section-rule`, one pixel below, rail to rail like every
-    other section boundary (maintainer, 2026-08-29).
+    Its bottom edge is not a `border-b` on the band any more: that border ran
+    the full width of the window, the one horizontal line on the page that did
+    not start and end on a rail. It is a `.section-rule` in a Container instead,
+    so it spans exactly the two rails like every other section boundary and
+    gives the marker a corner to start from (maintainer, 2026-08-29).
+
+    IT HAS TO LIVE INSIDE THIS BAND, not at the top of the hero's box below.
+    Drawn there it is invisible: `h-16` is 4rem against a root size that scales
+    with the viewport, so the band's bottom edge lands on a FRACTION of a device
+    pixel (75.83px at 1.5x), and a sticky opaque band is a composited layer that
+    snaps its own edge up to the next whole one — straight over a hairline that
+    begins exactly where it ends. Inside the band the line is painted by the
+    same layer and nothing can round over it. It also keeps the line pinned
+    under the nav for as long as the nav is pinned, which is what the eye
+    expects of a band with an edge.
   -->
-  <header class="sticky top-0 z-30 h-16 bg-canvas">
+  <header class="sticky top-0 z-30 h-16 bg-canvas relative">
     <Container width="content" class="flex h-16 items-center justify-between">
       <span class="text-[18px] font-semibold text-ink">Personal Jarvis</span>
       <nav class="flex items-center gap-7 text-[14px] font-medium text-body">
@@ -55,6 +63,10 @@ const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <
         </a>
       </nav>
     </Container>
+
+    <Container width="content" class="pointer-events-none absolute inset-x-0 bottom-0">
+      <div class="section-rule"></div>
+    </Container>
   </header>
 
   <!--
@@ -65,12 +77,8 @@ const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <
     can actually see. `SectionTrack` measures the box it is dropped into, so
     naming the box is all it takes.
   -->
-  <div class="relative grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)]">
+  <div class="relative grid min-h-0 grid-rows-[auto_minmax(0,1fr)]">
     <SectionTrack />
-
-    <Container width="content">
-      <div class="section-rule"></div>
-    </Container>
 
     <div class="pt-[5svh]">
       <Container width="prose">

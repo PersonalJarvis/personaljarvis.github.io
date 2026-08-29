@@ -277,6 +277,17 @@ the one horizontal line on the page running the full width of the window
 instead of rail to rail, which also left the hero with no corner for the marker
 to start from. One line, drawn like every other boundary, does both jobs.
 
+**That line is drawn INSIDE the nav band, not at the top of the hero's box.** It
+is the one rule on the page whose position is not its section's own top edge,
+and it has to be: `h-16` is 4rem against a root size that scales with the
+viewport, so the band's bottom edge lands on a fraction of a device pixel
+(75.83px at 1.5x), and a sticky opaque band is a composited layer that snaps its
+own edge up to the next whole pixel — straight over a hairline beginning exactly
+where it ends. The line is present in the DOM, correct in the box model, and
+invisible on screen. Inside the band the same layer paints it and nothing can
+round over it. A vertical rail never shows this because its blur is spread down
+its whole length; a 1px horizontal line at a layer boundary is swallowed whole.
+
 Every section below gets its own, the strip under the hero included.
 
 ### Vertical dividers between columns
@@ -579,6 +590,8 @@ nothing — test with a real one.)
   then snaps back to it
 - `spanProgress` for an ordinary section: it is the pinned-track span, and on a
   section barely taller than the window it collapses to a few pixels
+- A hairline that begins exactly where a sticky opaque layer ends. The layer
+  snaps its edge to a whole device pixel and paints over the line
 - A CSS transition on the marker's position, which makes it lag the scroll
 - Marker positions from stored `offsetTop` values, which go stale on every
   layout change
