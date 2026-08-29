@@ -2,34 +2,48 @@
 /**
  * Section — who is out there.
  *
- * One number and one globe. The number is how many people have starred the
- * repository; the marks are the ones who say on their GitHub profile where
- * they are. See docs/section-globe.md for the whole contract.
+ * One number and one globe. The number is how many GitHub stars the repository
+ * has; the marks are the stargazers who say on their profile where they are.
+ * See docs/section-globe.md for the whole contract.
+ *
+ * THE SECTION IS EXACTLY ONE VIEWPORT. `section-full-height` sets the floor and
+ * the body is a `flex-1` box that centres what it holds, so surplus height on a
+ * tall monitor becomes air above and below rather than a gap in the middle —
+ * the same construction as `Install.astro`, and the same reason. The floor is a
+ * MINIMUM: on a short window the content grows past one screen and the page
+ * scrolls instead of clipping.
+ *
+ * The globe is what makes that work or not, because it is square and therefore
+ * as tall as it is wide. It is capped at `min(column width, viewport height)`,
+ * so on a wide screen the column governs and on a short one the screen does.
  *
  * THE NUMBER IS TRUE AT THE MOMENT IT IS READ. It is rendered here from the
- * last build, and the browser then asks GitHub for the current figure and
- * moves to it if it has changed. That call is public and anonymous, so it
- * needs no token and no server of ours; if it fails for any reason the built
- * figure stands. See StarGlobe.tsx.
+ * last build, and the browser then asks GitHub for the current figure and moves
+ * to it if it has changed. That call is public and anonymous, so it needs no
+ * token and no server of ours; if it fails for any reason the built figure
+ * stands. See StarGlobe.tsx.
  *
- * THE MARKS TRAIL THE NUMBER, AND THE COPY SAYS SO. Locating a stargazer needs
- * an authenticated request, which a static page cannot make without handing
- * the token to everyone who reads the source, so the map is drawn at build
- * time by scripts/fetch-stargazers.mjs and refreshed by a scheduled workflow.
- * The standfirst therefore claims only what is true: this many people said
- * where they are, and each mark is one of those places. It never claims to
- * show everyone.
+ * THE COPY STATES WHAT IS MISSING, NOT ONLY WHAT IS THERE. Most GitHub profiles
+ * carry no location, so most stargazers cannot be placed at all — far more are
+ * absent from the globe than are on it. A visualisation that shows seven marks
+ * and says nothing invites the reader to believe seven is the number. The
+ * standfirst therefore says the count is live, says how many places the globe
+ * marks, and says why the rest are not there.
+ *
+ * The breakdown is deliberately written WITHOUT arithmetic against the live
+ * count. "7 places" describes the marks, which come from the same build as the
+ * sentence; "24 of 31 could not be placed" would be stale the moment someone
+ * stars the repository, which is the one thing this section promises will show
+ * up immediately.
  *
  * THE FIGURE IS NOT A HEADLINE. It is set larger than the hero's h1 tops out
- * at, which looks like a contradiction of docs/design.md's "exactly one
- * largest line" and is not: that rule is about display TYPE, and a two-digit
- * number carries a fraction of the ink of a twelve-word sentence at the same
- * size. The hero still owns the largest line on the page. This owns the
- * largest single thing, which is a different job.
+ * at, which looks like a contradiction of docs/design.md's "exactly one largest
+ * line" and is not: that rule is about display TYPE, and a two-digit number
+ * carries a fraction of the ink of a twelve-word sentence at the same size.
  *
- * Widths come from the one Container, as everywhere else. No max-width is
- * named in this file — docs/layout.md reserves that for widths.ts and
- * layout.css, and scripts/check-style.mjs enforces it.
+ * Widths come from the one Container. No max-width is named in this file —
+ * docs/layout.md reserves that for widths.ts and layout.css, and
+ * scripts/check-style.mjs enforces it.
  */
 import Container from "@/components/Container.astro";
 import { StarCount, StarGlobe } from "@/components/globe/StarGlobe";
@@ -37,58 +51,126 @@ import stargazers from "@/data/stargazers.json";
 
 const { repo, count, placed, clusters } = stargazers;
 
-/**
- * "7 of them" reads better than "7 people", and both beat a percentage — a
- * share implies a sample, and this is a census of a small number.
- */
-const placedLabel = placed === 1 ? "One of them says" : `${placed} of them say`;
+const places = placed === 1 ? "one place" : `${clusters.length} places`;
 ---
 
-<section id="stargazers">
+<section id="stargazers" class="section-full-height relative flex flex-col">
   <Container width="content">
-    <!-- The rule sits inside the container so it starts and ends on a rail,
-         and the vertical padding travels with it. Same as every section. -->
-    <div class="section-rule py-24">
-      <div class="grid items-center gap-14 lg:grid-cols-12 lg:gap-8">
-        <div class="lg:col-span-5">
+    <!-- The rule sits inside the container so it starts and ends on a rail.
+         Its vertical padding has moved onto the body below, which is the box
+         that has to give when the window is short. -->
+    <div class="section-rule"></div>
+  </Container>
+
+  <div class="stargazers-body flex flex-1 flex-col justify-center">
+    <Container width="content">
+      <div class="grid items-center gap-12 lg:grid-cols-12 lg:gap-10">
+        <div class="lg:col-span-4">
           <p class="stargazers-eyebrow">In the open</p>
 
-          <p
-            class="mt-5 leading-[1.05] text-ink"
-            style="font-size: clamp(2.5rem, 1.9rem + 2.4vw, 4rem); letter-spacing: var(--tracking-display-mega)"
-          >
-            <StarCount client:visible repo={repo} value={count} />
+          <!-- The unit sits beside the figure on its own baseline rather than
+               in a sentence below it. A number needs to say what it counts,
+               and "31" over "people have starred Personal Jarvis" made the
+               reader hold the figure in mind for a line before finding out. -->
+          <p class="stargazers-figure">
+            <span class="stargazers-count">
+              <StarCount client:visible repo={repo} value={count} />
+            </span>
+            <span class="stargazers-unit">GitHub stars</span>
           </p>
 
-          <p class="mt-4 text-[var(--text-display-sm)] leading-snug text-ink">
-            people have starred Personal Jarvis.
+          <hr class="stargazers-hr" />
+
+          <p class="stargazers-note">
+            Live from GitHub, counted again every time this page loads.
           </p>
 
-          <hr class="mt-10 border-0 border-t border-hairline" />
-
-          <p class="mt-5 text-[var(--text-body-sm)] text-muted">
-            {placedLabel} where they are. Each mark on the globe is one of those
-            places.
+          <p class="stargazers-note stargazers-note-muted">
+            The globe marks {places}. Most GitHub profiles carry no location at
+            all, so most stargazers cannot be placed — and none are placed by
+            guesswork.
           </p>
         </div>
 
-        <div class="lg:col-span-7">
+        <div class="stargazers-globe lg:col-span-8">
           <!-- client:visible, not client:load: the globe is most of the way
                down the page, and a rotation nobody is looking at is a frame
                budget spent on nothing. -->
           <StarGlobe client:visible clusters={clusters} />
         </div>
       </div>
-    </div>
-  </Container>
+    </Container>
+  </div>
 </section>
 
 <style>
+  /* A floor, not a fixed amount. On a tall monitor the flex box is taller than
+     its content and `justify-center` spreads the surplus evenly; on a short
+     laptop the floor is all there is and the section grows past one screen,
+     which `section-full-height` allows because it sets a minimum. */
+  .stargazers-body {
+    padding-block: clamp(2rem, 4svh, 4.5rem);
+  }
+
   .stargazers-eyebrow {
     color: var(--muted);
     font-size: var(--text-caption-upper);
     font-weight: 600;
     letter-spacing: var(--tracking-caption-upper);
     text-transform: uppercase;
+  }
+
+  .stargazers-figure {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2em 0.5rem;
+    margin-block-start: 1.25rem;
+    color: var(--ink);
+  }
+
+  .stargazers-count {
+    font-size: clamp(2.5rem, 1.9rem + 2.4vw, 4rem);
+    line-height: 1;
+    letter-spacing: var(--tracking-display-mega);
+  }
+
+  .stargazers-unit {
+    font-size: var(--text-display-sm);
+    letter-spacing: var(--tracking-display-sm);
+  }
+
+  .stargazers-hr {
+    margin-block-start: 2rem;
+    border: 0;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .stargazers-note {
+    margin-block-start: 1.25rem;
+    font-size: var(--text-body-sm);
+    color: var(--body);
+  }
+
+  .stargazers-note-muted {
+    color: var(--muted);
+  }
+
+  /*
+   * The globe is square, so a cap on its width is a cap on its height too.
+   *
+   * `100%` alone lets the column decide, which is right until the window is
+   * shorter than the column is wide — then a square that fills the column is
+   * taller than the screen and the section stops being one viewport. The svh
+   * term is not a content width in the sense docs/layout.md forbids: the
+   * container still governs through `100%`, and this only stops the graphic
+   * outgrowing the screen it has to fit on.
+   *
+   * The subtraction is the section's own furniture: the rule, the body's
+   * padding at its ceiling, and the nav the page keeps above everything.
+   */
+  .stargazers-globe :global(.star-globe) {
+    width: min(100%, calc(100svh - 14rem));
+    margin-inline: auto;
   }
 </style>

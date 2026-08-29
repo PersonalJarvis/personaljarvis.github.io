@@ -11,14 +11,31 @@ colours from [`design.md`](design.md); this file governs the rest.
 
 ## The claim the section makes
 
-**This many people starred it. These are the places the ones who say where they
-are come from.** Nothing more. In particular the section never implies the map
-is complete — most GitHub profiles have no location, and the copy states the
-number that do.
+**This many GitHub stars. These are the places the ones who say where they are
+come from.** Nothing more.
 
 That restraint is the whole reason the section is trustworthy. A globe covered
 in marks that were guessed at is a decoration; a globe with seven honest marks
 and a sentence saying seven is a fact.
+
+### The copy has three obligations
+
+1. **Name the unit.** The figure says "GitHub stars", beside the number on its
+   own baseline rather than in a sentence underneath it. A number over a line of
+   prose makes the reader hold the figure in mind until they find out what it
+   counts.
+2. **Say it is live**, because it is, and because a visitor has no way to tell a
+   live figure from one baked in six months ago.
+3. **Say who is missing.** Most GitHub profiles carry no location, so most
+   stargazers cannot be placed at all — far more are absent from the globe than
+   are on it. A visualisation showing seven marks and saying nothing invites the
+   reader to believe seven is the number. The standfirst names how many places
+   are marked and why the rest are not there.
+
+**No arithmetic against the live count in the copy.** "7 places" describes the
+marks, which come from the same build as the sentence. "24 of 31 could not be
+placed" would be wrong the moment someone stars the repository — which is the
+one thing this section promises will show up immediately.
 
 ---
 
@@ -71,6 +88,27 @@ visitor of a marketing site would be indefensible even though every field in it
 is individually public.
 
 **Never add a login, a URL or an avatar to that file.**
+
+---
+
+## The section is exactly one viewport
+
+`section-full-height` sets the floor and the body is a `flex-1` box that centres
+what it holds, so surplus height on a tall monitor becomes air above and below
+rather than a gap in the middle. Same construction as `Install.astro`, same
+reason.
+
+The floor is a **minimum**. On a short window the content grows past one screen
+and the page scrolls; nothing is ever clipped. Measured: 1440x900, 1280x720,
+1024x640, 834x1112 and 390x844 all come out at exactly one viewport, and
+390x600 overshoots by 93px and scrolls, which is the intended fallback.
+
+The globe is what makes that work or not, because it is square and therefore as
+tall as it is wide. It is capped at `min(100%, 100svh - 14rem)`: on a wide
+screen the column governs, on a short one the screen does. The svh term is not
+the bare viewport width `layout.md` forbids — the container still governs
+through the `100%`, and this only stops the graphic outgrowing the screen it
+has to fit on.
 
 ---
 
@@ -228,4 +266,7 @@ part of `npm run verify`.
 - Guessing at an unresolved location, or defaulting it to a country
 - A count-up animation on page load. The number animates when it has *changed*,
   which is information; animating always is decoration
-- Claiming in copy that the globe shows everyone
+- Claiming in copy that the globe shows everyone, or omitting why most
+  stargazers are not on it
+- Arithmetic in the copy that mixes the live count with the build-time
+  breakdown — it goes wrong on the next star
