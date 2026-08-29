@@ -83,15 +83,17 @@ const { nested = false } = Astro.props;
 </div>
 
 <script>
-  import { TURN_DOWN, sideForIndex, trackPath } from "@/lib/sectionTrack";
-  import { spanProgress } from "@/lib/scrollSpan";
+  import { sideForIndex, trackPath } from "@/lib/sectionTrack";
+  import { sectionProgress, spanProgress } from "@/lib/scrollSpan";
 
   /* Half the 8px square. The marker is placed by its top-left corner. */
   const HALF = 4;
 
   /* One rAF for the whole page, not one per section. Each loop would force its
-   * own layout read, and a page with six sections would then measure six
-   * rectangles a frame whether or not any of them is on screen. */
+   * own layout read, and eight sections would then flush layout eight times a
+   * frame; read together they cost a single pass. It also has to be one loop,
+   * because deciding WHICH section owns the square is a decision about all of
+   * them at once. */
   const tracks = Array.from(document.querySelectorAll<HTMLElement>("[data-section-track]"))
     .map((layer, index) => {
       const box = layer.querySelector<HTMLElement>(".section-track__box")!;
@@ -103,34 +105,62 @@ const { nested = false } = Astro.props;
        * per section is a hand-maintained answer that goes wrong the moment the
        * page is reordered. Written before getTotalLength below reads it. */
       path.setAttribute("d", trackPath(sideForIndex(index)));
-      /* The tall track for a sticky section, the section itself otherwise. */
-      const driver = layer.closest<HTMLElement>("[data-scroll-span]") ?? layer.closest("section");
-      return driver ? { box, path, marker, driver, length: 0, placed: -1, onScreen: false } : null;
+      /* WHAT DRIVES THE PROGRESS. A sticky section is driven by its tall track;
+       * everything else by the very box the marker is drawn in, which is the
+       * element `SectionTrack` was dropped into. Not by `closest("section")`:
+       * the hero's box starts under the nav rather than at the section's top
+       * edge, and measuring the progress against a box the marker does not walk
+       * puts the square off its own corners. */
+      const sticky = layer.closest<HTMLElement>("[data-scroll-span]");
+      const driver = sticky ?? layer.parentElement;
+      return driver
+        ? { box, path, marker, driver, sticky: sticky !== null, length: 0, placed: -1 }
+        : null;
     })
     .filter((t): t is NonNullable<typeof t> => t !== null);
 
   if (tracks.length > 0) {
     /* getTotalLength is a measurement of the path in its own user units, so it
-     * is the same 220 for every section and survives any resize. Read once. */
+     * is the same 200 for every section and survives any resize. Read once. */
     for (const track of tracks) track.length = track.path.getTotalLength();
 
-    /* Nothing measures or paints while its section is off screen. The margin is
-     * generous on the bottom so the marker is already in place by the time the
-     * section's first pixel arrives, and past the top by the length of the
-     * tail, which hangs below the box. */
-    const watcher = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          const track = tracks.find((t) => t.box === entry.target);
-          if (track) track.onScreen = entry.isIntersecting;
-        }
-      },
-      { rootMargin: "300px" },
-    );
-    for (const track of tracks) watcher.observe(track.box);
+    /* THERE IS ONE SQUARE ON THE PAGE, NOT ONE PER SECTION.
+     *
+     * Every section still owns a marker element — that is what keeps the
+     * geometry in the section's own box, on its own two rails — but only the
+     * section the reader is currently inside paints it. Without this, every
+     * section parks its square in its entry corner and waits there, so the page
+     * shows a dot in every corner at once and the moving one is lost among
+     * them. The maintainer asked for a single dot on 2026-08-29.
+     *
+     * The owner is the LAST section whose driver has crossed the top of the
+     * window, and the first section before anything has. Sections tile the
+     * document, so that rule names exactly one at every scroll position, with
+     * no gap between two of them and no moment when two qualify.
+     *
+     * It also lands the hand-over on a single point: a section reaches progress
+     * 1 — its exit corner — at the very moment its bottom edge touches the top
+     * of the window, which is the same moment the section below crosses it and
+     * takes over at ITS progress 0, the entry corner directly beneath. The
+     * square goes out on one corner and comes back on the same pixel. */
+    const ownerIndex = () => {
+      let owner = 0;
+      for (let i = 0; i < tracks.length; i++) {
+        if (tracks[i].driver.getBoundingClientRect().top <= 0) owner = i;
+      }
+      return owner;
+    };
 
     const place = (track: (typeof tracks)[number]) => {
-      const progress = spanProgress(track.driver.getBoundingClientRect(), window.innerHeight);
+      const rect = track.driver.getBoundingClientRect();
+      /* How much scrolling the document has left once this box's top reaches
+       * the top of the window. Only the last section is ever limited by it —
+       * see sectionProgress. */
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const reach = maxScroll - (rect.top + window.scrollY);
+      const progress = track.sticky
+        ? spanProgress(rect, window.innerHeight)
+        : sectionProgress(rect, reach);
       /* A sub-pixel move is a repaint nobody can see. */
       if (Math.abs(progress - track.placed) < 0.0004) return;
       track.placed = progress;
@@ -149,22 +179,22 @@ const { nested = false } = Astro.props;
       const y = (point.y / 100) * height + 0.5 - HALF;
 
       track.marker.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-      /* Past the exit corner the marker is on the tail, hanging below this
-       * section and over the top of the next one — on the same rail the next
-       * section enters on, which is what makes the hand-off read as continuous.
-       * It stays visible for that reason, but the next section's own marker is
-       * standing on that rail too, so it fades out along the tail rather than
-       * running the whole way down beside it. */
-      track.marker.style.opacity =
-        progress <= TURN_DOWN
-          ? "1"
-          : String(1 - (progress - TURN_DOWN) / (1 - TURN_DOWN));
     };
 
     let frame = 0;
+    let shown = -1;
     const loop = () => {
       frame = requestAnimationFrame(loop);
-      for (const track of tracks) if (track.onScreen) place(track);
+      const owner = ownerIndex();
+      if (owner !== shown) {
+        /* `visibility`, not `display`: it costs no layout, and the square that
+         * is handing over has already been placed on the shared corner, so the
+         * swap happens on one pixel with nothing to see. */
+        if (shown >= 0) tracks[shown].marker.style.visibility = "hidden";
+        tracks[owner].marker.style.visibility = "visible";
+        shown = owner;
+      }
+      place(tracks[owner]);
     };
 
     /* A resize moves every corner and every line, so nothing may be trusted. */

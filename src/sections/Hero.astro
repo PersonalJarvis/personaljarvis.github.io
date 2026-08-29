@@ -20,6 +20,7 @@
 import { Image } from "astro:assets";
 import Container from "@/components/Container.astro";
 import DemoStage from "@/components/demo/DemoStage";
+import SectionTrack from "@/components/SectionTrack.astro";
 import backdrop from "@/assets/hero/stage-backdrop.webp";
 
 // The frame is the `content` step, so on a wide screen the backdrop only
@@ -28,9 +29,19 @@ import backdrop from "@/assets/hero/stage-backdrop.webp";
 const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <img sizes> fetch hint, not a layout width
 ---
 
-<section class="grid min-h-svh grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden">
-  <!-- Nav sits on the `full` step: background edge to edge, content inside. -->
-  <header class="sticky top-0 z-30 h-16 border-b border-hairline bg-canvas">
+<section class="grid min-h-svh grid-rows-[auto_minmax(0,1fr)] overflow-hidden">
+  <!--
+    Nav sits on the `full` step: background edge to edge, content inside.
+
+    Its bottom edge is NOT a border on this band any more. That border ran the
+    full width of the window, which made it the one horizontal line on the page
+    that did not start and end on a rail — and the hero had no opening rule of
+    its own, so the marker had no corner to start from and the page's first
+    boundary was drawn to a different rule than all the others. The line is now
+    the hero's own `.section-rule`, one pixel below, rail to rail like every
+    other section boundary (maintainer, 2026-08-29).
+  -->
+  <header class="sticky top-0 z-30 h-16 bg-canvas">
     <Container width="content" class="flex h-16 items-center justify-between">
       <span class="text-[18px] font-semibold text-ink">Personal Jarvis</span>
       <nav class="flex items-center gap-7 text-[14px] font-medium text-body">
@@ -46,69 +57,85 @@ const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <
     </Container>
   </header>
 
-  <div class="pt-[5svh]">
-    <Container width="prose">
-      <!--
-        Capped well below the old 6rem: the headline is the one element that
-        decides whether the stage still has room, and three lines of it is the
-        shape the maintainer asked for (2026-08-29).
-      -->
-      <h1
-        class="text-center text-balance leading-[1.08] tracking-[-1.5px]"
-        style="font-size: clamp(1.875rem, 1.3rem + 1.5vw, 3.25rem)"
-      >
-        Speak to your computer and it does the work
-      </h1>
+  <!--
+    THE HERO'S OWN BOX — everything under the nav. It is a separate element and
+    not the `<section>` because the section's top edge is the top of the NAV,
+    and a marker starting there would begin its walk behind an opaque sticky
+    band. This box starts on the rule instead, which is the corner the reader
+    can actually see. `SectionTrack` measures the box it is dropped into, so
+    naming the box is all it takes.
+  -->
+  <div class="relative grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)]">
+    <SectionTrack />
 
-      <div class="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-        <a
-          href="#install"
-          class="inline-flex min-h-[44px] items-center justify-center rounded-full bg-ink px-6 text-[15px] font-medium text-on-ink transition-colors hover:bg-ink-active"
+    <Container width="content">
+      <div class="section-rule"></div>
+    </Container>
+
+    <div class="pt-[5svh]">
+      <Container width="prose">
+        <!--
+          Capped well below the old 6rem: the headline is the one element that
+          decides whether the stage still has room, and three lines of it is the
+          shape the maintainer asked for (2026-08-29).
+        -->
+        <h1
+          class="text-center text-balance leading-[1.08] tracking-[-1.5px]"
+          style="font-size: clamp(1.875rem, 1.3rem + 1.5vw, 3.25rem)"
         >
-          Download for Windows
-        </a>
-        <a
-          href="#docs"
-          class="inline-flex min-h-[44px] items-center justify-center rounded-full border border-hairline-strong bg-card px-6 text-[15px] font-medium text-ink transition-colors hover:border-ink"
-        >
-          Read the docs
-        </a>
+          Speak to your computer and it does the work
+        </h1>
+
+        <div class="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+          <a
+            href="#install"
+            class="inline-flex min-h-[44px] items-center justify-center rounded-full bg-ink px-6 text-[15px] font-medium text-on-ink transition-colors hover:bg-ink-active"
+          >
+            Download for Windows
+          </a>
+          <a
+            href="#docs"
+            class="inline-flex min-h-[44px] items-center justify-center rounded-full border border-hairline-strong bg-card px-6 text-[15px] font-medium text-ink transition-colors hover:border-ink"
+          >
+            Read the docs
+          </a>
+        </div>
+      </Container>
+    </div>
+
+    <!--
+      The stage row. `min-h-0` lets the row shrink past its content's intrinsic
+      height — without it the grid track grows to fit the board and the hero
+      spills past the fold again.
+    -->
+    <Container width="content" class="min-h-0 pt-6 pb-[10svh]">
+      <!--
+        `hairline-strong`, not the usual hairline (kept from 09943cb): the frame
+        now holds a pale painting on a near-black page, and the stronger edge is
+        what stops that bright rectangle from bleeding into the floor around it.
+        The reason has changed with the backdrop; the choice has not.
+      -->
+      <div
+        class="hero-frame relative h-full min-h-[300px] overflow-hidden rounded-2xl border border-hairline-strong"
+      >
+        <!--
+          The backdrop. An original painting generated for this site, so there is
+          no third-party licence attached to it — see docs/hero.md, "Backdrop".
+          Eager and above the fold; `object-cover` because the frame's own ratio
+          moves with the viewport height.
+        -->
+        <Image
+          src={backdrop}
+          alt=""
+          widths={[1280, 1920, 2560]}
+          sizes={backdropSizes}
+          loading="eager"
+          class="pointer-events-none absolute inset-0 h-full w-full object-cover"
+        />
+        <DemoStage client:load className="relative h-full" />
       </div>
     </Container>
   </div>
-
-  <!--
-    The stage row. `min-h-0` lets the row shrink past its content's intrinsic
-    height — without it the grid track grows to fit the board and the hero
-    spills past the fold again.
-  -->
-  <Container width="content" class="min-h-0 pt-6 pb-[10svh]">
-    <!--
-      `hairline-strong`, not the usual hairline (kept from 09943cb): the frame
-      now holds a pale painting on a near-black page, and the stronger edge is
-      what stops that bright rectangle from bleeding into the floor around it.
-      The reason has changed with the backdrop; the choice has not.
-    -->
-    <div
-      class="hero-frame relative h-full min-h-[300px] overflow-hidden rounded-2xl border border-hairline-strong"
-    >
-      <!--
-        The backdrop. An original painting generated for this site, so there is
-        no third-party licence attached to it — see docs/hero.md, "Backdrop".
-        Eager and above the fold; `object-cover` because the frame's own ratio
-        moves with the viewport height.
-      -->
-      <Image
-        src={backdrop}
-        alt=""
-        widths={[1280, 1920, 2560]}
-        sizes={backdropSizes}
-        loading="eager"
-        class="pointer-events-none absolute inset-0 h-full w-full object-cover"
-      />
-      <DemoStage client:load className="relative h-full" />
-    </div>
-  </Container>
 </section>
 
 <style is:global>

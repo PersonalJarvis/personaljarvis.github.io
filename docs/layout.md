@@ -271,11 +271,13 @@ than its padding box, so a border there overshoots both rails and the joint
 reads as a cross instead of a corner. Vertical padding moves onto the same
 element, so the line marks the boundary rather than floating below it.
 
-The **hero** gets none — its top edge is the nav, and a rule there would be a
-second line directly under the nav's own border. Every section below it gets
-one, the strip under the hero included: that boundary is a full viewport away
-from the nav, so nothing doubles, and without a rule the strip reads as spilling
-out of the hero.
+**The hero's rule is the line under the nav**, and it is the nav's only bottom
+edge — the band itself carries no `border-b`. It used to, and that border was
+the one horizontal line on the page running the full width of the window
+instead of rail to rail, which also left the hero with no corner for the marker
+to start from. One line, drawn like every other boundary, does both jobs.
+
+Every section below gets its own, the strip under the hero included.
 
 ### Vertical dividers between columns
 
@@ -304,8 +306,8 @@ An SVG `<path>` in a `viewBox="0 0 100 100"` with `preserveAspectRatio="none"`,
 so the box stretches to whatever the section is and no pixel is ever computed:
 
 ```
-M 0 0 V 100 H 100 V 120     enter top-left,  leave down the right rail
-M 100 0 V 100 H 0 V 120     enter top-right, leave down the left rail
+M 0 0 V 100 H 100     enter top-left,  leave at the bottom-right corner
+M 100 0 V 100 H 0     enter top-right, leave at the bottom-left corner
 ```
 
 The square is placed with `getPointAtLength(progress × totalLength)`, which
@@ -322,16 +324,48 @@ section's entry corner, and the page reads as one line folded back and forth.
 The side is assigned from **document order at runtime**, not from a prop — a
 section inserted in the middle would otherwise break the chain silently.
 
-**The path length is the pacing.** 100 + 100 + 20 = 220, so the marker spends
-45% of the section's scroll on the entry rail, 45% on the closing rule and 9% on
-the tail. Nothing else times it, and anything that has to line up with it reads
-its milestones back out of that ratio rather than carrying its own numbers —
+**The path length is the pacing.** 100 + 100 = 200, so the marker spends half
+the section's scroll coming down the entry rail and half crossing the closing
+rule. Nothing else times it, and anything that has to line up with it reads its
+milestones back out of that ratio rather than carrying its own numbers —
 `VoiceSwitch`'s wipe does exactly this.
 
-**The tail runs 20% past the box**, down the rail the next section enters on,
-and fades out along the way. A marker that stopped dead in its exit corner would
-read as the page ending there; the tail hands the reader over instead, and the
-fade keeps it from standing on top of the next section's own square.
+**The path ends ON the corner, with no tail.** It used to run 20% further down
+the exit rail and fade out there, which was the right shape while every section
+painted a square of its own: the overhang covered the seam. With a single
+square (below) a tail is a defect — it walks past the corner into the section
+below and then snaps back up to it at the hand-over. Ending on the corner is
+what makes the hand-over invisible, because that corner *is* the next section's
+first point.
+
+#### One square, not one per section
+
+Every section carries a marker element — that is what keeps each square's
+geometry inside its own box, on its own two rails — but **only the section the
+reader is inside ever paints it.** Without that, each section parks a square in
+its entry corner and waits there, and the page shows a dot sitting in every
+corner at once with the moving one lost among them (maintainer, 2026-08-29:
+"nur einen Punkt, der ständig von oben nach unten geht").
+
+The owner is the **last section whose box has crossed the top of the window**,
+and the first section before any has. Sections tile the document, so that names
+exactly one at every scroll position — no gap between two of them, and no moment
+when two qualify.
+
+It also puts the hand-over on a single pixel. A section reaches progress 1 — its
+exit corner — at the moment its bottom edge touches the top of the window, which
+is the same moment the section below crosses that line and takes over at *its*
+progress 0, the entry corner directly beneath. The square goes out on one corner
+and comes back on the same one.
+
+**Progress is the box's own height, not the pinned-track formula.** `spanProgress`
+subtracts a viewport once an element is taller than the screen, which is right
+for a sticky track and wrong for an ordinary section: one 40px taller than the
+window would get a 40px span, and the square would race its whole perimeter in
+40 pixels and then sit in the corner. Ordinary sections use `sectionProgress`.
+Its one extra term is `reach`, the scrolling the document has left — the **last**
+section's bottom can never touch the top of the window, so on its own height the
+square would stop halfway and never finish the page.
 
 #### The box it walks
 
@@ -341,7 +375,12 @@ the `<section>` element:
 | Section | Box | Progress from |
 |---|---|---|
 | ordinary | the `<section>` — its top edge *is* its rule, its bottom edge the next one | itself |
+| hero | everything **under the nav**, not the section: the section's top edge is the top of an opaque sticky band, and a square starting there starts out of sight | itself |
 | sticky (`VoiceSwitch`) | the pinned frame, one viewport tall | the tall track, `[data-scroll-span]` |
+
+The box is found as the element `SectionTrack` was dropped into, never as
+`closest("section")` — those differ for the hero, and measuring progress against
+a box the square does not walk puts it off its own corners.
 
 A three-screen section would otherwise put the marker's halfway point a screen
 and a half below the fold. A section that pins a child therefore has to **close
@@ -534,6 +573,12 @@ nothing — test with a real one.)
   bottom, leaving the marker to cross an edge that is not drawn
 - A section marker whose path does **not** alternate side, which jumps the full
   width of the column at every boundary
+- More than one square painted at a time — a dot parked in every corner buries
+  the one that is moving
+- A tail on the path, which with a single square walks past the exit corner and
+  then snaps back to it
+- `spanProgress` for an ordinary section: it is the pinned-track span, and on a
+  section barely taller than the window it collapses to a few pixels
 - A CSS transition on the marker's position, which makes it lag the scroll
 - Marker positions from stored `offsetTop` values, which go stale on every
   layout change

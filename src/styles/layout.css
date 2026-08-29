@@ -232,9 +232,13 @@
   overflow: visible;
 }
 
-/* Parked off screen until the first frame places it. Without this the square
- * paints in the top-left corner of every section for one frame on load, and a
- * page of markers flashing at once is the first thing anyone sees. */
+/* Hidden, and parked off screen, until the first frame decides which section
+ * owns it. Both halves are load-bearing: `visibility` is what keeps this to ONE
+ * square on the page — every section carries a marker element so the geometry
+ * stays in its own box, but only the section the reader is inside reveals it
+ * (src/components/SectionTrack.astro) — and the parking keeps the square out of
+ * the top-left corner for the one frame before any of that runs, which would
+ * otherwise be a page of dots flashing at once on load. */
 .section-track__marker {
   position: absolute;
   top: 0;
@@ -242,6 +246,7 @@
   width: 8px;
   height: 8px;
   background: var(--ink);
+  visibility: hidden;
   transform: translate3d(-100px, -100px, 0);
   will-change: transform;
 }
