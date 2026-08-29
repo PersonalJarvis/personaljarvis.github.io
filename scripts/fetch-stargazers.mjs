@@ -135,7 +135,13 @@ async function rest(auth, path) {
       "user-agent": "personal-jarvis-website-build",
     },
   });
-  if (!res.ok) throw new Error(`GitHub REST ${path}: HTTP ${res.status}`);
+  if (!res.ok) {
+    // The body, not just the status. A 403 from this API is three different
+    // problems wearing one number — no permission, primary rate limit,
+    // secondary rate limit — and the status alone cannot tell them apart.
+    const detail = (await res.text()).slice(0, 300).replace(/\s+/g, " ");
+    throw new Error(`GitHub REST ${path}: HTTP ${res.status} — ${detail}`);
+  }
   return res.json();
 }
 

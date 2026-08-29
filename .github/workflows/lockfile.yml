@@ -1,0 +1,53 @@
+# Resolve package-lock.json on Linux, on demand.
+#
+# npm writes a lockfile for the machine it runs on. Installing on Windows never
+# resolves the packages that only a Linux build would reach — Tailwind's
+# wasm32 fallback and sharp's @emnapi runtime — so the lockfile comes out
+# missing entries that exist nowhere in the tree it was written from.
+#
+# Nothing notices until `npm ci` runs on a Linux runner, which is where the
+# site is built. It then refuses the tree outright: "can only install packages
+# when your package.json and package-lock.json are in sync". That is what broke
+# the first two deploys here, and no amount of re-running `npm install` on
+# Windows fixes it — the entries cannot be resolved from that platform at all.
+#
+# So the lockfile is resolved where it is consumed. Run this by hand after
+# changing a dependency, then let the deploy that follows use the result.
+name: lockfile
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lockfile
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # `--package-lock-only`: resolve the tree and write the lockfile without
+      # installing anything. Seconds instead of minutes, and nothing on disk to
+      # go stale.
+      - run: npm install --package-lock-only --no-audit --no-fund
+
+      - name: Commit if it changed
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "already resolved"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(deps): resolve the lockfile on linux" \
+            --only -- package-lock.json
+          git push
