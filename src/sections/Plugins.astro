@@ -2,106 +2,65 @@
 /**
  * Feature section — copy left, plugins demo right.
  *
- * See docs/feature-section.md. The block is step `content` and its height comes
+ * See docs/feature-section.md. The card is step `content` and its height comes
  * from `16/9`, so the section fills about half a screen: enough to read from a
  * distance, not so much that the scroll stalls.
  *
- * THE FIRST OF THREE SECTIONS THAT READ AS ONE RUN, and the exception to
- * docs/layout.md § "One boundary, one shape". Plugins, Skills and CLIs draw NO
- * boundary of their own — no framed band, no card, no ground of their own.
- * Between the logo strip's closing rule and the voice section's opening one
- * there is nothing but the two rails and three blocks of content breathing at
- * the standard inset. Asked for by the maintainer on 2026-08-29: the frames and
- * the lines between these three were reading as boxes stacked in a column.
- *
- * WHAT THAT COSTS, AND WHY IT IS PAID HERE AND NOWHERE ELSE. The shared shell
- * exists so that no two sections meet in a way nobody chose. These three opt
- * out of it TOGETHER, as one run, so the property it protects still holds: the
- * run has exactly one boundary at each end, drawn by the neighbour, and the
- * joints inside it are the only joints on the page with no line at all — by
- * decision. A single section leaving the shell would be the old bug back.
- *
- * THREE THINGS ARE LOAD-BEARING AND EASY TO "TIDY" BACK IN:
- *
- *   - No `.section-bounds`. It is what drew the box.
- *   - No `.section-tone`. A tone is a per-section gradient that restarts at
- *     every section's top edge, so even three sections sharing one tone meet
- *     dark-on-light and the seam is exactly the line this change removed.
- *     `--tone-floor` is `--canvas`, so the run is on the floor either way, and
- *     its neighbours are both `raised` — the run still separates by ground.
- *   - `<SectionTrack open />` on the SECTION, not `nested` inside a band. See
- *     the marker note below.
- *
- * Depth is the well inside the demo and hairlines. There are no shadow tokens
- * in this system, and no card frame here any more.
+ * Depth is the two nested radii — card, then the well inside the demo — and
+ * hairlines. There are no shadow tokens in this system.
  */
 import Container from "@/components/Container.astro";
 import SectionTrack from "@/components/SectionTrack.astro";
 import { PluginsDemo } from "@/components/plugins-demo/PluginsDemo";
 ---
 
-<!--
-  No shell: this section draws no boundary and no ground. See the note above
-  for what that buys and what it costs.
-
-  THE MARKER IS TRACKED ON THE SECTION ITSELF, and both halves of that matter:
-
-  - not `nested` inside a band, because the tracked box has to TILE the
-    document for the square to run without stopping. A band is held an inset
-    inside its section, so the square would reach the band's bottom, then wait
-    out `2 x --section-inset` of air before reappearing at the top of the next
-    one — three short runs with two gaps, instead of one unbroken line.
-  - `open`, because nothing is drawn under this section for the square to cross.
-    An open section hands over on the rail it came down, so Plugins, Skills and
-    CLIs are one continuous descent on the LEFT rail — which is what the
-    maintainer asked for. Take `open` off and the square turns right along a
-    rule that does not exist.
--->
-<section id="features" class="relative flex flex-col">
-  <SectionTrack open />
-  <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
+<section id="features" class="relative">
+  <SectionTrack />
+  <Container width="content">
     <!--
-      No frame, no surface: the copy and the demo stand on the page itself,
-      between the two rails. The inline padding stays, as the inset that keeps
-      them off the rails; the vertical air is `.section-inset`'s job now, so
-      the padding is `px` and not `p`.
+      The rule runs rail to rail because it sits INSIDE the container: the
+      container's own border box is a gutter wider and would overshoot both
+      rails. The section's vertical padding moved in here with it, so the line
+      marks the boundary rather than floating 96px below it.
     -->
-    <div
-      class="grid items-center gap-12 px-8 lg:aspect-[16/9] lg:min-h-[560px] lg:grid-cols-12 lg:px-14"
-    >
-      <div class="lg:col-span-5">
-        <!--
-          Heading and body are one optical block: same size, separated by weight
-          and ink alone. A size jump here would turn a sentence into a headline
-          plus a subtitle, which is a louder shape than this section needs.
-        -->
-        <p class="text-[22px] leading-snug sm:text-[26px]">
-          <span class="font-medium text-ink"
-            >Plugins connect Jarvis to the tools you already use.</span
-          >{" "}
-          <span class="text-body"
-            >Sign in once, and it can read your mail, find a file or start the
-            music. When a connection stops working, it tells you which one and
-            why.</span
+    <div class="section-rule py-24">
+      <div
+        class="grid items-center gap-12 rounded-[var(--radius-xl)] border border-rule bg-card p-8 lg:aspect-[16/9] lg:min-h-[560px] lg:grid-cols-12 lg:p-14"
+      >
+        <div class="lg:col-span-5">
+          <!--
+            Heading and body are one optical block: same size, separated by weight
+            and ink alone. A size jump here would turn a sentence into a headline
+            plus a subtitle, which is a louder shape than this section needs.
+          -->
+          <p class="text-[22px] leading-snug sm:text-[26px]">
+            <span class="font-medium text-ink"
+              >Plugins connect Jarvis to the tools you already use.</span
+            >{" "}
+            <span class="text-body"
+              >Sign in once, and it can read your mail, find a file or start the
+              music. When a connection stops working, it tells you which one and
+              why.</span
+            >
+          </p>
+
+          <!--
+            A real link, and the one thing in this section that is focusable — the
+            demo beside it is aria-hidden and every control in it is tabIndex -1.
+            Ink, not an accent: docs/design.md retired the borrowed hue.
+          -->
+          <a
+            href="#docs"
+            class="mt-6 inline-flex items-center gap-2 text-[16px] font-medium text-ink underline-offset-4 hover:underline"
           >
-        </p>
+            See every plugin
+            <span aria-hidden="true">&#8594;</span>
+          </a>
+        </div>
 
-        <!--
-          A real link, and the one thing in this section that is focusable — the
-          demo beside it is aria-hidden and every control in it is tabIndex -1.
-          Ink, not an accent: docs/design.md retired the borrowed hue.
-        -->
-        <a
-          href="#docs"
-          class="mt-6 inline-flex items-center gap-2 text-[16px] font-medium text-ink underline-offset-4 hover:underline"
-        >
-          See every plugin
-          <span aria-hidden="true">&#8594;</span>
-        </a>
-      </div>
-
-      <div class="lg:col-span-7 lg:h-full">
-        <PluginsDemo client:visible />
+        <div class="lg:col-span-7 lg:h-full">
+          <PluginsDemo client:visible />
+        </div>
       </div>
     </div>
   </Container>

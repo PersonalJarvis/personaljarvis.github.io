@@ -46,6 +46,17 @@ screen keeps its clutter in one frame and its calm in the other. This replaces
 an earlier version that carried hand-measured pixel boxes around the monitor
 glass; those had to be re-measured every time a photograph was regenerated.
 
+AND WHY IT RUNS AFTER THE GAMMA. Before it, the pass measures differences in the
+raw exposure, and the night frame's whole subject lives inside five per cent of
+that range — see TONE_RADIUS. After it, the pass sees the tone that actually
+decides the dots, and the gamma is simply solved a second time so the coverage
+target still lands exactly.
+
+THE NIGHT FRAME CARRIES TWO HAND-PLACED TOUCHES, and both are measured against
+that one photograph rather than derived from anything: MIC_LIGHT dodges the
+microphone out of the wall it is the same brightness as, and BUBBLE draws the
+speech bubble. Regenerate that photograph and both need measuring again.
+
 The palette is baked into the PNGs rather than left to CSS. A mask would let the
 page recolour the dots, but a mask is resampled by the compositor and the crisp
 pixel grid is the entire point. **If the tokens change, re-run this script** —
@@ -73,11 +84,37 @@ GRID_W = 720   # dither resolution; the page scales it up with smoothing off
 #: frames converge on the same mid-grey mush.
 COVERAGE = 0.22
 
-#: Local contrast, as a fraction of the grid width and a gain on the difference.
-#: The radius is wide enough to be a lighting gradient rather than an outline,
-#: and the gain is under 1 so the result is a lift, not a solarisation.
-LOCAL_RADIUS = 0.025
-LOCAL_GAIN = 0.85
+#: The scale at which the frame's own colour cast is measured, as a fraction of
+#: the grid width. Wide enough to be a lighting gradient rather than an outline:
+#: `local_chroma` subtracts a blur this wide to throw away the warm wood, the
+#: warm skin and the warm lamp, and keep only the colour that changes from one
+#: dot to the next.
+CHROMA_RADIUS = 0.025
+
+#: Local contrast on TONE: the radius an object is separated from its
+#: background at, and the gain on the difference.
+#:
+#: THE PASS RUNS AFTER THE GAMMA SOLVE, NOT BEFORE, and that ordering is the
+#: whole of why the night frame has a microphone in it. Before the gamma the
+#: high-pass measures differences in the raw exposure, and the night frame's
+#: entire subject lives inside about five per cent of that range — the
+#: microphone reads 0.087 mean against a wall at 0.091, measured. A gain under
+#: one adds a few thousandths there and the object stays invisible, while the
+#: same gain is plenty on the daylight frame. Run after the gamma, the pass sees
+#: the tone that actually decides the dots, so a shadow difference the exponent
+#: has just expanded is amplified like any other. The gamma is then solved a
+#: second time on the result, so COVERAGE still lands exactly.
+#:
+#: THE RADIUS IS AN OBJECT'S SIZE, NOT A DOT'S. At 0.055 of the grid it is about
+#: 40px against a 50px microphone, so the pass separates the thing from the wall
+#: behind it rather than sharpening the texture on it — which is what a dark
+#: object on a dark ground actually needs. The daylight frame gains the same
+#: way: at the old radius the dozen overlapping panels dithered into one mush,
+#: and at this one each panel keeps its own edge.
+#:
+#: The maintainer asked for a legible microphone on 2026-08-29.
+TONE_RADIUS = 0.055
+TONE_GAIN = 1.0
 
 #: The five hues a coloured dot may take: the app's own agent-timeline tokens,
 #: which are the colours the editor in the photograph is actually showing. This
@@ -135,12 +172,17 @@ TINT = 0.80
 #: The speech bubble on the night frame, in fractions of the frame: box, then
 #: the tail's three points. Empty, with three dots inside — no text, ever.
 #:
-#: THE TAIL POINTS AT THE SCREEN, NOT AT THE PERSON. The bubble is the machine
-#: answering, which is the whole claim of the section — a bubble growing out of
-#: the man's mouth says he is talking to himself. The maintainer caught it
-#: pointing at his mouth on 2026-08-29. Its two base points sit on the bubble's
-#: LEFT edge and the tip reaches back across the bezel onto the glass, on the
-#: empty right half of the calm panel where it covers no code.
+#: THE TAIL POINTS AT THE MOUTH. The bubble is what the man is saying, so it
+#: grows out of him the way a speech bubble does anywhere else, and the reader
+#: is told in one shape that the way you work this thing is by talking.
+#:
+#: It pointed at the SCREEN until 2026-08-29 — the argument being that the
+#: bubble was the machine answering — and the maintainer replaced that
+#: direction the same day: "Ich möchte, dass die Sprechblase aus dem Mund
+#: kommt". The tail's two base points now sit on the bubble's BOTTOM edge and
+#: the tip lands on the lips, just clear of the microphone's near end. It
+#: crosses the boom arm on the way down, which is what a bubble drawn over a
+#: photograph does; the fill clears its dots, so it reads as lying on top.
 #:
 #: It is DRAWN HERE rather than asked of the image model, for three reasons: a
 #: model puts letters in a speech bubble whatever the prompt says, its outline
@@ -150,11 +192,14 @@ TINT = 0.80
 #: same lattice as the picture.
 #:
 #: These are measured against the photograph, so REGENERATING THE NIGHT FRAME
-#: MEANS RE-MEASURING THEM. The box sits OFF THE MONITOR — top right, over the
-#: dark wall above the person's head — with the tail reaching down-left to the
-#: microphone. It used to sit on the glass, which was harmless while the screen
-#: was a bright smudge and is not now that the screen is what the section is
-#: about.
+#: MEANS RE-MEASURING THEM — the box AND the tail's tip, which has to keep
+#: landing on the mouth. The box sits OFF THE MONITOR — top right, over the dark
+#: wall above the person's head. It used to sit on the glass, which was harmless
+#: while the screen was a bright smudge and is not now that the screen is what
+#: the section is about.
+#:
+#: The mouth in this pair is at (0.821, 0.528) of the frame, measured: the lit
+#: edge of the profile, immediately right of the microphone's near end.
 #:
 #: The vertical placement has a second constraint that is easy to miss and was
 #: measured, not guessed: the page crops this 16:9 frame into a box up to three
@@ -162,8 +207,35 @@ TINT = 0.80
 #: only rows 0.17..0.75 survive on the shortest window the sticky layout still
 #: runs on, and a bubble at 0.15 loses its top edge — which is exactly what the
 #: first version did. Keep the box inside 0.19..0.73.
+#: The microphone, dodged. Centre and radii in fractions of the frame, then the
+#: rotation of its long axis in degrees, the softness of the falloff as a share
+#: of the radius, and the gain in the middle of it.
+#:
+#: WHY THIS EXISTS. The night photograph exposes the microphone at 0.087 mean
+#: against a wall behind it at 0.091 — measured on the grid. Those are the same
+#: brightness, so the object has no boundary at all, and a halftone can only
+#: print what the photograph contains: no gamma, no local contrast and no
+#: coverage target invents a separation that is not in the file. On the page it
+#: read as a black smudge, and the maintainer asked for a legible microphone on
+#: 2026-08-29. A gain of 2.2 lifts the mic's own range (0.035..0.169) to
+#: 0.08..0.37 and leaves the wall where it is, so the thing gets an edge.
+#:
+#: IT IS A CORRECTION TO ONE PHOTOGRAPH, NOT A RULE. That is why it may be a
+#: measured box when the colour detector may not: the colour rule has to hold
+#: for any frame, and a box there was a bug waiting for the next photograph;
+#: this is a light that the photographer did not set, aimed at one object in one
+#: file. It sits beside BUBBLE because it carries the same contract —
+#: REGENERATING THE NIGHT FRAME MEANS RE-MEASURING IT, or better, lighting the
+#: microphone in the photograph and deleting this.
+#:
+#: Multiplicative, not additive: the mic's own dark bands stay dark relative to
+#: its body, so the shock mount and the cylinder keep their modelling instead of
+#: flooding into one grey shape. The falloff is generous on purpose — it reaches
+#: the lips, which is what the speech bubble's tail now points at.
+MIC_LIGHT = (0.746, 0.532, 0.074, 0.076, -8.0, 0.35, 2.2)
+
 BUBBLE = (0.790, 0.200, 0.952, 0.360)
-BUBBLE_TAIL = ((0.792, 0.232), (0.792, 0.318), (0.648, 0.368))
+BUBBLE_TAIL = ((0.797, 0.358), (0.857, 0.358), (0.821, 0.528))
 BUBBLE_STROKE = 2  # dots
 
 
@@ -218,7 +290,7 @@ def local_chroma(path: Path, size: tuple[int, int]) -> np.ndarray:
     colouring nothing, because the wood and the code sit at the same saturation.
     """
     im = Image.open(path).convert("RGB").resize(size, Image.LANCZOS)
-    blur = im.filter(ImageFilter.GaussianBlur(LOCAL_RADIUS * size[0]))
+    blur = im.filter(ImageFilter.GaussianBlur(CHROMA_RADIUS * size[0]))
     rgb = np.asarray(im, dtype=float) / 255.0
     low = np.asarray(blur, dtype=float) / 255.0
     return (rgb - rgb.mean(2, keepdims=True)) - (low - low.mean(2, keepdims=True))
@@ -241,7 +313,27 @@ def stage_hue(offset: np.ndarray) -> np.ndarray:
     return np.argmax(unit @ tokens.T, axis=2)
 
 
-def render(path: Path, *, invert: bool) -> tuple[np.ndarray, np.ndarray]:
+def dodge_mic(tone: np.ndarray) -> np.ndarray:
+    """Lift the microphone out of the wall behind it. See MIC_LIGHT.
+
+    A rotated ellipse with a smoothstep edge, applied as a gain. The ellipse is
+    measured in fractions of the FRAME so it survives a change of GRID_W, and
+    the vertical axis is circularised first so `soft` is one number rather than
+    one per axis.
+    """
+    cx, cy, rx, ry, angle, soft, gain = MIC_LIGHT
+    h, w = tone.shape
+    ys, xs = np.mgrid[0:h, 0:w]
+    dx = (xs - cx * w) / w
+    dy = (ys - cy * h) / h * (h / w)
+    a = np.radians(angle)
+    u = (dx * np.cos(a) + dy * np.sin(a)) / rx
+    v = (-dx * np.sin(a) + dy * np.cos(a)) / (ry * h / w)
+    edge = np.clip((1.0 + soft - np.sqrt(u * u + v * v)) / soft, 0.0, 1.0)
+    return np.clip(tone * (1.0 + edge * edge * (3 - 2 * edge) * (gain - 1.0)), 0.0, 1.0)
+
+
+def render(path: Path, *, invert: bool, retouch: bool) -> tuple[np.ndarray, np.ndarray]:
     """Return two grids: where a dot is printed, and which hue each dot takes.
 
     The second is an index into STAGE, or -1 for a dot in the frame's own mark
@@ -258,13 +350,15 @@ def render(path: Path, *, invert: bool) -> tuple[np.ndarray, np.ndarray]:
     height = round(GRID_W * im.height / im.width)
     im = im.resize((GRID_W, height), Image.LANCZOS)
 
-    blur = im.filter(ImageFilter.GaussianBlur(LOCAL_RADIUS * GRID_W))
     flat = np.asarray(im, dtype=float) / 255.0
-    tone = np.clip(flat + LOCAL_GAIN * (flat - np.asarray(blur, dtype=float) / 255.0), 0.0, 1.0)
+    if retouch:
+        flat = dodge_mic(flat)
+    tone = 1.0 - flat if invert else flat
 
-    if invert:
-        tone = 1.0 - tone
-
+    # Gamma first, so the local-contrast pass below works on the tone that
+    # decides the dots rather than on the raw exposure — see TONE_RADIUS.
+    tone = tone ** solve_gamma(tone, COVERAGE)
+    tone = np.clip(tone + TONE_GAIN * (tone - blur_grid(tone, TONE_RADIUS * GRID_W)), 0.0, 1.0)
     tone = tone ** solve_gamma(tone, COVERAGE)
 
     threshold = np.tile(bayer(), (height // 8 + 1, GRID_W // 8 + 1))[:height, :GRID_W]
@@ -359,7 +453,14 @@ def to_png(
     return Image.fromarray(rgb)
 
 
-#: name -> (source argv index, dots on the dark end, ground, dot colour, bubble)
+#: name -> (source argv index, dots on the dark end, ground, dot colour, retouch)
+#:
+#: `retouch` is the two hand-placed, hand-measured touches the NIGHT frame
+#: carries and the daylight one does not: the microphone's dodge (MIC_LIGHT,
+#: before the halftone) and the speech bubble (BUBBLE, after it). One flag,
+#: because they are one fact — this is the frame with a person speaking in it —
+#: and because they share a contract: regenerate that photograph and both have
+#: to be measured again.
 FRAMES = (
     ("manual", 1, True, INK, CANVAS, False),
     ("jarvis", 2, False, CANVAS, INK, True),
@@ -374,10 +475,10 @@ def main(argv: list[str]) -> int:
     out = Path(__file__).resolve().parent.parent / "src" / "assets" / "scene"
     out.mkdir(parents=True, exist_ok=True)
 
-    for name, index, invert, ground, mark, bubble in FRAMES:
+    for name, index, invert, ground, mark, retouch in FRAMES:
         src = Path(argv[index])
-        dots, hue = render(src, invert=invert)
-        if bubble:
+        dots, hue = render(src, invert=invert, retouch=retouch)
+        if retouch:
             dots, hue = add_bubble(dots, hue)
         to_png(dots, hue, ground=ground, mark=mark).save(out / f"{name}.png", optimize=True)
         print(

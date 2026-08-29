@@ -113,23 +113,39 @@ const figures = [
 ];
 ---
 
-<section id="voice" aria-labelledby="voice-heading" data-voice-switch data-mode="manual">
+<section
+  id="voice"
+  aria-labelledby="voice-heading"
+  class="section-tone"
+  data-tone="raised"
+  data-voice-switch
+  data-mode="manual"
+>
   <!--
-    The section rule, in the same container the rails stand on, so it starts
-    and ends exactly on them. It sits outside the track: the line marks where
-    the section begins, and the track begins where the line ends.
+    THERE IS NO OPENING `.section-rule` HERE, and adding one back is the bug.
+    This section already draws its two boundary rules on the pinned frame
+    below, an inset inside the sticky viewport. A rule up here drew a THIRD
+    line, 76px above the frame's own top line — the doubled boundary the
+    maintainer reported on 2026-08-29, and with the card border of the section
+    above it in the same view, three lines at one joint.
+
+    The frame's two lines and the inset around them are the standard shell
+    reached from the other direction: this box is inside a sticky child three
+    screens down and cannot use `.section-bounds`, so `[data-viewport]` takes
+    `--section-inset` as its padding and `[data-frame]` draws the rules. Same
+    two numbers as every other section. See docs/layout.md § "One boundary, one
+    shape".
   -->
-  <Container width="content">
-    <div class="section-rule"></div>
-  </Container>
 
   <!--
     The scroll track. Its only job is to be tall — the height IS the animation's
     running length, and the sticky child inside it is what the reader sees.
 
     Below the desktop breakpoint the track collapses to `auto` (see the styles)
-    and the section becomes an ordinary block with two buttons. A three-screen
-    scroll trap on a phone is a worse experience than no animation.
+    and the section becomes an ordinary block. A three-screen scroll trap on a
+    phone is a worse experience than no animation — but the wipe still runs,
+    because it reads THIS element's passage through the window and this element
+    is the right box either way.
   -->
   <div data-track data-scroll-span>
     <div data-viewport>
@@ -166,13 +182,7 @@ const figures = [
             instead of pushing the figures past the fold.
           -->
           <figure data-figure>
-            <div
-              data-stage
-              id="voice-panel"
-              role="tabpanel"
-              aria-labelledby="voice-tab-manual"
-              tabindex="0"
-            >
+            <div data-stage>
               <!--
                 Both frames are in the markup from the first paint: the canvas
                 draws from these elements, and a frame fetched on the first
@@ -199,41 +209,18 @@ const figures = [
                 data-source="jarvis"
               />
 
-              <canvas aria-hidden="true" data-canvas></canvas>
-
               <!--
-                The two states, set into the picture's bottom-left corner rather
-                than given a row of their own: this section has exactly one
-                viewport to spend, and a row of buttons above the photograph is a
-                row the photograph does not get.
-
-                They are the whole control surface when the scroll scrub is off —
-                on a phone, and under prefers-reduced-motion.
+                The canvas is the picture, so it carries the picture's name.
+                It used to be `aria-hidden` under a `role="tabpanel"` labelled
+                by whichever button was pressed; the buttons went on
+                2026-08-29 and the label went with them, which would have left
+                the one visible element of the section unnamed.
               -->
-              <div role="tablist" aria-label="Two ways of working at the same desk" data-switch>
-                <button
-                  type="button"
-                  role="tab"
-                  id="voice-tab-manual"
-                  aria-controls="voice-panel"
-                  aria-selected="true"
-                  tabindex="0"
-                  data-target="manual"
-                >
-                  By hand
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  id="voice-tab-jarvis"
-                  aria-controls="voice-panel"
-                  aria-selected="false"
-                  tabindex="-1"
-                  data-target="jarvis"
-                >
-                  By voice
-                </button>
-              </div>
+              <canvas
+                data-canvas
+                role="img"
+                aria-label="One desk in two states, dissolving from the first into the second as the page scrolls: by hand in hard daylight, hunched over a keyboard under a screenful of overlapping panels; then the same desk at night, sat back with both hands away, speaking into a microphone, the same editor down to one tidy column of code."
+              ></canvas>
             </div>
 
             <figcaption data-caption>
@@ -283,11 +270,17 @@ const figures = [
   [data-viewport] {
     position: sticky;
     top: 0;
-    /* One viewport, minus the sticky nav band, which is 4rem and opaque. The
-     * section owns everything under it and nothing behind it. */
     height: 100svh;
-    padding-top: 4rem;
-    padding-bottom: var(--space-xl);
+    /* `--section-inset`, top and bottom, because this padding IS this section's
+     * inset: it is the air between the section's own edge and the frame's two
+     * rules, which is what every other section spends on `.section-inset`.
+     *
+     * It used to be `4rem` over `--space-xl` — nav clearance over an arbitrary
+     * 32px — and that asymmetry is why this boundary looked different from
+     * every other one. The clearance was not needed either: the nav is sticky
+     * INSIDE the hero and has long since unstuck by the time this section is
+     * pinned. */
+    padding-block: var(--section-inset);
     overflow: hidden;
   }
 
@@ -314,6 +307,37 @@ const figures = [
     flex-direction: column;
     border-block: 1px solid var(--rule);
     padding-block: var(--space-lg);
+  }
+
+  /* --- The text is held off the rails ------------------------------------
+   * The two rails stand on the container's own content edges, so a paragraph
+   * inside it starts on exactly the pixel the rail is drawn on and every line
+   * reads as stuck to the frame. The maintainer's complaint, 2026-08-29.
+   *
+   * The inset is `--space-base` because that is what the figure cells already
+   * pad by: the eyebrow, the headline, the caption and the figure labels then
+   * all start on ONE vertical line a fixed distance inside the rail, rather
+   * than the bar being inset and everything above it not.
+   *
+   * IT GOES ON THE CHILDREN, NEVER ON `[data-frame]`. The section marker's
+   * layer is `position: absolute; inset: 0` against that element's padding
+   * box, and the marker is supposed to ride the rails — inline padding there
+   * pulls it a gutter inside both of them and it walks down the middle of the
+   * section instead. Same rule as `.section-bounds` in layout.css.
+   *
+   * The picture and the figure bar are deliberately NOT inset. They are
+   * objects with a 1px border of their own in the rail's own colour, and that
+   * border IS the rail for their height; holding them off it would break both
+   * lines for the height of the photograph.
+   */
+  [data-frame] {
+    --text-inset: var(--space-base);
+  }
+
+  [data-eyebrow],
+  [data-head],
+  [data-caption] {
+    padding-inline: var(--text-inset);
   }
 
   /* --- The head ----------------------------------------------------------
@@ -409,60 +433,27 @@ const figures = [
     visibility: hidden;
   }
 
-  /* --- The two states, set into the picture ------------------------------
-   * design.md's secondary control, promoted to the ink fill when selected. One
-   * shape language: the 8px button radius, never a pill. The group sits on the
-   * stage's own bottom-left corner, so only its two inner edges are drawn.
-   */
-  [data-switch] {
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    display: flex;
-    border-top: 1px solid var(--hairline-strong);
-    border-right: 1px solid var(--hairline-strong);
-    border-start-end-radius: var(--radius-md);
-    background: color-mix(in srgb, var(--canvas) 82%, transparent);
-    backdrop-filter: blur(6px);
-  }
-
-  [role="tab"] {
-    border: 0;
-    background: none;
-    color: var(--body);
-    padding: 0 var(--space-md);
-    height: 38px;
-    font-size: var(--text-body-sm);
-    font-weight: 500;
-    cursor: pointer;
-  }
-
-  [role="tab"]:hover {
-    color: var(--ink);
-  }
-
-  [role="tab"][aria-selected="true"] {
-    background: var(--ink);
-    color: var(--on-ink);
-  }
-
-  /* The first button's corner is the stage's corner. */
-  [role="tab"]:first-child {
-    border-end-start-radius: calc(var(--radius-xl) - 1px);
-  }
-
   /* --- Caption -----------------------------------------------------------
    * Both captions reserve the same box, so the state change does not shove the
    * figures up and down the page. They are stacked rather than toggled with
    * `hidden` at runtime: a caption that disappears for a frame between two
    * states flickers, and the box has to hold the taller of the two anyway.
+   *
+   * CENTRED, and it is the only line in the section that is. It is the one
+   * piece of text that belongs to the picture rather than to the column — it
+   * changes when the picture changes and says nothing on its own — so it is
+   * set to the picture's own centre instead of joining the left edge the
+   * eyebrow, the headline and the figures share. Maintainer's call,
+   * 2026-08-29.
    */
   [data-caption] {
     display: grid;
+    justify-items: center;
     margin: var(--space-md) 0 0;
     color: var(--muted);
     font-size: var(--text-body-sm);
     line-height: 1.5;
+    text-align: center;
   }
 
   [data-caption] > span {
@@ -529,24 +520,16 @@ const figures = [
     padding: var(--space-md) var(--space-base);
   }
 
-  /* The last cell is turned round, and it is the only one that is.
+  /* EVERY CELL RUNS THE SAME WAY, LEFT TO RIGHT — including the last one.
    *
-   * Four short facts do not fill a column this wide: every cell carries 110 to
-   * 165px of slack, measured. In the first three that slack sits against a
-   * divider, where it reads as the gutter it is. In the last one it sat against
-   * the RAIL with nothing after it, and read as the bar failing to reach the
-   * edge of the section — which is what the maintainer saw on 2026-08-29, and
-   * why the complaint was about the fourth card and not about the third, which
-   * actually has the most empty space of the four.
-   *
-   * NOT the whole row. The numbers share the section's left edge with the
-   * eyebrow and the headline; centring them, or turning all four round, would
-   * give the section a second left margin. One flush left, one flush right, and
-   * the bar spans exactly what the rails do. */
-  [data-figures] > div:last-child {
-    align-items: flex-end;
-    text-align: end;
-  }
+   * It was turned round for a while: four short facts do not fill a column
+   * this wide, and the fourth cell's slack sat against the RAIL with nothing
+   * after it, which read as the bar failing to reach the edge of the section.
+   * Setting that one cell flush right closed the gap and cost the row its
+   * rhythm — the maintainer's complaint on 2026-08-29 was that the last card
+   * ran the other way from the other three. A row of four that reads in two
+   * directions is worse than a row of four with a wide last gutter, so the
+   * slack stays and the direction is uniform. Do not turn it round again. */
 
   [data-figures] dd {
     margin: 0;
@@ -575,11 +558,9 @@ const figures = [
     font-size: var(--text-caption);
   }
 
-  /* --- Where the scroll scrub is off -------------------------------------
-   * Three cases drop out of the sticky layout into an ordinary block: no tall
-   * scroll distance, no sticky child, no scrub, and the picture back at its own
-   * 16:9. The two buttons are then the whole control, which is why they are
-   * real buttons and not a decoration on top of the animation.
+  /* --- Where the sticky layout is dropped --------------------------------
+   * Three cases drop out of it into an ordinary block: no tall scroll
+   * distance, no sticky child, and the picture back at its own 16:9.
    *
    *   narrow    a three-screen scroll trap on a phone is worse than no
    *             animation, and the head's two columns have collapsed anyway
@@ -589,8 +570,13 @@ const figures = [
    *             starts cutting the speech bubble off the top around there
    *   calm      prefers-reduced-motion
    *
-   * The JS reads the same three conditions, so the CSS and the script cannot
-   * disagree about which mode the section is in.
+   * THIS IS A GEOMETRY DECISION AND NOTHING ELSE. It used to be a mode: the
+   * script read the same three queries, turned the scrub off in all of them,
+   * and handed control to two buttons in the picture's corner. The buttons
+   * went on 2026-08-29 and the wipe now reads the track's own passage through
+   * the window, which is the correct input whether that track is three screens
+   * tall or one block high — so only `calm` still means anything to the
+   * script, and there is no longer a pair of conditions to keep spelled alike.
    */
   @media (max-width: 1023px), (max-height: 879px), (prefers-reduced-motion: reduce) {
     [data-track] {
@@ -720,9 +706,7 @@ const figures = [
     const track = section.querySelector<HTMLElement>("[data-track]")!;
     const stage = section.querySelector<HTMLElement>("[data-stage]")!;
     const view = section.querySelector<HTMLCanvasElement>("[data-canvas]")!;
-    const tabs = Array.from(section.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
     const captions = Array.from(section.querySelectorAll<HTMLElement>("[data-caption-for]"));
-    const panel = section.querySelector<HTMLElement>('[role="tabpanel"]');
     const sources = (["manual", "jarvis"] as const).map(
       (name) => section.querySelector<HTMLImageElement>(`[data-source="${name}"]`)!,
     );
@@ -733,13 +717,15 @@ const figures = [
     const mask = document.createElement("canvas");
     const maskCtx = mask.getContext("2d", { willReadFrequently: true });
 
+    /* The ONLY query left in here, and the only one the wipe cares about.
+     *
+     * The stylesheet still drops out of the sticky layout on two more (narrow
+     * and short), and this script no longer repeats them: the wipe reads the
+     * TRACK's own passage through the window, and the track is the right box in
+     * both geometries — three screens tall while the section is pinned, one
+     * ordinary block's worth when it is not. There is nothing left for the CSS
+     * and the script to disagree about. */
     const calm = window.matchMedia("(prefers-reduced-motion: reduce)");
-    /* The same two conditions the stylesheet drops out of the sticky layout on.
-     * Kept literally identical so the script and the CSS cannot disagree about
-     * which mode the section is in — the CSS decides the geometry, this decides
-     * where the wipe's value comes from, and a mismatch leaves a scrub driving
-     * a section that no longer has a scroll track. */
-    const narrow = window.matchMedia("(max-width: 1023px), (max-height: 879px)");
 
     /* The two grounds come from the tokens rather than from a literal, so a
      * palette change reaches the canvas the same way it reaches the CSS. They
@@ -868,12 +854,6 @@ const figures = [
       if (section.dataset.mode === mode) return;
       section.dataset.mode = mode;
       for (const caption of captions) caption.hidden = caption.dataset.captionFor !== mode;
-      for (const tab of tabs) {
-        const selected = tab.dataset.target === mode;
-        tab.setAttribute("aria-selected", String(selected));
-        tab.tabIndex = selected ? 0 : -1;
-        if (selected) panel?.setAttribute("aria-labelledby", tab.id);
-      }
     };
 
     const render = (wipe: number) => {
@@ -883,12 +863,12 @@ const figures = [
 
     /* --- Where the wipe's value comes from -------------------------------
      *
-     * Scrolling drives it on a desktop with motion allowed; the two buttons
-     * drive it everywhere else. `pick` is null while the scroll owns the value.
+     * The reader's own scrolling, and nothing else. There used to be a pair of
+     * "By hand" / "By voice" buttons in the picture's corner driving it on the
+     * layouts with no scroll track; the maintainer removed them on 2026-08-29,
+     * so the scrub is now the whole mechanism and the track's own passage
+     * through the window is the whole input.
      */
-    let pick: number | null = null;
-    const scrubbing = () => !narrow.matches && !calm.matches && pick === null;
-
     const fromScroll = (): number => {
       const through = spanProgress(track.getBoundingClientRect(), window.innerHeight);
       return Math.min(1, Math.max(0, (through - WIPE_FROM) / (WIPE_TO - WIPE_FROM)));
@@ -906,7 +886,7 @@ const figures = [
       raf = requestAnimationFrame(loop);
       if (!onScreen || now - last < FRAME_MS) return;
       last = now;
-      render(scrubbing() ? fromScroll() : (pick ?? 0));
+      render(calm.matches ? 1 : fromScroll());
     };
 
     /* The first paint has to wait for the frames to decode; until then the
@@ -919,44 +899,12 @@ const figures = [
      * repaint even at an unchanged wipe. */
     new ResizeObserver(() => (painted = -1)).observe(stage);
 
-    for (const [index, tab] of tabs.entries()) {
-      tab.addEventListener("click", () => {
-        pick = tab.dataset.target === "jarvis" ? 1 : 0;
-        painted = -1;
-        render(pick);
-      });
+    /* A reader who asked for less motion gets the night frame and its caption,
+     * standing still: the state the section is arguing for, the one carrying
+     * the speech bubble, and the one whose ground is the page's own. The
+     * daylight frame is still in the markup with its own alt text. */
+    calm.addEventListener("change", () => (painted = -1));
 
-      /* The tab pattern owes arrow-key navigation; buttons alone do not give it. */
-      tab.addEventListener("keydown", (event) => {
-        const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
-        if (!step) return;
-        event.preventDefault();
-        const next = tabs[(index + step + tabs.length) % tabs.length];
-        next.focus();
-        next.click();
-      });
-    }
-
-    /* A picked state is released when the reader scrolls the section again —
-     * otherwise one click would freeze the scrub for the rest of the visit. It
-     * is NOT released under reduced motion or on a narrow screen, where the
-     * pick is the only control there is. */
-    window.addEventListener(
-      "scroll",
-      () => {
-        if (!narrow.matches && !calm.matches) pick = null;
-      },
-      { passive: true },
-    );
-
-    for (const query of [calm, narrow]) {
-      query.addEventListener("change", () => {
-        pick = calm.matches || narrow.matches ? (pick ?? 0) : null;
-        painted = -1;
-      });
-    }
-
-    if (calm.matches || narrow.matches) pick = 0;
     raf = requestAnimationFrame(loop);
     window.addEventListener("pagehide", () => cancelAnimationFrame(raf), { once: true });
   }

@@ -9,22 +9,14 @@
  * § "The section marker" and src/lib/sectionTrack.ts for the path itself.
  *
  * WHICH RAIL IT WALKS IS NOT THIS COMPONENT'S TO DECIDE, and it is not a prop
- * either. The side is a running total down the page — a section that closes on
- * a rule flips it for the section below, a section that does not keeps it (see
- * `sidesForTracks`) — so it is a function of everything ABOVE this one, and a
- * prop would mean every section carrying a hand-maintained answer that silently
- * goes wrong the moment one is inserted, removed or reordered. The client
- * script reads `[data-section-track]` in document order and writes the `d` it
- * derives, which is the one place that ordering is knowable. The markup below
- * therefore ships a placeholder path: it is never stroked and the marker is
- * parked off-screen until the first frame, so nothing of it is ever seen.
- *
- * `open` IS THE ONE THING THIS COMPONENT CANNOT DERIVE, and that is why it IS a
- * prop. Whether a rule is drawn under a section is a local fact about that
- * section's own markup, not about its place in the page: pass `open` when the
- * section below carries no `.section-rule`, so there is no line for the square
- * to cross and it hands over on the rail it came down. Plugins, Skills and CLIs
- * are that run — one block, no rules between them (maintainer, 2026-08-29).
+ * either. Consecutive sections alternate — the serpentine — so the side is a
+ * function of a section's POSITION among the tracked sections, and a prop would
+ * mean every section carrying a hand-maintained answer that silently goes wrong
+ * the moment one is inserted, removed or reordered. The client script counts
+ * `[data-section-track]` in document order and writes the `d` it derives, which
+ * is the one place that ordering is knowable. The markup below therefore ships
+ * a placeholder path: it is never stroked and the marker is parked off-screen
+ * until the first frame, so nothing of it is ever seen.
  *
  * WHERE TO PUT IT. Drop it inside the box the reader sees the section AS, and
  * give that box `position: relative`. For an ordinary section that is the
@@ -62,18 +54,12 @@ import { trackPath } from "@/lib/sectionTrack";
 interface Props {
   /** True when the host box already sits on the content column. */
   nested?: boolean;
-  /** True when no rule is drawn under this section — see the note above. */
-  open?: boolean;
 }
 
-const { nested = false, open = false } = Astro.props;
+const { nested = false } = Astro.props;
 ---
 
-<div
-  class="section-track"
-  aria-hidden="true"
-  data-section-track={open ? "open" : "closed"}
->
+<div class="section-track" aria-hidden="true" data-section-track>
   <Container width={nested ? "full" : "content"} class="section-track__column">
     <div class="section-track__box">
       {/*
@@ -97,7 +83,7 @@ const { nested = false, open = false } = Astro.props;
 </div>
 
 <script>
-  import { sidesForTracks, trackPath, type TrackEnd } from "@/lib/sectionTrack";
+  import { sideForIndex, trackPath } from "@/lib/sectionTrack";
   import { sectionProgress, spanProgress } from "@/lib/scrollSpan";
 
   /* Half the 8px square. The marker is placed by its top-left corner. */
@@ -108,28 +94,17 @@ const { nested = false, open = false } = Astro.props;
    * frame; read together they cost a single pass. It also has to be one loop,
    * because deciding WHICH section owns the square is a decision about all of
    * them at once. */
-  const layers = Array.from(document.querySelectorAll<HTMLElement>("[data-section-track]"));
-
-  /* The serpentine, folded over document order — which is the only place that
-   * order is known, since a component cannot see its own siblings. How a
-   * section ENDS is its own markup's business and travels on the element; where
-   * it STARTS depends on every section above it and is computed here. A per
-   * section side prop would be a hand-maintained answer that goes wrong the
-   * moment the page is reordered. */
-  const sides = sidesForTracks(
-    layers.map((layer): TrackEnd =>
-      layer.dataset.sectionTrack === "open" ? "open" : "closed",
-    ),
-  );
-
-  const tracks = layers
+  const tracks = Array.from(document.querySelectorAll<HTMLElement>("[data-section-track]"))
     .map((layer, index) => {
       const box = layer.querySelector<HTMLElement>(".section-track__box")!;
       const path = layer.querySelector<SVGPathElement>("path")!;
       const marker = layer.querySelector<HTMLElement>(".section-track__marker")!;
-      const end: TrackEnd = layer.dataset.sectionTrack === "open" ? "open" : "closed";
-      /* Written before getTotalLength below reads it. */
-      path.setAttribute("d", trackPath(sides[index], end));
+      /* The serpentine. `index` is this section's place in document order among
+       * the sections that carry a marker, which is the only place that order is
+       * known — the component itself cannot see its own siblings, and a prop
+       * per section is a hand-maintained answer that goes wrong the moment the
+       * page is reordered. Written before getTotalLength below reads it. */
+      path.setAttribute("d", trackPath(sideForIndex(index)));
       /* WHAT DRIVES THE PROGRESS. A sticky section is driven by its tall track;
        * everything else by the very box the marker is drawn in, which is the
        * element `SectionTrack` was dropped into. Not by `closest("section")`:

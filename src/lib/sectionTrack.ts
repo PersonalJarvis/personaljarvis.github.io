@@ -1,11 +1,10 @@
 /**
  * The path the section marker walks, and the milestones on it.
  *
- * THE PATH IS THE SECTION'S OWN PERIMETER, in percent of the tracked box. A
- * CLOSED section — one whose bottom edge is drawn, which is the ordinary case —
- * comes in two mirror images, because consecutive closed sections alternate:
+ * THE PATH IS THE SECTION'S OWN PERIMETER, in percent of the tracked box — and
+ * it comes in two mirror images, because consecutive sections alternate:
  *
- *      closed, side "left"                 closed, side "right"
+ *      odd section — side "left"          even section — side "right"
  *
  *   (0,0) ┌────────────────┐              ┌────────────────┐ (100,0)
  *         │                │              │                │
@@ -15,38 +14,16 @@
  *                    ● = the exit corner, which is also the next
  *                        section's entry corner, one pixel below
  *
- * WHY IT ALTERNATES — "the serpentine". A marker that always crossed and then
- * started the next section on the far rail would jump the full width of the
- * column at every boundary. Mirroring the section that follows a crossing one
- * puts each section's exit corner directly above the next section's entry
- * corner, so the square hands itself over without moving sideways and the whole
- * page reads as one line folded back and forth rather than as one gadget
- * repeated per section.
- *
- * AN OPEN SECTION IS THE OTHER CASE, and it is why the side is not `index % 2`.
- *
- *      open, side "left"                   open, side "right"
- *
- *   (0,0) ┌ ─ ─ ─ ─ ─ ─ ─ ─               ─ ─ ─ ─ ─ ─ ─ ─ ┐ (100,0)
- *         │                                               │
- *         ▼                                               ▼
- * (0,100) ●  no closing rule to cross                     ● (100,100)
- *
- * Three sections of this page — Plugins, Skills, CLIs — deliberately have no
- * rule between them: the maintainer asked on 2026-08-29 for that run to read as
- * one block with nothing but the two rails around it. There is therefore no
- * line for the square to cross at those boundaries, so an open section walks
- * its entry rail and nothing else, and hands over on the SAME rail. Draw the
- * crossing leg anyway and the square would trace a line that is not there.
- *
- * WHICH MAKES THE SIDE A RUNNING TOTAL, NOT A PARITY. A closed section flips
- * the side for the one below it; an open section keeps it. `sidesForTracks`
- * folds that down the page, which is the only rule that holds for both kinds —
- * `index % 2` is the same answer only as long as every section closes, and it
- * silently breaks the chain the moment one does not.
+ * WHY IT ALTERNATES — "the serpentine". A marker that always ran down the left
+ * rail would leave every section at the bottom-RIGHT corner and enter the next
+ * one at the top-LEFT: a jump the full width of the column, at every single
+ * section boundary. Mirroring every second section puts each section's exit
+ * corner directly above the next section's entry corner, so the square hands
+ * itself over without moving sideways and the whole page reads as one line
+ * folded back and forth rather than as one gadget repeated per section.
  *
  * WHY A PATH AND NOT THREE SUMS. `getPointAtLength` on a real `<path>` gives
- * the position and the corner handling for free, in percent, so the same few
+ * the position and the corner handling for free, in percent, so the same two
  * strings work for a section of any height without a single pixel being
  * computed anywhere. The SVG carries `preserveAspectRatio="none"`, so the
  * square 0..100 box above stretches to whatever the section actually is.
@@ -63,10 +40,9 @@
  * 2026-08-29: "nur einen Punkt, der ständig von oben nach unten geht".
  *
  * THE PATH LENGTH IS THE TIMING. The marker moves at a constant speed along the
- * path, so a closed section's two legs split its scroll distance evenly,
- * 100 : 100, and an open section spends all of it coming down the rail. Nothing
- * else sets the pacing, and the milestones below are read back out of those
- * numbers rather than tuned by hand.
+ * path, so the two legs split the section's scroll distance evenly, 100 : 100.
+ * Nothing else sets the pacing, and the milestones below are read back out of
+ * those numbers rather than tuned by hand.
  *
  * Adapted from <https://www.meuze.ai>, whose section marker walks the same
  * alternating path and which the maintainer asked for by name on 2026-08-29.
@@ -84,59 +60,31 @@ const CLOSING_RULE = 100;
 
 const TOTAL = RAIL + CLOSING_RULE;
 
-/** Which rail a section's marker walks DOWN. */
+/** Which rail a section's marker walks DOWN. It exits on the other one. */
 export type TrackSide = "left" | "right";
 
 /**
- * Whether a section's bottom edge is a drawn rule the marker crosses.
+ * The side for the n-th tracked section, counted from 0 in document order.
  *
- * `"closed"` is the ordinary section: it ends on a horizontal rule, the square
- * runs along it to the opposite rail, and the section below starts there.
- * `"open"` is a section with no rule under it — the square reaches the bottom
- * of its entry rail and the section below carries straight on down the same
- * one.
- */
-export type TrackEnd = "closed" | "open";
-
-/**
- * The side each tracked section walks down, folded over document order.
- *
- * Takes how every section ENDS, in order, and returns where each one STARTS.
- * The first square starts on the left; after that, a closed section flips the
- * side and an open one keeps it, which is exactly the statement "the exit
- * corner and the next entry corner are the same pixel".
- *
- * Counted over the sections that actually carry a marker, not over every
+ * Odd sections (the 1st, 3rd, 5th) run down the left rail, even ones down the
+ * right. Counted over the sections that actually carry a marker, not over every
  * section on the page: the chain only has to be unbroken between neighbouring
- * MARKERS, and a section without one is not a link in it.
+ * MARKERS, and a section without one — the hero — is not a link in it.
  */
-export const sidesForTracks = (ends: readonly TrackEnd[]): TrackSide[] => {
-  let side: TrackSide = "left";
-  return ends.map((end) => {
-    const entry = side;
-    if (end === "closed") side = side === "left" ? "right" : "left";
-    return entry;
-  });
-};
+export const sideForIndex = (index: number): TrackSide =>
+  index % 2 === 0 ? "left" : "right";
 
 /**
- * The `d` attribute for one section, in the 0..100 box the SVG stretches over
- * it. Enter at the top of one rail; a closed section leaves along its bottom
- * rule, an open one stops where the rail does.
+ * The `d` attribute for one side, in the 0..100 box the SVG stretches over the
+ * section. Enter at the top of one rail, leave down the other.
  */
-export const trackPath = (side: TrackSide, end: TrackEnd = "closed"): string => {
+export const trackPath = (side: TrackSide): string => {
   const enter = side === "left" ? 0 : 100;
   const exit = side === "left" ? 100 : 0;
-  const down = `M ${enter} 0 V ${RAIL}`;
-  return end === "closed" ? `${down} H ${exit}` : down;
+  return `M ${enter} 0 V ${RAIL} H ${exit}`;
 };
 
-/**
- * Progress at which the marker leaves the rail and turns onto the rule.
- *
- * A CLOSED section's milestone. An open section has no such turn: it is on its
- * rail for the whole of its progress.
- */
+/** Progress at which the marker leaves the rail and turns onto the rule. */
 export const TURN_ACROSS = RAIL / TOTAL;
 
 /**
@@ -148,8 +96,5 @@ export const TURN_ACROSS = RAIL / TOTAL;
  */
 export const TURN_DOWN = (RAIL + CLOSING_RULE) / TOTAL;
 
-/**
- * Progress at a point `t` (0..1) of the way down the entry rail of a CLOSED
- * section — the only kind that reads its milestones back out (`VoiceSwitch`).
- */
+/** Progress at a point `t` (0..1) of the way down the entry rail. */
 export const downTheRail = (t: number): number => (t * RAIL) / TOTAL;

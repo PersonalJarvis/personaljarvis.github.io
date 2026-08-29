@@ -90,10 +90,28 @@ distance is what drives the wipe.
 | Headline | `--text-display-xl`, left column, **two lines** |
 | Standfirst | right column, `--text-body`, four lines |
 | Picture | fills the leftover height; `--radius-xl` (16px), 1px hairline |
+| Caption | centred under the picture, `--text-body-sm` |
 | Figures | four columns from `md`, two below; hairlines from `gap: 1px` |
 
 Order from the top: section rule → eyebrow → head (headline | standfirst) →
-picture with the two states set into its corner → caption → figures.
+picture → caption → figures.
+
+**The text is held `--space-base` off the rails.** The rails stand on the
+container's own content edges, so a paragraph inside it starts on exactly the
+pixel the rail is drawn on and every line reads as stuck to the frame — the
+maintainer's complaint, 2026-08-29. The inset is `--space-base` because that is
+what the figure cells already pad by, so the eyebrow, the headline and the
+figure labels all start on one vertical line.
+
+It goes on those children, **never on `[data-frame]`**: the section marker's
+layer is laid against that element's padding box, and inline padding there walks
+the marker down the middle of the section instead of down the rails. The picture
+and the figure bar are deliberately not inset — each has a 1px border in the
+rail's own colour, and that border *is* the rail for its height.
+
+**The caption is the one centred line in the section**, and that is the only
+exception. It belongs to the picture rather than to the column: it changes when
+the picture changes and says nothing on its own. Maintainer's call, 2026-08-29.
 
 **Nothing is allowed to exceed the sticky box.** Every height between it and the
 picture is a flex chain carrying `min-height: 0`, so the picture is the one
@@ -113,9 +131,11 @@ Tailwind's rem utilities: the root font size grows with the viewport, so a
 
 ### Where the sticky layout is dropped
 
-Three cases fall back to an ordinary block — no track, no sticky child, no
-scrub, and the picture back at its own 16:9, with the two buttons as the whole
-control:
+Three cases fall back to an ordinary block — no track, no sticky child, and the
+picture back at its own 16:9. **The wipe still runs**: it reads the track's own
+passage through the window, and the track is the right box in either geometry —
+three screens tall while the section is pinned, one block's worth when it is
+not.
 
 | Case | Query | Why |
 |---|---|---|
@@ -123,8 +143,11 @@ control:
 | short | `max-height: 879px` | the flex chain gives the picture what height is left, and below about 880px that is a 4:1 letterbox slot the photograph cannot survive |
 | calm | `prefers-reduced-motion: reduce` | — |
 
-**The CSS and the script read the same three conditions, spelled identically.** A
-mismatch leaves a scrub driving a section that no longer has a scroll track.
+**This is a geometry decision and nothing else.** It used to be a mode: the
+script read the same three queries, turned the scrub off in all of them, and
+handed control to two buttons in the picture's corner. The buttons went on
+2026-08-29 and only `prefers-reduced-motion` still means anything to the script,
+so there is no longer a pair of conditions to keep spelled alike.
 
 The 880px figure is measured, not chosen: it is where the crop starts cutting
 the speech bubble off the top of the frame.
@@ -200,6 +223,18 @@ it are worth knowing before changing anything:
   disappear. Subtracting a blurred copy puts the edges back at every brightness.
   This replaced an earlier version carrying hand-measured pixel boxes around the
   monitor glass, which had to be re-measured whenever a photograph changed.
+- **The local-contrast pass runs AFTER the gamma solve, at an object's scale.**
+  Before the gamma it measures differences in the raw exposure, and the night
+  frame's whole subject lives inside about five per cent of that range, so a
+  gain under one adds a few thousandths there and changes nothing. Run after, it
+  sees the tone that actually decides the dots and a shadow difference the
+  exponent has just expanded is amplified like any other; the gamma is then
+  solved a second time so `COVERAGE` still lands exactly. The radius went with
+  it, from 0.025 of the grid to **0.055** — about 40px against a 50px
+  microphone, so the pass separates a thing from the wall behind it rather than
+  sharpening the texture on it. The daylight frame gained the same way: at the
+  old radius its dozen overlapping panels dithered into one mush, and at this
+  one each panel keeps its own edge.
 
 The palette is baked into the PNGs rather than left to CSS. A mask would let the
 page recolour the dots, but a mask is resampled by the compositor and the crisp
@@ -238,20 +273,47 @@ code comment sit at the same saturation. `COLOURED` is a ceiling on the share of
 dots that may take a hue, not a target; the micro-colour test runs out of screen
 first, at about 3% of the dots on the daylight frame and 5% on the night one.
 
+### The microphone
+
+The night photograph exposes the microphone at **0.087 mean against a wall
+behind it at 0.091** — measured on the grid. Those are the same brightness, so
+the object has no boundary at all, and a halftone can only print what the
+photograph contains: no gamma, no local contrast and no coverage target invents
+a separation that is not in the file. On the page it read as a black smudge, and
+the maintainer asked for a legible microphone on 2026-08-29.
+
+`MIC_LIGHT` in the script dodges it: a rotated ellipse with a smoothstep edge,
+applied as a **gain of 2.2 before the halftone**. That lifts the mic's own range
+(0.035..0.169) to 0.08..0.37 and leaves the wall where it is, so the thing gets
+an edge. Multiplicative, never additive — the shock mount's dark bands stay dark
+relative to the cylinder, so the mic keeps its modelling instead of flooding
+into one grey shape. The falloff is generous on purpose: it reaches the lips,
+which is what the speech bubble's tail points at.
+
+**It is a correction to one photograph, not a rule**, and that is why it may be
+a measured box when the colour detector may not. The colour rule has to hold for
+any frame, and a box there was a bug waiting for the next photograph; this is a
+light the photographer did not set, aimed at one object in one file. It sits
+beside `BUBBLE` because it carries the same contract: **regenerating the night
+frame means re-measuring it** — or better, lighting the microphone in the
+photograph and deleting it.
+
 ### The speech bubble
 
 The night frame carries one empty speech bubble with three dots in it, drawn
 into the dot grid after the halftone. The maintainer asked for it by name on
 2026-08-29.
 
-**Its tail points at the SCREEN, not at the person.** The bubble is the machine
-answering, which is the claim the whole section is making; a bubble growing out
-of the man's mouth says he is talking to himself, and the section already has
-his posture and the microphone to say that he is speaking. The first version
-pointed at the microphone and the maintainer caught it the same day. The two
-base points sit on the bubble's left edge and the tip reaches back across the
-bezel onto the glass, on the empty right half of the calm panel where it covers
-no code.
+**Its tail points at the MOUTH.** The bubble is what the man is saying, so it
+grows out of him the way a speech bubble does anywhere else, and the reader is
+told in one shape that the way you work this thing is by talking. It pointed at
+the *screen* until 2026-08-29 — the argument being that the bubble was the
+machine answering — and the maintainer replaced that direction the same day:
+*"Ich möchte, dass die Sprechblase aus dem Mund kommt"*. The two base points now
+sit on the bubble's bottom edge and the tip lands on the lips at (0.821, 0.528)
+of the frame, measured, just clear of the microphone's near end. It crosses the
+boom arm on the way down, which is what a bubble drawn over a photograph does;
+the fill clears its dots, so it reads as lying on top.
 
 **It is drawn by the script, never asked of the image model.** A model puts
 letters in a speech bubble whatever the prompt says; its outline would be
@@ -265,10 +327,10 @@ Outline alone leaves the room showing through and it stops looking like a
 bubble.
 
 **`BUBBLE` is measured against the photograph.** Regenerating the night frame
-means re-measuring it. It sits **off the monitor** — top right, over the dark
-wall above the person's head, tail pointing down-left at the microphone. It used
-to sit on the glass, which was harmless when the screen was a bright smudge and
-is not now that the screen is the subject. It also has a crop constraint: the page crops this 16:9
+means re-measuring it — the box *and* the tail's tip, which has to keep landing
+on the mouth. It sits **off the monitor** — top right, over the dark wall above
+the person's head. It used to sit on the glass, which was harmless when the
+screen was a bright smudge and is not now that the screen is the subject. It also has a crop constraint: the page crops this 16:9
 frame into a box up to three times as wide as it is tall, anchored at 0.42 of
 the height, so only rows 0.17–0.75 survive on the shortest window the sticky
 layout still runs on. Keep the box inside 0.19–0.73 — a bubble at 0.15 loses its
@@ -366,16 +428,23 @@ version. **The rule that a picture change here is opacity-only is withdrawn.**
 
 ## The two states
 
-Two buttons set into the picture's bottom-left corner, rather than a row of
-their own: the section has exactly one viewport to spend, and a row above the
-photograph is a row the photograph does not get.
+**There is no control.** Scrolling is the whole mechanism: the picture turns
+over as the reader passes the section, and the caption turns over with it.
 
-- Real `<button role="tab">` inside a `role="tablist"`, never divs
-- `aria-selected` marks the active one; arrow keys move between them with a
-  roving `tabindex`; the panel's `aria-labelledby` follows the selection
-- The scrub drives them on a desktop; on the fallback layouts they are the whole
-  control, which is why they are real buttons and not decoration
+A pair of "By hand" / "By voice" buttons used to sit in the picture's
+bottom-left corner, driving the wipe wherever the scroll track was off. The
+maintainer removed them on 2026-08-29 — *"diese zwei Buttons by hand, by voice
+können dann raus"* — and the fallback layouts now scrub from the same input as
+the pinned one. **Do not put a control back.**
+
 - The starting state is `manual`. The visitor should see the problem first
+- The canvas carries the picture's name in `aria-label` under `role="img"`. It
+  used to be `aria-hidden` inside a `role="tabpanel"` labelled by whichever
+  button was pressed; the label went with the buttons, and without a
+  replacement the one visible element of the section would have no name
+- Under `prefers-reduced-motion` the section shows the **night** frame,
+  standing still: the state it is arguing for, the one carrying the speech
+  bubble, and the one whose ground is the page's own
 
 ---
 
@@ -428,17 +497,15 @@ the maintainer saw on 2026-08-29. One pixel of the grid's own hairline ground
 shows at each outer edge instead, in the same colour and on the same line. The
 picture above solves the identical problem with its own 1px border.
 
-**The last cell is turned round.** Four short facts do not fill a column this
-wide: every cell carries 110 to 165px of slack, measured. In the first three
-that slack sits against a divider and reads as the gutter it is; in the last it
-sat against the *rail* with nothing after it, and read as the bar failing to
-reach the edge of the section. Setting that one cell flush right puts its slack
-against a divider too, and the bar meets both rails.
-
-Not the whole row — the numbers share the section's left edge with the eyebrow
-and the headline, and centring them or turning all four round would give the
-section a second left margin. It is also why the complaint was about the fourth
-card and not the third, which actually has the most empty space of the four.
+**Every cell runs the same way, left to right — including the last one.** It
+was turned round for a while: four short facts do not fill a column this wide,
+every cell carries 110 to 165px of slack, and in the fourth that slack sat
+against the *rail* with nothing after it, which read as the bar failing to reach
+the edge of the section. Setting that one cell flush right closed the gap and
+cost the row its rhythm; the maintainer's complaint on 2026-08-29 was that the
+last card ran the other way from the other three. A row of four that reads in
+two directions is worse than a row of four with a wide last gutter, so the slack
+stays and the direction is uniform. **Do not turn it round again.**
 
 ### Why the figures do not change with the state
 
@@ -477,6 +544,10 @@ difference between having the numbers and wanting them.
 - Two independently generated frames whose room or camera visibly differ
 - Text inside a generated image, and any third-party mark
 - Invented figures, or a figure bar that counts
+- A figure cell that runs right to left while its neighbours run left to right
+- A control on the picture — the scroll is the whole mechanism
+- Text starting on the pixel the rail is drawn on, or inline padding on
+  `[data-frame]` to fix it
 - Another product's accent colour, typeface or section furniture
 - A photograph whose monitor is small, angled away, or hidden behind the person
 - Colour anywhere but the screen, or a screen coloured by a measured pixel box
