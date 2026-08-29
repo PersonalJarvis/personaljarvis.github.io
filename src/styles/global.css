@@ -30,6 +30,11 @@
   --radius-lg: var(--radius-lg);
 }
 
+/* The page colour lives here and nowhere else. The rails sit in the layer
+ * between this background and the content (see layout.css § "Page chrome"), so
+ * an opaque background on a section would paint over them and the lines would
+ * come out in pieces. Sections are transparent; only blocks with a surface of
+ * their own — cards, the CTA band — are meant to interrupt a rail. */
 body {
   background: var(--canvas);
   color: var(--body);

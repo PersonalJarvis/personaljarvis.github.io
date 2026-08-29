@@ -193,6 +193,77 @@ never text. An image that should look wide belongs on `.wide`.
 
 ---
 
+## Page chrome: rails and the scroll marker
+
+The gutters are made visible. Two vertical hairlines stand on the edges of the
+`content` step and run **the whole page**, not one segment per section.
+
+### Rails
+
+- `position: fixed`, full viewport height, `pointer-events: none`
+- They sit on the edges of the `content` step and get there through the
+  `Container` component itself — never a recomputed pixel value, or they drift
+  from the formula the moment one of the four numbers changes
+- 1px, `var(--hairline)`
+- **`z-index: -1`.** The layer between the page background and the content. A
+  fixed element at `z-index: 0` paints in the positioned layer, which is *above*
+  ordinary in-flow content, and the rails would be drawn over the cards instead
+  of behind them. The page colour lives on `<body>` and propagates to the
+  canvas underneath, so negative z still leaves them visible; sections are
+  **transparent by default** so they do not cover them
+- Hidden below 768px — there are no gutters left to draw in
+
+Blocks with a surface of their own — cards, the CTA band — paint over the rails
+and interrupt them. That is intended, not a defect. A block that is filled in
+the *page* colour is the case to watch: it hides a rail without reading as a
+surface, so it leaves what looks like a hole. Either make it transparent, or
+let the same hairline show at its outer edge (the figures grid in
+`VoiceSwitch.astro` does the latter with one pixel of inline padding, because
+its dividers are gaps on a hairline ground and its cells have to stay filled).
+
+### Horizontal rules
+
+Every section gets `border-top: 1px solid var(--hairline)` on an element
+**inside** the container — the `.section-rule` class. Not on the section, and
+not on the container either: the container's border box is one gutter wider
+than its padding box, so a border there overshoots both rails and the joint
+reads as a cross instead of a corner. Vertical padding moves onto the same
+element, so the line marks the boundary rather than floating below it.
+
+The first section after the hero gets none, or there are two lines under the
+nav.
+
+### Vertical dividers between columns
+
+Optional, in two-column sections. Use `gap: 1px` on a grid with a coloured
+ground, not `border-right` — the same technique as the logo cells.
+
+### The scroll marker
+
+A small square on the **left** rail showing how far down the page the reader is.
+
+- 8×8px, filled `var(--ink)`, no rounding
+- Centred on the 1px line: `left: -4.5px`. An absolutely positioned child is
+  placed against its ancestor's *padding* box, which starts on the inner edge
+  of the rail, so half the square alone leaves it a pixel off the line
+- `top` is the scroll fraction of `100% - 8px`, not of `100%`: at a flat 100%
+  the square's top edge is the bottom edge of the screen and the marker
+  disappears exactly where the reader is meant to see it arrive
+- The fraction is measured inside a `requestAnimationFrame`, never in the
+  scroll handler — `scrollHeight` and `innerHeight` both force layout, and
+  doing that per scroll event ties the page's frame rate to the wheel
+- `aria-hidden="true"` — decorative, with no navigation function
+- `prefers-reduced-motion`: stays visible, loses the position transition
+
+At the very top of the page the marker sits behind the nav band, which is
+opaque by necessity. It clears it after about fifty pixels of scroll.
+
+`PageChrome` is rendered **once**, in the root layout. A rail assembled from one
+segment per section is a rail with seams, and the seams are the first thing the
+eye finds on a long page.
+
+---
+
 ## Responsive
 
 | Viewport | Behaviour |
@@ -229,6 +300,11 @@ nothing — test with a real one.)
 - Text, buttons, or forms that leave the `content` container
 - Horizontal padding on a section on top of the container — padding lives in the container alone
 - `100vh` for section-filling heights. Always `100svh`, or iOS pushes the address bar into the layout
+- Rails per section instead of once in the root layout
+- Rail positions from recomputed pixel values instead of the `Container`
+- An opaque background on a section, which paints over the rails. The page
+  colour belongs on `<body>`
+- Scroll maths in the scroll handler with no `requestAnimationFrame`
 
 `scripts/check-style.mjs` enforces this list. It runs as a pre-commit hook; a
 violation fails the build. The two owner files — `src/styles/layout.css` and

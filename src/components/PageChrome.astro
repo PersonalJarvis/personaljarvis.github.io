@@ -1,0 +1,71 @@
+---
+/**
+ * Page chrome — the two rails and the scroll marker.
+ *
+ * Rendered ONCE, in the root layout. Never per section: a rail assembled from
+ * one segment per section is a rail with seams, and the seams are the first
+ * thing the eye finds on a long page.
+ *
+ * The rails stand on the edges of the `content` step and get there through the
+ * Container itself rather than a recomputed pixel value, so they cannot drift
+ * from the width formula. Everything else — the layer it sits in, the marker
+ * geometry, the breakpoint below which it disappears — is in
+ * src/styles/layout.css next to that formula.
+ *
+ * Decorative only: aria-hidden, pointer-events: none, no navigation function.
+ *
+ * See docs/layout.md § "Page chrome: rails and the scroll marker".
+ */
+import Container from "@/components/Container.astro";
+---
+
+<div class="page-chrome" aria-hidden="true" data-page-chrome>
+  <Container width="content" class="page-chrome__column">
+    <div class="page-chrome__rails">
+      <span class="page-chrome__marker"></span>
+    </div>
+  </Container>
+</div>
+
+<script>
+  /**
+   * Scroll progress as a plain 0..1 number on the chrome element. CSS turns it
+   * into a position, so the only thing crossing the language boundary is the
+   * fraction itself.
+   *
+   * The read happens inside a requestAnimationFrame, not in the scroll handler:
+   * scrollHeight and innerHeight both force layout, and doing that on every
+   * scroll event ties the page's frame rate to the wheel. Inside rAF the
+   * browser is about to lay out anyway, and the pending frame is cancelled when
+   * a second event arrives before it runs, so a burst of events costs one
+   * measurement rather than forty.
+   */
+  const chrome = document.querySelector<HTMLElement>("[data-page-chrome]");
+
+  if (chrome) {
+    let frame = 0;
+
+    const measure = () => {
+      const scrollable =
+        document.documentElement.scrollHeight - window.innerHeight;
+      const progress = scrollable > 0 ? window.scrollY / scrollable : 0;
+      chrome.style.setProperty("--scroll-progress", String(progress));
+    };
+
+    const schedule = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    };
+
+    measure();
+    addEventListener("scroll", schedule, { passive: true });
+    addEventListener("resize", schedule, { passive: true });
+
+    // The page grows as islands hydrate and images land, and a taller page
+    // means the same scrollY is a smaller fraction. Without this the marker
+    // sits wrong until the reader scrolls.
+    if ("ResizeObserver" in window) {
+      new ResizeObserver(schedule).observe(document.documentElement);
+    }
+  }
+</script>

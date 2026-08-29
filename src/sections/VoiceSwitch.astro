@@ -42,6 +42,7 @@
  * `?url` is load-bearing: a bare .png import goes to astro:assets and yields an
  * ImageMetadata object, which is useless inside a CSS url().
  */
+import Container from "@/components/Container.astro";
 import jarvisInk from "@/assets/scene/jarvis-ink.png?url";
 import manualInk from "@/assets/scene/manual-ink.png?url";
 
@@ -115,143 +116,155 @@ const figures = [
 <section
   id="voice"
   aria-labelledby="voice-heading"
-  class="flex min-h-svh flex-col justify-center py-20"
+  class="flex min-h-svh flex-col"
   data-voice-switch
   data-mode="manual"
 >
-  <div class="layout">
-    <p class="text-center uppercase text-muted" data-voice-eyebrow>
-      Typing vs speaking
-    </p>
+  <!--
+    The section rule, in the same container the rails stand on, so it starts
+    and ends exactly on them. It is a child of the section rather than of the
+    centred block below: the line marks where the section begins, and the
+    block is free to sit in the middle of the leftover height.
+  -->
+  <Container width="content">
+    <div class="section-rule"></div>
+  </Container>
 
-    <h2
-      id="voice-heading"
-      class="mt-4 text-balance text-center"
-      data-voice-headline
-    >
-      Nothing on this desk changed except who does the typing.
-    </h2>
+  <div class="flex flex-1 flex-col justify-center py-20">
+    <div class="layout">
+      <p class="text-center uppercase text-muted" data-voice-eyebrow>
+        Typing vs speaking
+      </p>
 
-    <p class="mt-5 text-balance text-center" data-voice-standfirst>
-      Jarvis runs on your own machine, listens when you speak to it, and works
-      the apps you already have. The keyboard still does everything it did — it
-      just stops being the only way in.
-    </p>
-
-    <div
-      class="wide mt-8 flex justify-center gap-2"
-      role="tablist"
-      aria-label="Two ways of working at the same desk"
-    >
-      <button
-        type="button"
-        role="tab"
-        id="voice-tab-manual"
-        aria-controls="voice-panel"
-        aria-selected="true"
-        tabindex="0"
-        data-target="manual"
+      <h2
+        id="voice-heading"
+        class="mt-4 text-balance text-center"
+        data-voice-headline
       >
-        With mouse and keyboard
-      </button>
-      <button
-        type="button"
-        role="tab"
-        id="voice-tab-jarvis"
-        aria-controls="voice-panel"
-        aria-selected="false"
-        tabindex="-1"
-        data-target="jarvis"
-      >
-        With Jarvis
-      </button>
-    </div>
+        Nothing on this desk changed except who does the typing.
+      </h2>
 
-    <!--
-      The rail wraps the picture: down its left edge, then along its bottom. It
-      is a scroll indicator, so it belongs to the reader's position, not to the
-      switch — see the script.
-    -->
-    <div class="wide mt-8 relative" data-rail-wrap>
-      <div class="rail-track" data-rail="down" aria-hidden="true">
-        <span class="rail-fill"></span>
+      <p class="mt-5 text-balance text-center" data-voice-standfirst>
+        Jarvis runs on your own machine, listens when you speak to it, and works
+        the apps you already have. The keyboard still does everything it did — it
+        just stops being the only way in.
+      </p>
+
+      <div
+        class="wide mt-8 flex justify-center gap-2"
+        role="tablist"
+        aria-label="Two ways of working at the same desk"
+      >
+        <button
+          type="button"
+          role="tab"
+          id="voice-tab-manual"
+          aria-controls="voice-panel"
+          aria-selected="true"
+          tabindex="0"
+          data-target="manual"
+        >
+          With mouse and keyboard
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="voice-tab-jarvis"
+          aria-controls="voice-panel"
+          aria-selected="false"
+          tabindex="-1"
+          data-target="jarvis"
+        >
+          With Jarvis
+        </button>
       </div>
-      <div class="rail-track" data-rail="along" aria-hidden="true">
-        <span class="rail-fill"></span>
-      </div>
-      <span class="rail-head" aria-hidden="true"></span>
 
       <!--
-        Both sheets are stacked in the same box. The white one never moves; the
-        ink one slides over it and back off to the right. Both masks are in the
-        markup from the first paint — a mask fetched on first switch flashes an
-        empty box, which reads as a page bug rather than a transition.
+        The rail wraps the picture: down its left edge, then along its bottom. It
+        is a scroll indicator, so it belongs to the reader's position, not to the
+        switch — see the script.
       -->
-      <div
-        id="voice-panel"
-        role="tabpanel"
-        aria-labelledby="voice-tab-manual"
-        tabindex="0"
-        data-stage
-      >
-        <div
-          data-frame="manual"
-          data-active="true"
-          style={`--sheet: url(${manualInk})`}
-          role="img"
-          aria-label="An ink drawing: a person hunched over a desk with both hands on the keyboard and one on the mouse, brow furrowed and a bead of sweat at the temple, facing a monitor filled with a scribbled mess of overlapping windows. A coffee mug steams at the left."
-        >
+      <div class="wide mt-8 relative" data-rail-wrap>
+        <div class="rail-track" data-rail="down" aria-hidden="true">
+          <span class="rail-fill"></span>
         </div>
+        <div class="rail-track" data-rail="along" aria-hidden="true">
+          <span class="rail-fill"></span>
+        </div>
+        <span class="rail-head" aria-hidden="true"></span>
 
         <!--
-          The ground behind the ink sheet's pale strokes. A separate box because
-          the mask punches the strokes OUT of the element that carries it — the
-          ground has to be an element the mask does not touch. It travels with
-          the sheet, so the two read as one page being laid down.
+          Both sheets are stacked in the same box. The white one never moves; the
+          ink one slides over it and back off to the right. Both masks are in the
+          markup from the first paint — a mask fetched on first switch flashes an
+          empty box, which reads as a page bug rather than a transition.
         -->
-        <div data-sheet-ground aria-hidden="true"></div>
-
         <div
-          data-frame="jarvis"
-          data-active="false"
-          style={`--sheet: url(${jarvisInk})`}
-          role="img"
-          aria-label="The same drawing with the sheet turned over: the same desk, the same person, the same mug and monitor. Now leaning back with a small desk microphone held near the mouth, both hands away from the keyboard and mouse, smiling. An empty speech bubble rises to the upper left and the monitor shows a few tidy lines."
+          id="voice-panel"
+          role="tabpanel"
+          aria-labelledby="voice-tab-manual"
+          tabindex="0"
+          data-stage
         >
-        </div>
-
-        <p data-bubble>
-          <span class="sr-only">{spokenLine}</span>
-          <span data-typed aria-hidden="true">{spokenLine}</span>
-        </p>
-      </div>
-    </div>
-
-    <!--
-      One caption per state, cross-faded. Both are in the DOM so a screen reader
-      and a search engine get the whole argument, not just the resting half.
-    -->
-    <div class="wide mt-6" data-captions>
-      {
-        (["manual", "jarvis"] as const).map((mode) => (
-          <p data-caption={mode}>
-            <span class="caption-lead">{captions[mode].lead}</span>{" "}
-            <span class="caption-rest">{captions[mode].rest}</span>
-          </p>
-        ))
-      }
-    </div>
-
-    <dl class="wide mt-8" data-figures>
-      {
-        figures.map(({ value, label, title }) => (
-          <div title={title}>
-            <dt>{label}</dt>
-            <dd>{value}</dd>
+          <div
+            data-frame="manual"
+            data-active="true"
+            style={`--sheet: url(${manualInk})`}
+            role="img"
+            aria-label="An ink drawing: a person hunched over a desk with both hands on the keyboard and one on the mouse, brow furrowed and a bead of sweat at the temple, facing a monitor filled with a scribbled mess of overlapping windows. A coffee mug steams at the left."
+          >
           </div>
-        ))
-      }
-    </dl>
+
+          <!--
+            The ground behind the ink sheet's pale strokes. A separate box because
+            the mask punches the strokes OUT of the element that carries it — the
+            ground has to be an element the mask does not touch. It travels with
+            the sheet, so the two read as one page being laid down.
+          -->
+          <div data-sheet-ground aria-hidden="true"></div>
+
+          <div
+            data-frame="jarvis"
+            data-active="false"
+            style={`--sheet: url(${jarvisInk})`}
+            role="img"
+            aria-label="The same drawing with the sheet turned over: the same desk, the same person, the same mug and monitor. Now leaning back with a small desk microphone held near the mouth, both hands away from the keyboard and mouse, smiling. An empty speech bubble rises to the upper left and the monitor shows a few tidy lines."
+          >
+          </div>
+
+          <p data-bubble>
+            <span class="sr-only">{spokenLine}</span>
+            <span data-typed aria-hidden="true">{spokenLine}</span>
+          </p>
+        </div>
+      </div>
+
+      <!--
+        One caption per state, cross-faded. Both are in the DOM so a screen reader
+        and a search engine get the whole argument, not just the resting half.
+      -->
+      <div class="wide mt-6" data-captions>
+        {
+          (["manual", "jarvis"] as const).map((mode) => (
+            <p data-caption={mode}>
+              <span class="caption-lead">{captions[mode].lead}</span>{" "}
+              <span class="caption-rest">{captions[mode].rest}</span>
+            </p>
+          ))
+        }
+      </div>
+
+      <dl class="wide mt-8" data-figures>
+        {
+          figures.map(({ value, label, title }) => (
+            <div title={title}>
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
   </div>
 </section>
 
@@ -524,6 +537,11 @@ const figures = [
     gap: 1px;
     background: var(--hairline);
     margin: 0;
+    /* The outer gap. The cells are filled in the page colour, so without this
+     * the block would paint over both rails for its full height and leave a
+     * hole in them. One pixel of the same hairline ground the inner dividers
+     * are made of continues each rail instead of interrupting it. */
+    padding-inline: 1px;
   }
 
   @media (min-width: 768px) {

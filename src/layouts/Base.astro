@@ -2,9 +2,15 @@
 /**
  * The page shell. Every route extends this one.
  *
- * It owns <head>, the stylesheet, and nothing else — layout belongs to
- * Container (docs/layout.md), looks belong to the tokens (docs/design.md).
+ * It owns <head>, the stylesheet and the page chrome, and nothing else —
+ * layout belongs to Container (docs/layout.md), looks belong to the tokens
+ * (docs/design.md).
+ *
+ * PageChrome is here rather than in a section because the rails run the whole
+ * page. Assembled per section they would come out as segments with seams, and
+ * the seams are the first thing the eye finds. See docs/layout.md.
  */
+import PageChrome from "@/components/PageChrome.astro";
 import "@/styles/global.css";
 
 interface Props {
@@ -30,6 +36,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta name="generator" content={Astro.generator} />
   </head>
   <body>
+    <PageChrome />
     <slot />
   </body>
 </html>

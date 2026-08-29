@@ -34,6 +34,16 @@
   --w-content: min(100% - 2 * var(--gutter), max(1280px, var(--content-share)));
   --w-prose: min(100% - 2 * var(--gutter), max(672px, var(--prose-share)));
 
+  /* The PADDING box of each step - where a Container's children actually
+   * begin, one gutter inside the border box above.
+   *
+   * This is the edge the page chrome draws on, and the edge a horizontal rule
+   * inside a Container spans. Anything that has to line up with those lines
+   * measures from here, so there is still exactly one width formula and no
+   * second set of numbers to keep in step. */
+  --w-content-inner: calc(var(--w-content) - 2 * var(--gutter));
+  --w-prose-inner: calc(var(--w-prose) - 2 * var(--gutter));
+
   /* Type scales with the viewport too, so a wide screen gets a bigger page
    * rather than the same page with more empty space around it. Everything
    * sized in rem follows this automatically. */
@@ -80,17 +90,24 @@
  * of carrying their own width. The outer columns keep a minimum of one gutter
  * so nothing touches the screen edge, and prose sits centred inside content
  * rather than flush left — a page with two different centres reads as broken.
+ *
+ * The named columns are the containers' PADDING boxes, not their border
+ * boxes, so a `.wide` child lands on exactly the same edge as a child of
+ * `<Container width="content">`. They used to be the border boxes, which put
+ * every grid section one gutter wider than every container section —
+ * invisible until the page chrome drew rails on those edges and the grid
+ * sections overhung them by a gutter a side.
  * ------------------------------------------------------------------------ */
 
 .layout {
   /* Half the difference between the two steps, so prose lands centred. */
-  --rail: calc((var(--w-content) - var(--w-prose)) / 2);
+  --rail: calc((var(--w-content-inner) - var(--w-prose-inner)) / 2);
 
   display: grid;
   grid-template-columns:
     [full-start] minmax(var(--gutter), 1fr)
     [content-start] minmax(0, var(--rail))
-    [prose-start] minmax(0, var(--w-prose)) [prose-end]
+    [prose-start] minmax(0, var(--w-prose-inner)) [prose-end]
     minmax(0, var(--rail)) [content-end]
     minmax(var(--gutter), 1fr) [full-end];
 }
@@ -116,4 +133,96 @@
 
 .section-full-height {
   min-height: 100svh;
+}
+
+/* ---------------------------------------------------------------------------
+ * Page chrome — two rails, the horizontal rules, and the scroll marker
+ *
+ * The gutters are made visible: two hairlines standing on the edges of the
+ * `content` step, running the whole page rather than restarting per section.
+ * That is why they are FIXED and rendered once in the root layout — a rail per
+ * section stitches together out of segments that never quite line up, and the
+ * seams are exactly what the eye picks out.
+ *
+ * They are positioned by the container itself, not by a recomputed pixel
+ * value, so they cannot drift from the formula above.
+ *
+ * z-index: -1, not 0. A fixed element at z-index 0 paints in the positioned
+ * layer, which is ABOVE ordinary in-flow content — the rails would then be
+ * drawn over the cards instead of behind them. Negative z takes the layer
+ * between the page background and the content, which is where chrome belongs.
+ * The page colour sits on <body> and propagates to the canvas underneath, so
+ * the rails stay visible; sections are transparent by default so they do not
+ * cover them. Blocks with a surface of their own (cards, the CTA band) paint
+ * over the rails and interrupt them. That is intended, not a defect.
+ * ------------------------------------------------------------------------ */
+
+.page-chrome {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.page-chrome__column,
+.page-chrome__rails {
+  height: 100%;
+}
+
+.page-chrome__rails {
+  position: relative;
+  border-inline: 1px solid var(--hairline);
+}
+
+/* Below the container's own breakpoint there are no gutters left to draw in. */
+@media (max-width: 767px) {
+  .page-chrome {
+    display: none;
+  }
+}
+
+/* The scroll marker — an 8px square riding the left rail, centred on the 1px
+ * line. `--scroll-progress` is a plain number between 0 and 1, written by the
+ * component's script from inside a requestAnimationFrame.
+ *
+ * -4.5px, not -3.5px: an absolutely positioned child is placed against its
+ * ancestor's PADDING box, which starts on the inner edge of the rail, so the
+ * line's centre is at -0.5px and the square's left edge is 4px further left
+ * again. Offsetting by half the square alone leaves the marker sitting a
+ * pixel off the line it is meant to ride.
+ *
+ * The travel is `100% - 8px` rather than a flat 100%, so the square is fully
+ * inside the viewport at both ends: at 100% of the height its top edge would
+ * be the bottom edge of the screen and the marker would vanish exactly where
+ * the reader is meant to see it arrive. */
+.page-chrome__marker {
+  position: absolute;
+  left: -4.5px;
+  top: calc(var(--scroll-progress, 0) * (100% - 8px));
+  width: 8px;
+  height: 8px;
+  background: var(--ink);
+  transition: top 100ms linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-chrome__marker {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Section rule
+ *
+ * The horizontal line between two sections. It goes on an element INSIDE the
+ * container, never on the section or the container itself: the container's own
+ * border box is a gutter wider than its padding box, so a border there would
+ * overshoot both rails by 32px and the joint would read as a cross rather than
+ * a corner. Inside, the line starts and ends exactly on a rail.
+ *
+ * Vertical padding belongs below the line, so it goes on the same element.
+ * ------------------------------------------------------------------------ */
+
+.section-rule {
+  border-top: 1px solid var(--hairline);
 }
