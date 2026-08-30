@@ -840,10 +840,27 @@ that means "whatever the parent is".
   the body: a section that grows makes the same scroll position a different
   fraction of it, and a section growing *above* another one moves it down the
   document without changing its size at all
-- Centred on the 1px lines, which lie just *inside* the box on its left and
-  right and just below it at the bottom. Both corrections are linear in the
-  point's own coordinate — the x nudge runs +0.5 to −0.5 across the box, the y
-  nudge is +0.5 everywhere — so they are one term each and not a case per corner
+- **Centred on the 1px lines, and the lines are MEASURED, not assumed.** The
+  rails are the easy half: they lie just inside the tracked box left and right,
+  so the x nudge runs +0.5 to −0.5 across it. The horizontals are not, because
+  the page draws them three different ways and the centre of the line lands
+  somewhere different in each — `.section-bounds` opens on a 1px `::before` at
+  its padding-box top and closes on a `border-bottom`; `.section-run-rule`
+  closes on a 1px `::after` hung at `top: 100%`, outside its box; a pinned frame
+  draws both edges as real borders, and a border on the TOP edge is the one case
+  that goes the other way. The marker reads the border widths off the element
+  that draws the line, and half a hairline is not a rounding error here: the
+  square is 8px on a 1px line, so a pixel out is a pixel of ground showing
+  through — "es muss genau mittig auf der Linie fahren"
+- **A pinned frame's own rule is found through `offsetTop`, not its rect.** A
+  sticky child's rect is where it is parked, not where it lives, and the
+  schedule is worked out once for every scroll position. Reading the rect while
+  the pin happened to be holding put the voice section's opening rule 10.5px
+  above the line the reader can see — the frame pays an inset the track knows
+  nothing about — and the square rode that phantom line all the way across.
+  `offsetTop` is layout, and sticky does not touch layout; the rect is still
+  preferred where the two agree, because it carries the sub-pixel the whole
+  number does not
 - **One rAF for the whole page**, and the measuring that forces layout happens
   outside it — `getBoundingClientRect` in a scroll handler ties the page's frame
   rate to the wheel

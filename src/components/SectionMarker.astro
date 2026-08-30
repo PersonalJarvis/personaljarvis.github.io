@@ -77,6 +77,16 @@
         box,
         path,
         side: sides[index],
+        /* The element the reader sees the section AS, which is what actually
+         * DRAWS the two horizontal lines. It is not the tracked box: the track
+         * layer is laid against this element's PADDING box, so a rule drawn as
+         * a border sits outside the box on one edge and inside it on the other,
+         * and a rule drawn as a pseudo-element sits outside both. */
+        host: layer.parentElement as HTMLElement,
+        /* Where the two lines sit relative to that element's border box, filled
+         * in at measure time. */
+        topOff: 0.5,
+        bottomOff: 0.5,
         /* Whether this section's own bottom edge is the drawn line at its
          * bottom joint, or the section below draws it. */
         end: layer.dataset.sectionTrack === "open" ? "open" : ("closed" as TrackEnd),
@@ -86,6 +96,59 @@
         length: path.getTotalLength(),
       };
     });
+
+    /**
+     * Where a section's two hairlines actually are, measured rather than
+     * assumed — as an offset from its own border box, top and bottom.
+     *
+     * THE PAGE DRAWS THEM THREE DIFFERENT WAYS and the centre of the line lands
+     * somewhere different in each: `.section-bounds` opens on a 1px
+     * `::before` at its padding-box top and closes on a `border-bottom`;
+     * `.section-run-rule` closes on a 1px `::after` hung at `top: 100%`, which
+     * is OUTSIDE its box; a pinned frame draws both edges as real borders. A
+     * border on the TOP edge is the one that goes the other way — it lies
+     * inside the border box, so its centre is half a border DOWN from the box's
+     * top, where every other case is half a pixel down from an edge.
+     *
+     * Half of a hairline is not a rounding error here: the square is 8px and it
+     * is meant to sit centred on a 1px line, so a pixel out is a pixel of white
+     * showing above or below it, which is exactly what "es muss genau mittig
+     * auf der Linie fahren" is about (maintainer, 2026-08-30).
+     */
+    const lineOffsets = (host: HTMLElement) => {
+      const style = getComputedStyle(host);
+      const top = parseFloat(style.borderTopWidth) || 0;
+      const bottom = parseFloat(style.borderBottomWidth) || 0;
+      return {
+        topOff: top > 0 ? top / 2 : 0.5,
+        bottomOff: bottom > 0 ? -bottom / 2 : 0.5,
+      };
+    };
+
+    /**
+     * A host's own top, in the document, from the offset chain rather than from
+     * a rect.
+     *
+     * A PINNED CHILD'S RECT IS WHERE IT IS PARKED, NOT WHERE IT LIVES. The
+     * schedule is worked out once and has to hold at every scroll position, so
+     * the one number it must not read off a sticky element is that element's
+     * position — measure while the pin happens to be holding and the whole
+     * section's geometry is wherever the reader was standing. `offsetTop` is
+     * layout, and sticky does not touch layout.
+     */
+    const documentTop = (el: HTMLElement) => {
+      let chain = 0;
+      for (let node: HTMLElement | null = el; node; node = node.offsetParent as HTMLElement | null) {
+        chain += node.offsetTop;
+      }
+      /* `offsetTop` is a whole number and this page lays out on fractions, so
+       * the chain is up to a pixel coarse — which on a hairline is the whole
+       * budget. The rect is exact, and it agrees with the chain except while a
+       * sticky ancestor is actually parked somewhere else; so take the rect
+       * whenever the two agree, and the chain only when they do not. */
+      const rect = el.getBoundingClientRect().top + window.scrollY;
+      return Math.abs(chain - rect) <= 1 ? rect : chain;
+    };
 
     /**
      * WHICH element is actually held still, right now — or null.
@@ -121,6 +184,7 @@
 
       const boxes = tracks.map((track) => {
         track.length = track.path.getTotalLength();
+        Object.assign(track, lineOffsets(track.host));
         const boxRect = track.box.getBoundingClientRect();
         const sticky = stickyChild(track.box, track.pin);
         const pinRect = sticky ? track.pin!.getBoundingClientRect() : null;
@@ -139,21 +203,18 @@
         };
       });
 
-      /**
-       * Where the line at a section's bottom joint is, in the document.
-       *
-       * A PINNED NEIGHBOUR'S OPENING RULE IS NOT WHERE ITS BOX CURRENTLY IS.
-       * Its box is a sticky child, so a rect taken while the pin is holding
-       * reads back the resting place rather than the layout position, and the
-       * schedule has to be true at every scroll position — including the ones
-       * measured from somewhere else on the page. Its track never moves, and
-       * the child rests one `pinRest` inside it, so those two say where the
-       * reader will see that rule when the square arrives at it.
-       */
+      /** The centre of a section's own opening hairline, in the document. */
       const openingRule = (i: number) => {
-        const at = boxes[i];
-        if (!at) return null;
-        return at.pinTop === null ? at.boxTop : at.pinTop + at.pinRest;
+        const track = tracks[i];
+        return track ? documentTop(track.host) + track.topOff : null;
+      };
+
+      /** The centre of a section's own closing hairline, in the document. */
+      const closingRule = (i: number) => {
+        const track = tracks[i];
+        return (
+          documentTop(track.host) + track.host.getBoundingClientRect().height + track.bottomOff
+        );
       };
 
       spans = scheduleTracks(
@@ -165,7 +226,7 @@
             /* Its own closing rule, or — when it draws none — the opening rule
              * of the section below, which is the line the reader actually sees
              * at that joint. */
-            cross: track.end === "closed" ? at.boxTop + at.boxHeight : openingRule(i + 1),
+            cross: track.end === "closed" ? closingRule(i) : openingRule(i + 1),
           };
         }),
         viewport,
@@ -197,9 +258,15 @@
       const along = Math.min(1, Math.max(0, progress));
       const point = track.path.getPointAtLength(along * track.length);
       const rect = track.box.getBoundingClientRect();
+      /* The two horizontals come off the element that DRAWS them, with the
+       * offsets `lineOffsets` measured; the two verticals are the rails, which
+       * lie 1px inside the tracked box on either side. */
+      const host = track.host.getBoundingClientRect();
+      const top = host.top + track.topOff;
+      const bottom = host.bottom + track.bottomOff;
       return {
         x: rect.left + (point.x / 100) * rect.width + 0.5 - point.x / 100,
-        y: rect.top + (point.y / 100) * rect.height + 0.5,
+        y: top + (point.y / 100) * (bottom - top),
       };
     };
 
@@ -247,21 +314,22 @@
        * where every section leaves it. */
       const rides = reading - span.crossing / 2;
 
-      if (span.cross === null) return { x: rails.entry, y: rides + 0.5 };
+      if (span.cross === null) return { x: rails.entry, y: rides };
 
-      /* Never above the band: past its own rule a section is done and the
-       * hand-over has the square, but the last one on the page has nothing to
-       * hand to and simply holds. */
+      /* `span.cross` is already the CENTRE of the hairline, so there is nothing
+       * to add here. Never above the band: past its own rule a section is done
+       * and the hand-over has the square, but the last one on the page has
+       * nothing to hand to and simply holds. */
       const rule = Math.max(rides, span.cross - top);
 
       if (rule >= rides + span.crossing) {
         const rail = span.leave - span.crossing - span.enter;
         const down = rail > 0 ? Math.min(1, Math.max(0, (top - span.enter) / rail)) : 1;
-        return { x: rails.entry, y: rides + span.crossing * down + 0.5 };
+        return { x: rails.entry, y: rides + span.crossing * down };
       }
 
       const across = (rides + span.crossing - rule) / span.crossing;
-      return { x: rails.entry + (rails.exit - rails.entry) * across, y: rule + 0.5 };
+      return { x: rails.entry + (rails.exit - rails.entry) * across, y: rule };
     };
 
     /** Where a section takes the square, and where it leaves it. */
