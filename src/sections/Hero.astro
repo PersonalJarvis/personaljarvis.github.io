@@ -22,8 +22,9 @@
 import { Image } from "astro:assets";
 import Container from "@/components/Container.astro";
 import DemoStage from "@/components/demo/DemoStage";
+import DownloadCta from "@/components/DownloadCta.astro";
 import SectionTrack from "@/components/SectionTrack.astro";
-import { DOCS_URL, INSTALL_ID, TOP_ID } from "@/lib/nav";
+import { DOCS_URL, TOP_ID } from "@/lib/nav";
 import backdrop from "@/assets/hero/stage-backdrop.webp";
 
 // The frame is the `content` step, so on a wide screen the backdrop only
@@ -100,12 +101,16 @@ const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <
         </h1>
 
         <div class="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-          <a
-            href={`#${INSTALL_ID}`}
-            class="inline-flex min-h-[44px] items-center justify-center rounded-full bg-ink px-6 text-[15px] font-medium text-on-ink transition-colors hover:bg-ink-active"
-          >
-            Download for Windows
-          </a>
+          {/*
+            THE LABEL NAMES THE READER'S OWN MACHINE. It read "Download for
+            Windows" on every screen until 2026-09-01 — a lie to most of the
+            people who saw it, and a button that dropped a Mac visitor onto a
+            PowerShell line. The component holds the detection, the three
+            labels and the link to the matching command; this file keeps only
+            the pill, because the shape is the hero's business and the words
+            are not. See DownloadCta.astro and docs/hero.md § "CTAs".
+          */}
+          <DownloadCta class="inline-flex min-h-[44px] items-center justify-center rounded-full bg-ink px-6 text-[15px] font-medium text-on-ink transition-colors hover:bg-ink-active" />
           {/*
             This used to point at `#docs`, an id no element on this page has
             ever carried — the button scrolled nowhere. The docs live in the

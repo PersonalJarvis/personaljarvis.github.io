@@ -143,9 +143,23 @@ const activeSection = DETAIL_PAGES.find((page) => pathname.startsWith(page.href)
         button always scrolls to an install command on the page the reader is
         already on. A jump back to the front page would throw away the page they
         came to read.
+
+        IT KEEPS THE BARE WORD while the hero's button names the visitor's
+        machine (`DownloadCta.astro`). Not an oversight: this row is
+        width-constrained down to the character — seven section links, the Docs
+        link, the wordmark and this button share one `content` row and the row
+        has no way to say it is full (src/lib/nav.ts, and the gap arithmetic in
+        layout.css). "Download for Windows" is 105px wider than "Download" and
+        pushes the labels out through the button at 1024px. The word is already
+        true on every machine, so there is nothing to fix here — only a budget
+        to spend, and no reason to spend it.
+
+        `data-download-cta` still opts it into the behaviour: clicking it opens
+        the install box on the reader's own machine, exactly as the hero button
+        does. See the script in InstallCommand.astro.
       */
     }
-    <a class="site-nav__cta" href={`#${INSTALL_ID}`}>Download</a>
+    <a class="site-nav__cta" href={`#${INSTALL_ID}`} data-download-cta>Download</a>
   </Container>
 </header>
 

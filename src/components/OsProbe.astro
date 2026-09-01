@@ -1,0 +1,46 @@
+---
+/**
+ * Names the visitor's machine on the <html> element, before anything is drawn.
+ *
+ * WHY IT IS IN THE HEAD, INLINE, AND NOT A NORMAL COMPONENT SCRIPT.
+ * ------------------------------------------------------------------
+ * The site is built ahead of time and served as files, so the markup that
+ * leaves the server cannot know who asked for it. Every "Download for <your
+ * machine>" on the page is therefore decided in the browser — and a decision
+ * taken in an ordinary module script is taken AFTER the first paint, which
+ * shows a Mac visitor "Download for Windows" for a frame and then swaps it.
+ * That flicker is the whole reason the label was hardcoded before.
+ *
+ * An inline script in the head runs while the document is still being parsed,
+ * before the body exists and before a single pixel is committed. It writes one
+ * attribute; the labels are then chosen by CSS (`DownloadCta.astro`), so the
+ * correct one is the only one the visitor ever sees.
+ *
+ * IT MUST STAY THE SIZE IT IS. This is the one script that blocks parsing, so
+ * it does the minimum: three regular expressions and one attribute. Anything
+ * that can wait belongs in a module script that does not hold the page up.
+ *
+ * WITHOUT JAVASCRIPT the attribute is simply never set, and the CSS falls back
+ * to `DEFAULT_OS` — a real label pointing at a real command, not a blank
+ * button. See docs/hero.md § "CTAs".
+ *
+ * `define:vars` is what carries the signature table across: an inline script
+ * has no imports, so the table from `src/lib/install.ts` is serialised into the
+ * markup instead of being retyped here. There is one copy of the rules.
+ */
+import { OS_SIGNATURES, DEFAULT_OS } from "@/lib/install";
+---
+
+<script is:inline define:vars={{ signatures: OS_SIGNATURES, fallback: DEFAULT_OS }}>
+  (function () {
+    var agent = navigator.userAgent || "";
+    var os = fallback;
+    for (var i = 0; i < signatures.length; i++) {
+      if (new RegExp(signatures[i][1], "i").test(agent)) {
+        os = signatures[i][0];
+        break;
+      }
+    }
+    document.documentElement.setAttribute("data-os", os);
+  })();
+</script>

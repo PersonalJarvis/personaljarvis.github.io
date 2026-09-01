@@ -2,9 +2,10 @@
  * The install one-liners, verbatim from the app's README.md § Install.
  *
  * One module, because the section PRINTS them, its client script copies them,
- * and the box names the shell each one is pasted into: three literals would
- * drift the moment the installer moves, and the site would hand someone a
- * command that 404s.
+ * the box names the shell each one is pasted into, and the download buttons are
+ * named after the same three machines: four literals would drift the moment the
+ * installer moves, and the site would hand someone a command that 404s — or a
+ * button whose label and destination disagree.
  *
  * The README has two lines, not three — macOS and Linux run the same `curl`.
  * The site still offers three choices, because "which of these is mine" is a
@@ -73,7 +74,21 @@ export const INSTALL_TARGETS: readonly InstallTarget[] = [
 export const DEFAULT_OS: OsId = "macos";
 
 /**
- * Which machine the visitor is on.
+ * The user-agent signatures, IN MATCH ORDER, as regular-expression SOURCE
+ * strings rather than as literals.
+ *
+ * Strings and not `RegExp`, because this table has to cross into a script that
+ * cannot import it. The download button's label is decided before the page is
+ * painted, which means an inline `<script>` in the document head — and an
+ * inline script has no module graph, so the only way to hand it this knowledge
+ * is to serialise it into the markup (`OsProbe.astro`, via `define:vars`). A
+ * `RegExp` does not survive that trip; a string does, and `detectOs` below
+ * compiles the very same strings for everyone else. One table, two readers,
+ * no second copy of the rules to fall out of step.
+ *
+ * ORDER IS LOAD-BEARING. Android's user agent contains "Linux" and Chrome OS's
+ * contains both "X11" and "CrOS", so the broad Linux signature has to be tried
+ * last or it would claim machines that are not Linux.
  *
  * A single copy button that gives a Windows visitor a `curl` line is worse
  * than no button at all, and a printed command has the same problem: the
@@ -85,11 +100,30 @@ export const DEFAULT_OS: OsId = "macos";
  * same reason. Neither can actually run the installer; both keep the box
  * honest instead of guessing something further away.
  */
+export const OS_SIGNATURES: readonly (readonly [OsId, string])[] = [
+  ["windows", "Windows|Win32|Win64"],
+  ["macos", "Mac OS X|Macintosh|iPhone|iPad|iPod"],
+  ["linux", "Linux|Android|X11|CrOS"],
+];
+
+/** Which machine the visitor is on. */
 export function detectOs(userAgent: string): OsId {
-  if (/Windows|Win32|Win64/i.test(userAgent)) return "windows";
-  if (/Mac OS X|Macintosh|iPhone|iPad|iPod/i.test(userAgent)) return "macos";
-  if (/Linux|Android|X11|CrOS/i.test(userAgent)) return "linux";
+  for (const [id, signature] of OS_SIGNATURES) {
+    if (new RegExp(signature, "i").test(userAgent)) return id;
+  }
   return DEFAULT_OS;
+}
+
+/**
+ * What the download button says on a given machine.
+ *
+ * Built from the target's own label rather than written out three times, so a
+ * machine renamed in `INSTALL_TARGETS` is renamed on the button in the same
+ * edit. The button and the tab it opens then always agree — which is the whole
+ * promise: "Download for Linux" has to land on the Linux line.
+ */
+export function downloadLabelFor(os: OsId): string {
+  return `Download for ${targetFor(os).label}`;
 }
 
 /** The line to hand over for a given machine. */

@@ -1,0 +1,93 @@
+---
+/**
+ * The download button — named after the machine the visitor is actually on.
+ *
+ * It used to read "Download for Windows" on every screen in the world, which
+ * is wrong three ways: it is a lie to two thirds of the visitors, it tells a
+ * Mac reader the product may not be for them, and it landed everyone on the
+ * same install line whatever they were holding. The maintainer's ask on
+ * 2026-09-01 was the obvious one — detect the machine, say its name, and send
+ * the reader to the command for it.
+ *
+ * THE LABEL IS CHOSEN BY CSS, NOT BY SCRIPT, AND THAT IS THE POINT.
+ * ------------------------------------------------------------------
+ * All three labels are in the markup. `OsProbe.astro` writes `data-os` on the
+ * <html> element from the head, before the body is parsed, and the rules below
+ * reveal the one that matches. Nothing is measured, nothing is rewritten after
+ * the fact, so there is no frame in which the wrong machine is on screen —
+ * which is what a `textContent =` in a deferred module script would give.
+ *
+ * The two labels that are not shown are `display: none`, so they are out of
+ * the accessibility tree as well as off the screen: a screen reader announces
+ * one button with one name, not three.
+ *
+ * WITHOUT JAVASCRIPT the attribute is never written and `[data-fallback]` — the
+ * label for `DEFAULT_OS` — stands. That is a working button pointing at a real
+ * command, which is the accessible resting state rather than a degraded one.
+ *
+ * WHERE IT SENDS THE READER. `#install`, the section that prints the actual
+ * one-liner, on whichever page they are on: the front page has `Install.astro`
+ * and every detail page has `DetailFoot.astro`, both carrying that id and both
+ * containing an `InstallCommand`. That box opens on the visitor's machine of
+ * its own accord, and `InstallCommand.astro`'s script additionally forces its
+ * tab to match this button on the way — see the note there. So "Download for
+ * Linux" lands on the Linux line even if the reader had clicked another tab
+ * first.
+ *
+ * A LINK AND NOT A BUTTON, because it navigates. That keeps middle-click,
+ * ctrl-click and "copy link address" working, and it keeps the target reachable
+ * with scripting turned off.
+ */
+import { INSTALL_TARGETS, DEFAULT_OS, downloadLabelFor } from "@/lib/install";
+import { INSTALL_ID } from "@/lib/nav";
+
+interface Props {
+  /**
+   * How the caller dresses it. The hero wants the pill from docs/hero.md; the
+   * nav wants its own `site-nav__cta`. This component owns the words and the
+   * behaviour, never the looks — there is no house style for a CTA that two
+   * places on the page disagree about.
+   */
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<a href={`#${INSTALL_ID}`} class:list={["download-cta", className]} data-download-cta>
+  {
+    INSTALL_TARGETS.map((target) => (
+      <span
+        class="download-cta__label"
+        data-os={target.id}
+        data-fallback={target.id === DEFAULT_OS ? "" : undefined}
+      >
+        {downloadLabelFor(target.id)}
+      </span>
+    ))
+  }
+</a>
+
+<style>
+  /* Hidden by default; exactly one rule below puts one back. Written this way
+     round so that an unknown `data-os` value can never show two labels at
+     once — it shows none of the three and falls through to the last rule. */
+  .download-cta__label {
+    display: none;
+  }
+
+  /* One pair per machine, because CSS cannot compare an attribute on <html>
+     against an attribute on a descendant. A fourth target means a fourth line
+     here and a fourth entry in INSTALL_TARGETS, in the same edit.
+
+     `:global()` on the <html> half is required: the element is outside this
+     component, so Astro's scoping must not narrow it. The label half stays
+     scoped, which is what keeps these rules off every other `[data-os]` on the
+     page — InstallCommand.astro uses the same attribute for its own lines. */
+  :global(html[data-os="macos"]) .download-cta__label[data-os="macos"],
+  :global(html[data-os="windows"]) .download-cta__label[data-os="windows"],
+  :global(html[data-os="linux"]) .download-cta__label[data-os="linux"],
+  :global(html:not([data-os])) .download-cta__label[data-fallback] {
+    display: inline;
+  }
+</style>

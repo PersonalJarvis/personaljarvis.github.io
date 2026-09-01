@@ -138,6 +138,23 @@ hold the stage on any screen, which is what the crop was hiding.
 - First filled (ink on cream, per `design.md`), second outline or ghost
 - Below 640px they stack, each at full `prose` width
 
+**The first one names the reader's machine.** "Download for macOS", "Download
+for Windows" or "Download for Linux", decided in the browser and pointing at
+`#install`, where the box opens on that same machine's command. Until
+2026-09-01 it said "Download for Windows" to everyone, which was wrong for most
+visitors and sent a Mac reader to a PowerShell line.
+
+It is chosen by CSS from `data-os` on `<html>`, written by an inline head
+script (`OsProbe.astro`) before the body is parsed — never by rewriting the
+text after load, which shows the wrong machine for a frame. All three labels
+ship in the markup and two are `display: none`, so a screen reader announces
+one button. With scripting off the `DEFAULT_OS` label stands: a real button
+pointing at a real command. See `src/components/DownloadCta.astro`.
+
+The nav's button keeps the bare word "Download". That row is width-constrained
+to the character (`src/lib/nav.ts`), the short word is already true on every
+machine, and clicking it still opens the install box on the reader's own.
+
 **Shape:** pill (`rounded-full`), at least 44px tall, at least 24px of
 horizontal padding, at least 15px type. The hero is the one place that overrides
 `design.md`'s 8px button radius — a hero CTA is read from across the room, and

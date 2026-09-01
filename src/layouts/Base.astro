@@ -16,12 +16,18 @@
  * the gaps BETWEEN sections instead of parking in a corner until the next one
  * starts. The sections declare their own geometry with `SectionTrack`.
  *
+ * OsProbe is here because it belongs to the document too — it writes one
+ * attribute on <html>, which every download button on every route reads. It is
+ * also the only thing on the site that must run before the body is parsed, and
+ * the head is the only place that can promise that.
+ *
  * SiteNav is here for the same class of reason. It used to be markup inside
  * `Hero.astro`, pinned with `sticky` — and sticky pins a child only for as long
  * as its own parent is on screen, so the nav slid away at the hero's bottom
  * edge and the other ten sections had none at all. A nav that belongs to the
  * whole document has to be rendered by the thing that owns the whole document.
  */
+import OsProbe from "@/components/OsProbe.astro";
 import PageChrome from "@/components/PageChrome.astro";
 import SectionMarker from "@/components/SectionMarker.astro";
 import SiteNav from "@/components/SiteNav.astro";
@@ -48,6 +54,15 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta name="generator" content={Astro.generator} />
+
+    {/*
+      LAST IN THE HEAD, AND IT HAS TO BE IN THE HEAD. It names the visitor's
+      machine on <html> so the download buttons can say it, and it has to have
+      done so before the body is parsed or the first painted frame carries the
+      wrong one. See OsProbe.astro for why this is the one blocking script on
+      the site.
+    */}
+    <OsProbe />
   </head>
   <body>
     <PageChrome />

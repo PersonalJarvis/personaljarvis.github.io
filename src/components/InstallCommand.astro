@@ -17,11 +17,12 @@
  * the command sits in the body: no sibling relationship is needed between
  * them, so the markup can be laid out for the reader rather than for CSS.
  *
- * JAVASCRIPT ADDS EXACTLY TWO THINGS: it preselects the visitor's own machine,
- * and it copies. Neither is load-bearing. Without it the box opens on macOS
- * and every line is still on screen to read, select and copy by hand — which
- * is why the copy button starts `hidden` and is revealed by the script rather
- * than sitting there dead.
+ * JAVASCRIPT ADDS EXACTLY THREE THINGS: it preselects the visitor's own
+ * machine, it copies, and it re-selects that machine when a download button
+ * elsewhere on the page is clicked. None is load-bearing. Without it the box
+ * opens on macOS and every line is still on screen to read, select and copy by
+ * hand — which is why the copy button starts `hidden` and is revealed by the
+ * script rather than sitting there dead.
  *
  * The prompt (`$`, `PS>`) is decoration, `aria-hidden` and unselectable, and is
  * never part of what gets copied — the copied text comes from the module, not
@@ -398,6 +399,42 @@ import { INSTALL_TARGETS, DEFAULT_OS } from "@/lib/install";
 
       /* Switching machines invalidates a confirmation about the old one. */
       inputs.forEach((input) => input.addEventListener("change", clear));
+    }
+
+    /*
+     * THE DOWNLOAD BUTTONS LAND ON THE LINE THEY PROMISE.
+     * ------------------------------------------------------------------
+     * The hero's button says "Download for Linux" on a Linux machine and the
+     * nav's says "Download"; both are anchors to `#install`, which is this
+     * box. Detection already opens the box on the right machine, so most of
+     * the time the click needs nothing — but a reader who has clicked a tab by
+     * hand has left it somewhere else, and a button naming their machine that
+     * then shows another machine's command is worse than the button that named
+     * the wrong machine in the first place. So the click puts the tab back.
+     *
+     * It answers to the BUTTON'S machine rather than to the box's current tab,
+     * because the button's own label is what the reader just read.
+     *
+     * The `change` event is dispatched by hand: assigning `.checked` does not
+     * fire one, and the confirmation above listens for it to clear a "copied"
+     * message that is now about the wrong command.
+     *
+     * Wired from here, and not from the button, because this is the component
+     * that owns the radios — and because it is on every route while the hero
+     * is on one. See DownloadCta.astro.
+     */
+    const wanted = box.querySelector<HTMLInputElement>(
+      `input[name='install-os'][value='${detectOs(navigator.userAgent)}']`,
+    );
+
+    if (wanted) {
+      document.querySelectorAll<HTMLElement>("[data-download-cta]").forEach((cta) => {
+        cta.addEventListener("click", () => {
+          if (wanted.checked) return;
+          wanted.checked = true;
+          wanted.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+      });
     }
   }
 </script>
