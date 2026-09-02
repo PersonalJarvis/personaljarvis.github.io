@@ -12,12 +12,12 @@ site, which was retired on 2026-08-28 together with its repository.
 ## Where this folder lives
 
 This is its **own git repository**, sitting inside the Personal Jarvis app
-checkout as `website/` so one folder holds both projects.
+checkout as `personaljarvisweb/` so one folder holds both projects.
 
 - The **parent** folder is the app's repo and is **public**. This repo is
   separate, with its own remote and its own history. They share a folder, never
   a history.
-- The parent's `.gitignore` hides `website/`, so nothing here is visible to the
+- The parent's `.gitignore` hides `personaljarvisweb/`, so nothing here is visible to the
   app repo and nothing here can be staged or pushed from it.
 - Read the app's source freely for reference — it is one level up — but never
   edit, stage, or commit anything outside this folder from here.
