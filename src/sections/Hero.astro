@@ -57,9 +57,20 @@ const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <
 -->
 <section
   id={TOP_ID}
-  class="relative grid min-h-[calc(100svh_-_var(--section-inset))] grid-rows-[minmax(0,1fr)] overflow-hidden"
+  class="relative grid min-h-[calc(100svh_-_var(--section-inset))] grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)] overflow-hidden"
 >
   <!--
+    ONE EXPLICIT COLUMN, `minmax(0, 1fr)`, on this grid and the one inside it.
+    Left implicit, the column is `auto`, and an auto track is never narrower
+    than its content's own idea of its width: the headline's longest line and
+    the stage wrapper's aspect ratio (a 444px-tall frame asks for ~780px) both
+    outrank a 390px phone. The track then grows past the viewport, the
+    percentage widths in layout.css resolve against that oversized track, and
+    the first screen runs off the right edge of the phone — the maintainer's
+    report on 2026-09-02 was a demo "cut off to the half". A `0` minimum lets
+    the track shrink to the screen; `1fr` still fills it, so a desktop viewport
+    lays out exactly as before.
+
     THE HERO'S OWN BOX. It stays a separate element from the `<section>` — the
     section is what the reader scrolls past, this is what they look at — and it
     is what `SectionTrack` measures, since the track measures the box it is
@@ -82,7 +93,7 @@ const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <
     strip's opening rule, which is the next line that actually exists.
   -->
   <div
-    class="relative grid min-h-0 grid-rows-[auto_minmax(0,1fr)] pt-[var(--nav-height)]"
+    class="relative grid min-h-0 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] pt-[var(--nav-height)]"
   >
     <SectionTrack open />
 
