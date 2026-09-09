@@ -10,6 +10,8 @@
     "build": "node scripts/build-atomic.mjs",
     "preview": "astro preview",
     "check": "astro check",
+    "video:agents:studio": "remotion studio video/agents/index.tsx",
+    "video:agents:render": "remotion render video/agents/index.tsx JarvisAgents .video-output/jarvis-agents-4k.mp4 --scale=2.6666666666666665 --crf=18 --concurrency=4",
     "check:style": "node scripts/check-style.mjs",
     "check:geocode": "node scripts/test-geocode.mjs",
     "data:stargazers": "node scripts/fetch-stargazers.mjs",
@@ -22,17 +24,22 @@
   "dependencies": {
     "@astrojs/react": "^6.0.4",
     "@astrojs/sitemap": "^3.7.3",
+    "@remotion/player": "4.0.481",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.2.9",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "remotion": "4.0.481",
     "tailwindcss": "^4.3.3",
     "three": "^0.180.0"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@remotion/cli": "4.0.481",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@types/three": "^0.185.4",
-    "js-yaml": "^5.4.1"
+    "js-yaml": "^5.4.1",
+    "typescript": "^6.0.3"
   }
 }

@@ -1,0 +1,48 @@
+---
+import Container from "@/components/Container.astro";
+import SectionTrack from "@/components/SectionTrack.astro";
+import AgentsDemo from "@/components/agents-demo/AgentsDemo";
+---
+
+<section id="agents" aria-labelledby="agents-heading">
+  <Container width="content" class="section-inset">
+    <div class="section-bounds agents-band">
+      <SectionTrack nested />
+      <Container width="prose">
+        <div class="agents-head">
+        <p class="agents-eyebrow">Jarvis Agents</p>
+        <h2 id="agents-heading">Give your team a goal.<br/><span>Watch it come together.</span></h2>
+        <p class="agents-standfirst">Your agents have their own roles, tools and conversations. Ask Jarvis for the outcome. Follow the handoffs, read their replies, and keep the whole team in view.</p>
+        </div>
+      </Container>
+      <AgentsDemo client:visible />
+      <details class="agents-transcript"><summary>Read the demo story</summary><p>In this scripted example, you ask Jarvis to prepare a launch briefing. Jarvis asks LinearDailyAgent to check release blockers and Gmail-Agent to review customer questions. Each agent sends its findings back through an internal message. Jarvis brings the answers together into a short briefing for your review.</p><p>The island footage and avatars come from the app. The English conversation is an illustrative scenario, with timing shortened for the demo.</p></details>
+    </div>
+  </Container>
+</section>
+
+<style>
+  .agents-head { text-align:center; margin-bottom:var(--space-xxl); }
+  .agents-eyebrow { color:var(--muted); font:var(--text-caption-upper) var(--font-mono); letter-spacing:var(--tracking-caption-upper); text-transform:uppercase; margin:0 0 var(--space-base); }
+  h2 { color:var(--ink); font-size:clamp(2rem,1.2rem + 1vw,3.25rem); font-weight:400; line-height:1.12; letter-spacing:-.045em; margin:0; }
+  h2 span { color:var(--body); }
+  .agents-standfirst { color:var(--body); font-size:var(--text-body); line-height:1.7; margin:var(--space-lg) 0 0; }
+  .agents-transcript { margin:var(--space-lg) var(--space-xl) 0; color:var(--muted); font-size:var(--text-body-sm); line-height:1.65; }
+  summary { width:fit-content; cursor:pointer; text-underline-offset:4px; }
+  summary:hover { color:var(--ink); }
+  :global(.agents-demo) { min-width:0; margin-inline:var(--space-base); }
+  :global(.agents-demo-controls) { display:flex; align-items:center; gap:var(--space-lg); padding:var(--space-base) var(--space-xl); border-top:1px solid var(--hairline); border-bottom:1px solid var(--hairline); }
+  :global(.agents-demo-controls button) { display:flex; align-items:center; gap:var(--space-sm); color:var(--ink); background:none; border:0; cursor:pointer; font-size:var(--text-body-sm); }
+  :global(.agents-demo-controls > span) { color:var(--muted); font:var(--text-caption) var(--font-mono); }
+  :global(.agents-demo-controls button:last-child) { margin-left:auto; }
+  :global(.agents-chapters) { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); padding:var(--space-lg) var(--space-xl) 0; gap:var(--space-base); }
+  :global(.agents-chapters button) { text-align:left; color:var(--body); background:none; border:0; cursor:pointer; font-size:var(--text-body-sm); }
+  :global(.agents-chapters button span) { display:block; font:var(--text-caption) var(--font-mono); color:var(--muted); margin-bottom:var(--space-xs); }
+  :global(.agents-chapters button:hover) { color:var(--ink); }
+  :global(.agents-demo button:focus-visible),summary:focus-visible { outline:2px solid var(--ink); outline-offset:5px; }
+  @media (max-width:767px) {
+    :global(.agents-demo-controls) { flex-wrap:wrap; gap:var(--space-base); padding-inline:var(--space-base); }
+    :global(.agents-chapters) { grid-template-columns:repeat(2,minmax(0,1fr)); padding-inline:var(--space-base); }
+    .agents-transcript { margin-inline:var(--space-base); }
+  }
+</style>

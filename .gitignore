@@ -8,6 +8,7 @@ build/
 .dist-build-*/
 .next/
 coverage/
+.video-output/
 
 # Secrets — never committed
 .env

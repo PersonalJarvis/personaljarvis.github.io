@@ -70,6 +70,7 @@ export default defineConfig({
 function pinDevReactRuntime() {
   return {
     name: "jarvis:pin-dev-react-runtime",
+    /** @param {unknown} _config @param {{ command: string }} environment */
     config(_config, { command }) {
       if (command !== "serve") return;
       if (!process.env.NODE_ENV) process.env.NODE_ENV = "development";
