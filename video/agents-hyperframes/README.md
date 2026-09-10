@@ -14,6 +14,11 @@ no production files or user settings are modified. The fixture uses synthetic
 English messages and in-memory state. Its API and socket adapters never
 contact a backend, execute an agent, or send a real message.
 
+The browser-preview component is frozen in `capture/reference/AgentBrowserPreview.tsx`
+from app commit `23b402b8a4369e40712ace7fae64756f2b8a10a3`. This preserves the
+approved demo's idle browser appearance while unrelated browser work continues
+in the app checkout. The capture build substitutes that original source only.
+
 The app is rendered inside a fixed composition at its responsive desktop
 layout. The website uses the same 1440×1340 canvas and shared 76px title bar
 as Plugins, Skills and CLIs. The movie occupies the 1440×1264 body, without
@@ -39,6 +44,8 @@ This one event log drives cursor coordinates, click rings and view changes.
 The pointer tip is the target coordinate. A press stays visible for 140ms
 before the resulting view replaces it; the pointer holds during that press.
 Drafts are typed into the real contenteditable composer and complete before Send.
+The specialist draft occupies a full-width row above the model, microphone and
+Send controls, so the entire instruction fits before it is submitted.
 Calibration uses the renderer's original browser frame clock, while authored
 motion uses virtual time. Twelve setup frames settle the camera and labels before
 timeline registration. A single render worker avoids repeating setup midway through
@@ -63,9 +70,9 @@ npm run video:agents:render
 
 FFmpeg must be available on PATH. The render script checks the composition,
 renders it and crops the padding without resampling. It writes
-`public/agents-demo/agents-feature-v5-readable.mp4` (1080×948, 30 fps),
-`public/agents-demo/agents-feature-v5-readable-2x.mp4` (2160×1896), and
-`public/agents-demo/agents-feature-v5-readable-poster.webp`.
+`public/agents-demo/agents-feature-v6-readable.mp4` (1080×948, 30 fps),
+`public/agents-demo/agents-feature-v6-readable-2x.mp4` (2160×1896), and
+`public/agents-demo/agents-feature-v6-readable-poster.webp`.
 `npm run video:agents:studio` opens the editing environment; it is separate
 from the website's single development server at port 4399.
 

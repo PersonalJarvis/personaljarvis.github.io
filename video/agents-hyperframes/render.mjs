@@ -7,7 +7,7 @@ const project = dirname(fileURLToPath(import.meta.url));
 const website = resolve(project, "../..");
 const scratch = resolve(website, ".video-output");
 const media = resolve(website, "public/agents-demo");
-const name = "agents-feature-v5-readable";
+const name = "agents-feature-v6-readable";
 const cli = resolve(project, "node_modules/hyperframes/bin/hyperframes.mjs");
 
 function run(command, args, requireReady = false) {
