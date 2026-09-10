@@ -29,6 +29,7 @@ export function GitHubDemo() {
 
   return (
     <DemoStage
+      backdrop="open-source"
       canvasWidth={CANVAS_WIDTH}
       canvasHeight={CANVAS_HEIGHT}
       description={DEMO_DESCRIPTION}

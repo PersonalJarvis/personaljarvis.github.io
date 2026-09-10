@@ -32,6 +32,7 @@ export function ClisDemo() {
 
   return (
     <DemoStage
+      backdrop="clis"
       canvasWidth={CANVAS_WIDTH}
       canvasHeight={CANVAS_HEIGHT}
       description={DEMO_DESCRIPTION}

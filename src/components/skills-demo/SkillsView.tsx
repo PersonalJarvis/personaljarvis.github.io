@@ -14,6 +14,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import {
   CANVAS_WIDTH,
+  FEATURE_CANVAS_HEIGHT,
   HAIRLINE,
   RADIUS,
   STROKE,
@@ -30,7 +31,7 @@ import {
 export { CANVAS_WIDTH };
 /** Same height as the other feature windows, so the cards sit on the page as
  *  views of one application rather than as different shapes. */
-export const CANVAS_HEIGHT = 1340;
+export const CANVAS_HEIGHT = FEATURE_CANVAS_HEIGHT;
 
 // --- Icons ----------------------------------------------------------------
 

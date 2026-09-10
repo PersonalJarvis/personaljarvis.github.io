@@ -55,6 +55,15 @@
   margin-inline: auto;
 }
 
+/* On narrow screens, offscreen labels must not widen the whole document.
+   Keep a small halo allowance inside the page's existing 24px gutter. */
+@media (max-width: 767px) {
+  .star-globe {
+    overflow: clip;
+    overflow-clip-margin: 16px;
+  }
+}
+
 /*
  * A zero-sized box sitting exactly on the projected point.
  *

@@ -1,7 +1,7 @@
 /**
  * The window's title bar, shared by every feature demo.
  *
- * Three feature cards show three different parts of the same application, so
+ * Four feature cards show different parts of the same application, so
  * the frame around them has to be the same frame. Separate copies drift — one
  * gains a pixel, another loses a dot — and the page stops reading as three
  * views of one product.
@@ -24,12 +24,15 @@ export const RADIUS = 18;
  *  width is shared, which is what keeps the three windows the same size on the
  *  page and the type inside them the same size as each other. */
 export const CANVAS_WIDTH = 1440;
+/** All four feature demos use this same window geometry. */
+export const FEATURE_CANVAS_HEIGHT = 1340;
+export const WINDOW_CHROME_HEIGHT = 76;
 
 export function WindowChrome({ title = "Personal Jarvis" }: { title?: string }) {
   return (
     <div
       style={{
-        height: 76,
+        height: WINDOW_CHROME_HEIGHT,
         flexShrink: 0,
         background: "var(--canvas-soft)",
         borderBottom: `${HAIRLINE}px solid var(--hairline)`,

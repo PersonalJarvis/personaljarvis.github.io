@@ -22,6 +22,7 @@
 import type { DemoPlugin, FilterId, PluginStatus } from "./frames";
 import {
   CANVAS_WIDTH,
+  FEATURE_CANVAS_HEIGHT,
   HAIRLINE,
   RADIUS,
   STROKE,
@@ -35,7 +36,7 @@ export { CANVAS_WIDTH };
 /** How tall this window is. The width is shared with the other feature demos
  *  (see chrome.tsx); the height is this one's own, because a five-row list and
  *  a terminal do not want the same proportion. */
-export const CANVAS_HEIGHT = 1340;
+export const CANVAS_HEIGHT = FEATURE_CANVAS_HEIGHT;
 
 export interface PluginCounts {
   /** How many the real catalog ships — not how many rows are on screen. */

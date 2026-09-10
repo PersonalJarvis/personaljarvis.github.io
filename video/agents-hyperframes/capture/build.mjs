@@ -14,6 +14,10 @@ await build({
   plugins:[{name:"capture-seek-adapters",transform(code,id){
     if(id.endsWith("/AgentCardOverlay.tsx"))return code.replace("<Dialog.Portal>",'<Dialog.Portal container={document.getElementById("root")}>');
     if(id.endsWith("/FigureRig.tsx"))return code.replace("figure.mixer.update(Math.min(dt, 0.1))","figure.mixer.setTime(window.__demoTime ?? 0)");
+    if(id.endsWith("/Minimap.tsx"))return code
+      .replaceAll("frame = requestAnimationFrame(draw);", "")
+      .replace("if (now - last < REDRAW_MS) return;", "")
+      .replace("return () => cancelAnimationFrame(frame);", 'const repaint = () => draw((window.__demoTime ?? 0) * 1000); window.addEventListener("jarvis-demo-draw", repaint); repaint(); return () => window.removeEventListener("jarvis-demo-draw", repaint);');
   }}],
   css: { postcss: app },
   build: { outDir:output, emptyOutDir:true, sourcemap:false, reportCompressedSize:false, chunkSizeWarningLimit:5000 },

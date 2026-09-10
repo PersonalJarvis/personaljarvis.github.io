@@ -198,6 +198,7 @@ export function PluginsDemo() {
 
   return (
     <DemoStage
+      backdrop="plugins"
       canvasWidth={CANVAS_WIDTH}
       canvasHeight={CANVAS_HEIGHT}
       description={DEMO_DESCRIPTION}

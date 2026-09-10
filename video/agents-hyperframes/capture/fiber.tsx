@@ -16,4 +16,5 @@ export function renderCanvases(time:number){
     state.clock.elapsedTime=time-1/30;
     state.advance(time,true);
   }
+  window.dispatchEvent(new Event("jarvis-demo-draw"));
 }

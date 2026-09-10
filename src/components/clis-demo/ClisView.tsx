@@ -14,6 +14,7 @@ import type { ReactNode } from "react";
 
 import {
   CANVAS_WIDTH,
+  FEATURE_CANVAS_HEIGHT,
   HAIRLINE,
   RADIUS,
   STROKE,
@@ -36,7 +37,7 @@ import {
 export { CANVAS_WIDTH };
 /** Same height as the other two feature windows, so the three cards read as
  *  three views of one application. */
-export const CANVAS_HEIGHT = 1340;
+export const CANVAS_HEIGHT = FEATURE_CANVAS_HEIGHT;
 
 // --- Icons ----------------------------------------------------------------
 

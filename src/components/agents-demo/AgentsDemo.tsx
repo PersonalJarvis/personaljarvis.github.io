@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { DemoStage } from "../window-demo/Stage";
+import { CANVAS_WIDTH, FEATURE_CANVAS_HEIGHT, WINDOW_CHROME_HEIGHT, WindowChrome } from "../window-demo/chrome";
 
 /** The HyperFrames render is native media; no video runtime ships to visitors. */
 export default function AgentsDemo() {
@@ -16,8 +17,9 @@ export default function AgentsDemo() {
         node.pause();
         return;
       }
-      if (!node.getAttribute("src")) {
-        node.src = "/agents-demo/agents-hyperframes.mp4";
+      const source = "/agents-demo/agents-feature-v3.mp4";
+      if (node.getAttribute("src") !== source) {
+        node.src = source;
         node.load();
       }
       node.muted = true;
@@ -44,11 +46,12 @@ export default function AgentsDemo() {
     };
   }, []);
 
-  return <DemoStage canvasWidth={1600} canvasHeight={1200}
+  return <DemoStage backdrop="agents" canvasWidth={CANVAS_WIDTH} canvasHeight={FEATURE_CANVAS_HEIGHT}
     description="Animated product demonstration: ask Jarvis to coordinate a launch check, watch Scout and Archivist exchange messages on the island, message Scout directly, and receive the team's findings in Jarvis's conversation. English example data."
     onTakeOver={() => {}}>
+    <WindowChrome />
     <video ref={video} autoPlay muted loop playsInline preload="none" tabIndex={-1}
-      poster="/agents-demo/agents-hyperframes-poster.webp" width={1600} height={1200}
-      style={{ display:"block", width:"100%", height:"100%" }} aria-hidden="true" />
+      poster="/agents-demo/agents-feature-v3-poster.webp" width={CANVAS_WIDTH} height={FEATURE_CANVAS_HEIGHT - WINDOW_CHROME_HEIGHT}
+      style={{ display:"block", width:"100%", height:FEATURE_CANVAS_HEIGHT - WINDOW_CHROME_HEIGHT }} aria-hidden="true" />
   </DemoStage>;
 }

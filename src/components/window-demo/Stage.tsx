@@ -1,8 +1,8 @@
 /**
  * The demo stage — the machinery every feature card's demo shares.
  *
- * One well, one window, one fixed canvas scaled to fit. The three feature
- * sections (plugins, skills, CLIs) differ only in what is drawn inside the
+ * One well, one window, one fixed canvas scaled to fit. The four feature
+ * sections (plugins, skills, CLIs, Agents) differ only in what is drawn inside the
  * canvas; everything about how it is sized, clipped, framed and handed over to
  * the visitor lives here, once.
  *
@@ -21,7 +21,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import wellBackdrop from "@/assets/hero/stage-backdrop-well.webp";
+import { DEMO_BACKDROPS, type DemoBackdrop } from "./backdrops";
 
 /** True when the visitor asked their system for less motion. Read on mount,
  *  not during render: reading it during render would differ between the
@@ -71,7 +71,13 @@ export function useFitScale(
     };
 
     const box = node.getBoundingClientRect();
-    measure(box.width, box.height);
+    const css = getComputedStyle(node);
+    // Match ResizeObserver's content box on the first measurement. Counting
+    // padding here enlarged the first frame and could inflate its grid row.
+    measure(
+      box.width - parseFloat(css.paddingLeft) - parseFloat(css.paddingRight) - parseFloat(css.borderLeftWidth) - parseFloat(css.borderRightWidth),
+      box.height - parseFloat(css.paddingTop) - parseFloat(css.paddingBottom) - parseFloat(css.borderTopWidth) - parseFloat(css.borderBottomWidth),
+    );
 
     const observer = new ResizeObserver((entries) => {
       const rect = entries[0]?.contentRect;
@@ -179,6 +185,8 @@ export interface DemoStageProps {
    *  viewport — that is the whole point of the technique. */
   canvasWidth: number;
   canvasHeight: number;
+  /** Each section supplies its own painting from the shared brand collection. */
+  backdrop: DemoBackdrop;
   /** What a screen reader is told instead of the stage, which is aria-hidden. */
   description: string;
   /** Called on the first pointer press anywhere in the stage. */
@@ -207,6 +215,7 @@ export interface DemoStageProps {
 export function DemoStage({
   canvasWidth,
   canvasHeight,
+  backdrop,
   description,
   onTakeOver,
   wellShape = "aspect-[7/6] lg:aspect-auto lg:h-full",
@@ -214,9 +223,10 @@ export function DemoStage({
 }: DemoStageProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const scale = useFitScale(stageRef, canvasWidth, canvasHeight);
+  const wellBackdrop = DEMO_BACKDROPS[backdrop];
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full min-h-0 w-full min-w-0">
       {/*
         The recessed well. Its 24px of padding is what keeps the window off its
         edge — the second of the two nested radii that carry the depth in this
@@ -227,6 +237,7 @@ export function DemoStage({
       */}
       <div
         ref={stageRef}
+        data-demo-stage={backdrop}
         aria-hidden="true"
         /*
          * Take over on the CLICK, not on the press.
@@ -241,10 +252,10 @@ export function DemoStage({
          * Every interactive element inside already calls takeOver itself, so
          * this only has to catch a press on dead space.
          */
-        className={`relative grid w-full place-items-center overflow-hidden rounded-[var(--radius-lg)] border border-hairline bg-canvas p-6 ${wellShape}`}
+        className={`relative grid min-h-0 w-full min-w-0 place-items-center overflow-hidden rounded-[var(--radius-lg)] border border-hairline bg-canvas p-6 ${wellShape}`}
       >
         {/*
-          The same painting the hero window floats on.
+          Each section has a distinct painting in the same visual family.
 
           The well used to be flat `bg-canvas`. A window is never as tall as the
           box it is centred in — the list is short on a filtered frame, and the
@@ -252,10 +263,10 @@ export function DemoStage({
           read as a hole punched in the card rather than as a background. The
           painting turns the leftover into the reason the window is there.
 
-          A separate, smaller file than the hero's on purpose: the wells render
-          at about 600px wide, the hero frame at 1216. Same source image.
+          The shared collection gives Plugins, Skills, CLIs, Agents and Open
+          Source separate images. The Hero keeps its original painting.
 
-          Lazy, because all three of these sit below the fold; `alt=""` and the
+          Lazy, because all of these sit below the fold; `alt=""` and the
           well's own `aria-hidden` keep it out of the accessibility tree.
         */}
         <img
@@ -268,6 +279,9 @@ export function DemoStage({
           className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         />
         <div
+          data-demo-window={backdrop}
+          data-canvas-width={canvasWidth}
+          data-canvas-height={canvasHeight}
           className="relative overflow-hidden rounded-[var(--radius-md)] border border-hairline bg-card"
           style={{
             width: canvasWidth * scale,

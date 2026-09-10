@@ -80,7 +80,7 @@ const {map}=buildIsland();
 const placements=[[-9,10],[-3,18],[3,18]];
 function pose(i,mode="rest") {const[x,z]=placements[i];setRetirementPose(roster[i].agentId,{...poseAt(x,groundY(map,x,z),z,-Math.PI/2),mode});}
 roster.forEach((_,i)=>pose(i));
-useCameraStore.getState().focusOn(0,10,1);
+useCameraStore.getState().focusOn(0,14,0);
 const known=new Set(roster.map(a=>a.agentId));
 let sequence=0;
 function message(from,to,text) {
@@ -115,7 +115,7 @@ function Fixture() {
   },[]);
   function scene(name) {
     useConversationStore.getState().reset();roster.forEach((_,i)=>pose(i));
-    if(name==="world") {setSelected(null);useCameraStore.getState().focusOn(0,10,1);}
+    if(name==="world") {setSelected(null);useCameraStore.getState().focusOn(0,14,0);}
     if(name==="request") {
       const typed={...request,text:request.text.slice(0,Math.max(0,Math.floor((window.__demoTime-2.2)*105)))};
       const items=[typed];

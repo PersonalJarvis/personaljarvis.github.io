@@ -6,7 +6,7 @@ the actual Agents view in the same painted well on the right. A fast, silent
 English walkthrough shows a request, a direct agent message, a conversation
 on the island and the result. The product is the visual. Use its real React
 components, figures, materials, fonts and message receipts. HyperFrames renders
-the captured product into one looping video with gentle viewport reframing.
+the product into one looping video inside the shared feature window.
 
 ## Colors
 From `src/styles/tokens.css` and the app theme: canvas #060605, app background
@@ -19,9 +19,9 @@ Section copy follows the CLI section's 22/26px optical paragraph, weight 500
 for the leading sentence and 400 for the continuation.
 
 ## Motion
-Approximately 25 seconds, with useful visible activity in each beat. Native
-agent gestures and communication arcs; short camera moves toward the active
-conversation. No introductory title card or separate ending. The loop returns
+28 seconds, with useful visible activity in each beat. Native agent gestures,
+messages and in-app view changes. The outer viewport stays fixed. There is no
+separate caption band. No introductory title card or separate ending. The loop returns
 to the opening app state without a black frame. Autoplay muted when visible.
 
 ## What NOT to Do
@@ -30,3 +30,8 @@ to the opening app state without a black frame. Autoplay muted when visible.
 - No invented UI controls or hand-drawn substitute characters.
 - No private conversations, actual customer data or live agent execution.
 - No recreation of the old Remotion presentation inside a different renderer.
+
+## Window contract
+The website uses the shared 1440×1340 canvas, including the same 76px
+`WindowChrome` as Plugins, Skills and CLIs. The rendered video fills the
+remaining 1440×1264 body. No outer pan, zoom, stretch or letterbox.

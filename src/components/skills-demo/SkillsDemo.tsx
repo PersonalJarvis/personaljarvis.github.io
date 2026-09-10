@@ -125,6 +125,7 @@ export function SkillsDemo() {
 
   return (
     <DemoStage
+      backdrop="skills"
       canvasWidth={CANVAS_WIDTH}
       canvasHeight={CANVAS_HEIGHT}
       description={DEMO_DESCRIPTION}

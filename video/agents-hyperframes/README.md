@@ -14,11 +14,11 @@ no production files or user settings are modified. The fixture uses synthetic
 English messages and in-memory state. Its API and socket adapters never
 contact a backend, execute an agent, or send a real message.
 
-The app is rendered inside the composition at its native responsive desktop
-layout. The outer HyperFrames timeline reframes the viewport toward the
-conversation being demonstrated. It follows the installed `ui-focus-zoom`
-component's anchored, single-writer camera approach, with no skeleton UI or
-decorative halo. Brief English captions explain the actions without audio.
+The app is rendered inside a fixed composition at its responsive desktop
+layout. The website uses the same 1440×1340 canvas and shared 76px title bar
+as Plugins, Skills and CLIs. The movie occupies the 1440×1264 body, without
+an additional caption band or moving crop. The English example conversations
+explain the workflow within the app itself.
 
 The capture build redirects portals into the fixture and binds Three.js's
 clock and figure animation mixers to film time. Native CSS transition clocks
@@ -37,9 +37,9 @@ npm run video:agents:check
 npm run video:agents:render
 ```
 
-The final render is `public/agents-demo/agents-hyperframes.mp4` (1600×1200,
+The final render is `public/agents-demo/agents-feature-v3.mp4` (1440×1264,
 30 fps). Extract a representative frame as
-`public/agents-demo/agents-hyperframes-poster.webp` after visual verification.
+`public/agents-demo/agents-feature-v3-poster.webp` after visual verification.
 `npm run video:agents:studio` opens the editing environment; it is separate
 from the website's single development server at port 4399.
 

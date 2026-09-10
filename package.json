@@ -12,7 +12,7 @@
     "check": "astro check",
     "video:agents:studio": "npm --prefix video/agents-hyperframes run dev",
     "video:agents:check": "npm --prefix video/agents-hyperframes run check",
-    "video:agents:render": "node video/agents-hyperframes/capture/build.mjs && npm --prefix video/agents-hyperframes run render -- --quality high --fps 30 --workers 2 --output ../../public/agents-demo/agents-hyperframes.mp4",
+    "video:agents:render": "node video/agents-hyperframes/capture/build.mjs && npm --prefix video/agents-hyperframes run render -- --quality high --fps 30 --workers 2 --output ../../public/agents-demo/agents-feature-v3.mp4",
     "check:style": "node scripts/check-style.mjs",
     "check:geocode": "node scripts/test-geocode.mjs",
     "data:stargazers": "node scripts/fetch-stargazers.mjs",
