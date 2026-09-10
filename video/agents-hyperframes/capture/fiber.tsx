@@ -3,7 +3,7 @@ import React from "react";
 import { Canvas as NativeCanvas } from "@demo/fiber";
 export * from "@demo/fiber";
 const canvases=new Set<any>();
-export function Canvas(props:any){return <NativeCanvas {...props} frameloop="never" onCreated={(state:any)=>{
+export function Canvas(props:any){return <NativeCanvas {...props} dpr={2} frameloop="never" onCreated={(state:any)=>{
   state.clock.getElapsedTime=()=>window.__demoTime??0;
   canvases.add(state);
   props.onCreated?.(state);

@@ -20,6 +20,24 @@ as Plugins, Skills and CLIs. The movie occupies the 1440×1264 body, without
 an additional caption band or moving crop. The English example conversations
 explain the workflow within the app itself.
 
+The final media has 2160×1896 samples for that logical body. HyperFrames renders
+a 1080px square composition at DPR 2; FFmpeg removes only its bottom padding.
+The app iframe stays at 1440×1264 with a constant 0.75 transform. Its WebGL
+canvas uses DPR 2, full internal resolution and no bloom. Conversation text
+uses the same 24–32px scale as the upper feature demos; compact rails retain
+smaller type and the original application components.
+
+Before rendering, `capture/actions.ts` records nine clicks on the actual app
+controls, checks their hit targets and validates both real Send handlers.
+This one event log drives cursor coordinates, click rings and view changes.
+The pointer tip is the target coordinate. A press stays visible for 140ms
+before the resulting view replaces it; the pointer holds during that press.
+Drafts are typed into the real contenteditable composer and complete before Send.
+Calibration uses the renderer's original browser frame clock, while authored
+motion uses virtual time. Twelve setup frames settle the camera and labels before
+timeline registration. A single render worker avoids repeating setup midway through
+the film; the final export must contain no timeline-readiness warnings.
+
 The capture build redirects portals into the fixture and binds Three.js's
 clock and figure animation mixers to film time. Native CSS transition clocks
 are disabled in the fixture; the film timeline owns presentation timing.
@@ -37,9 +55,10 @@ npm run video:agents:check
 npm run video:agents:render
 ```
 
-The final render is `public/agents-demo/agents-feature-v3.mp4` (1440×1264,
-30 fps). Extract a representative frame as
-`public/agents-demo/agents-feature-v3-poster.webp` after visual verification.
+FFmpeg must be available on PATH. The render script checks the composition,
+renders it and crops the padding without resampling. It writes
+`public/agents-demo/agents-feature-v4-sharp.mp4` (2160×1896, 30 fps) and
+`public/agents-demo/agents-feature-v4-sharp-poster.webp`.
 `npm run video:agents:studio` opens the editing environment; it is separate
 from the website's single development server at port 4399.
 

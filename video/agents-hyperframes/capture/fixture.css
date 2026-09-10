@@ -1,3 +1,21 @@
 html,body,#root{width:100%;height:100%;margin:0;overflow:hidden}
-html{font-size:20px}
+html{font-size:24px}
+/* Match the 24–32px type scale of the other 1440px feature demos. */
+body{font-size:28px}
+.text-xs{font-size:24px;line-height:32px}
+.text-sm{font-size:26px;line-height:36px}
+.text-base{font-size:28px;line-height:40px}
+.text-lg{font-size:32px;line-height:44px}
+.text-xl{font-size:36px;line-height:48px}
+/* Preserve compact app chrome while keeping the conversation readable. */
+[data-testid="society-roster-rail"] .text-sm{font-size:20px;line-height:28px}
+[data-testid="society-roster-rail"] .text-xs{font-size:16px;line-height:24px}
+[data-testid="agent-card"]>.grid{grid-template-columns:260px minmax(0,1fr) 300px}
+[data-testid="society-chat"]>.grid{display:flex}
+[data-testid="society-chat"]>.grid>:first-child{flex:1;min-width:0}
+[data-testid="society-chat"]>.grid>:not(:first-child){flex-shrink:0}
+[data-testid="society-chat"]>.grid .text-xs{font-size:18px;line-height:26px}
+[data-testid="society-chat"]>.grid .text-sm{font-size:20px;line-height:28px}
+.sw-bubble{width:max-content;max-width:380px;font-size:22px;line-height:1.35}
+.sw-bubble-kind,.sw-bubble-digest{font-size:16px}
 *,*::before,*::after{animation:none!important;transition:none!important}

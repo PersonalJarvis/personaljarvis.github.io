@@ -17,7 +17,7 @@ export default function AgentsDemo() {
         node.pause();
         return;
       }
-      const source = "/agents-demo/agents-feature-v3.mp4";
+      const source = "/agents-demo/agents-feature-v4-sharp.mp4";
       if (node.getAttribute("src") !== source) {
         node.src = source;
         node.load();
@@ -51,7 +51,7 @@ export default function AgentsDemo() {
     onTakeOver={() => {}}>
     <WindowChrome />
     <video ref={video} autoPlay muted loop playsInline preload="none" tabIndex={-1}
-      poster="/agents-demo/agents-feature-v3-poster.webp" width={CANVAS_WIDTH} height={FEATURE_CANVAS_HEIGHT - WINDOW_CHROME_HEIGHT}
+      poster="/agents-demo/agents-feature-v4-sharp-poster.webp" width={CANVAS_WIDTH} height={FEATURE_CANVAS_HEIGHT - WINDOW_CHROME_HEIGHT}
       style={{ display:"block", width:"100%", height:FEATURE_CANVAS_HEIGHT - WINDOW_CHROME_HEIGHT }} aria-hidden="true" />
   </DemoStage>;
 }

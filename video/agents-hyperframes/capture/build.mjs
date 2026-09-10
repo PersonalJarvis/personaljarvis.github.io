@@ -11,7 +11,9 @@ await build({
   root, configFile: false, base: "./", publicDir: false,
   assetsInclude: ["**/*.glb"], esbuild: { jsx: "automatic" },
   resolve: { alias: { "@": resolve(app,"src"), "@demo/fiber":resolve(app,"node_modules/@react-three/fiber/dist/react-three-fiber.esm.js"), "@react-three/fiber":resolve(root,"fiber.tsx"), react:resolve(app,"node_modules/react"), "react-dom":resolve(app,"node_modules/react-dom"), "@tanstack/react-query":resolve(app,"node_modules/@tanstack/react-query") } },
-  plugins:[{name:"capture-seek-adapters",transform(code,id){
+  plugins:[{name:"capture-seek-adapters",enforce:"pre",transform(code,id){
+    if(id.endsWith("/RosterRail.tsx"))return code.replace('onClick={() => onOpen(agent.agentId)}','data-demo-target={`agent-${agent.agentId}`} onClick={() => onOpen(agent.agentId)}');
+    if(id.endsWith("/AgentChatPanel.tsx"))return code.replace('const fieldRef = useRef<ComposerChipFieldHandle>(null);','const fieldRef = useRef<ComposerChipFieldHandle>(null); useEffect(() => { window.__demoComposer = { hydrate: (text) => fieldRef.current?.hydrate(text, []) }; return () => { delete window.__demoComposer; }; }, []);');
     if(id.endsWith("/AgentCardOverlay.tsx"))return code.replace("<Dialog.Portal>",'<Dialog.Portal container={document.getElementById("root")}>');
     if(id.endsWith("/FigureRig.tsx"))return code.replace("figure.mixer.update(Math.min(dt, 0.1))","figure.mixer.setTime(window.__demoTime ?? 0)");
     if(id.endsWith("/Minimap.tsx"))return code
