@@ -2,18 +2,15 @@
 /**
  * Feature section — copy left, CLIs demo right.
  *
- * One of three blocks that share one shape. Everything structural here — the
+ * One of the feature blocks that share one shape. Everything structural here — the
  * 16/9, the 5/7 split, the missing frame and the missing ground — is
  * deliberately identical to Plugins.astro, and the demo's stage and window come
  * from src/components/window-demo/. Two blocks that are nearly the same read as
  * a mistake; two that are exactly the same read as one product.
  *
- * The three draw no band and no ground of their own: they are one run between
- * the logo strip's closing rule and the voice section's opening one, told apart
- * by a single hairline at each joint. This is the LAST block, so it draws no
- * line of its own — the run's outer boundaries belong to its neighbours, and a
- * rule here as well would be the doubled boundary the shell exists to prevent.
- * That is also why this is the one block of the three still marked `open`.
+ * The feature blocks share one run between the logo strip and voice section.
+ * Agents follows CLIs, so this block now closes with the same single rule
+ * as Plugins and Skills. Agents is the open end of the feature run.
  * Plugins.astro carries the whole reasoning; change it there, not here.
  *
  * See docs/feature-section.md.
@@ -25,16 +22,11 @@ import { ClisDemo } from "@/components/clis-demo/ClisDemo";
 ---
 
 <!--
-  No shell, no ground, and no closing rule: the last of the three sections that
-  read as one run. `open` because nothing is drawn under this block for the
-  square to cross — the voice section below opens on its own pinned frame, an
-  inset further down — so the marker hands over on the rail it came down. The
-  other two close on `.section-run-rule` and are not `open`. See Plugins.astro
-  for the whole reasoning, including why the marker is tracked on the section
-  rather than `nested`.
+  One closing rule separates CLIs from Agents. The marker follows this
+  section's boundary, just as it does for Plugins and Skills.
 -->
-<section id="clis" class="relative flex flex-col">
-  <SectionTrack open />
+<section id="clis" class="section-run-rule relative flex flex-col">
+  <SectionTrack />
   <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
     <!--
       `lg:p-14` and not `lg:px-14`: the block padding is what keeps the well

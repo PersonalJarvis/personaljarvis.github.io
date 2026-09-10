@@ -9,6 +9,10 @@ build/
 .next/
 coverage/
 .video-output/
+video/agents-hyperframes/app/
+video/agents-hyperframes/.hyperframes/
+video/agents-hyperframes/snapshots/
+video/agents-hyperframes/renders/
 
 # Secrets — never committed
 .env

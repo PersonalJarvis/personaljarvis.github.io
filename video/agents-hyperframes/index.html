@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en"><head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=1600,height=1200"/>
+  <title>Jarvis Agents — a working team</title>
+  <script src="assets/gsap.min.js"></script>
+  <style>
+    @font-face{font-family:Inter;src:url(assets/inter.woff2) format('woff2');font-weight:100 900}
+    :root{--bg:#0a0a09;--ink:#f7f7f4;--muted:#b4b1a7;--border:#322f2b}
+    *{box-sizing:border-box}body{margin:0;font-family:Inter,sans-serif;background:var(--bg);color:var(--ink)}
+    #film{width:1600px;height:1200px;overflow:hidden;position:relative}
+    .scene-content{display:flex;flex-direction:column;width:100%;height:100%;padding:0;gap:0}
+    #screen{height:1000px;flex-shrink:0;position:relative;overflow:hidden;border-bottom:1px solid var(--border);background:var(--bg)}
+    #camera{width:1600px;height:1000px;transform-origin:0 0;position:relative;will-change:transform}
+    iframe{display:block;width:1200px;height:750px;transform:scale(1.3333333333);transform-origin:0 0;border:0;pointer-events:none}
+    #captions{height:200px;position:relative;flex-shrink:0;padding:38px 48px}
+    .caption{position:absolute;inset:38px 48px;opacity:0}
+    h2{font-size:52px;line-height:1.1;letter-spacing:-1.6px;font-weight:500;margin:0 0 18px}
+    p{font-size:27px;line-height:1.4;color:var(--muted);margin:0}
+    #pointer{position:absolute;left:0;top:0;z-index:8;width:36px;height:44px;transform-origin:0 0;opacity:0;filter:drop-shadow(0 2px 2px #0a0a09)}
+    #pointer svg{width:100%;height:100%}
+  </style>
+</head><body>
+<div id="film" data-composition-id="jarvis-agents" data-start="0" data-duration="28" data-width="1600" data-height="1200">
+  <div class="scene-content">
+    <div id="screen" data-layout-allow-overflow="Camera crops the real application viewport intentionally.">
+      <div id="camera"><iframe id="product" src="app/index.html" title="Isolated Jarvis Agents demonstration"></iframe></div>
+      <div id="pointer" aria-hidden="true" data-layout-ignore><svg viewBox="0 0 36 44"><path d="M3 2L30 25L19 27L25 39L19 42L13 29L4 37Z" fill="#f7f7f4" stroke="#0a0a09" stroke-width="2"/></svg></div>
+    </div>
+    <div id="captions">
+      <div class="caption" id="cap-team"><h2>Your agents. One team.</h2><p>Each with a role, tools and a conversation of their own.</p></div>
+      <div class="caption" id="cap-jarvis"><h2>Give Jarvis the goal.</h2><p>“Scout, check the blockers. Ask Archivist for the checklist.”</p></div>
+      <div class="caption" id="cap-message"><h2>They talk to each other.</h2><p>Questions, handoffs and replies — visible on the island.</p></div>
+      <div class="caption" id="cap-direct"><h2>Or message an agent directly.</h2><p>Open their conversation. Refine the task in plain English.</p></div>
+      <div class="caption" id="cap-result"><h2>Get the answer, with the context.</h2><p>Jarvis brings the team's findings back into your conversation.</p></div>
+    </div>
+  </div>
+</div>
+<script>
+  const tl=gsap.timeline({paused:true});
+  const product=document.getElementById('product');
+  // Camera equation from the installed ui-focus-zoom primitive: keep one
+  // wrapper, translating the scaled anchor to the center of the viewport.
+  function focus(time,x,y,scale,duration=.65){tl.to('#camera',{x:800-x*scale,y:500-y*scale,scale,duration,ease:'power2.inOut'},time);}
+  focus(0,800,500,1,0);
+  focus(2.15,730,265,1.9);
+  focus(6.5,800,500,1);
+  focus(7.2,650,500,1.9);
+  focus(14.35,800,500,1);
+  focus(15.15,730,340,1.85);
+  focus(20.3,800,500,1);
+  focus(21.2,730,350,1.85);
+  focus(25.35,800,500,1);
+  const captions=[['team',0,2],['jarvis',2,7],['message',7,15],['direct',15,21],['result',21,26],['team',26,28]];
+  for(const[id,start,end]of captions){
+    if(start===0)tl.set('#cap-'+id,{opacity:1,y:0},0);
+    else tl.fromTo('#cap-'+id,{opacity:0,y:12},{opacity:1,y:0,duration:.28,ease:'power3.out',immediateRender:false},start);
+    if(end<28)tl.to('#cap-'+id,{opacity:0,duration:.18,ease:'sine.inOut'},end-.18);
+  }
+  tl.set('#pointer',{x:1440,y:170,opacity:1},1.3).to('#pointer',{scale:.8,duration:.1,ease:'power2.in'},1.8).to('#pointer',{opacity:0,duration:.15},2.1);
+  tl.set('#pointer',{x:1440,y:270,scale:1,opacity:1},14.3).to('#pointer',{scale:.8,duration:.1,ease:'power2.in'},14.8).to('#pointer',{opacity:0,duration:.15},15.1);
+  function draw(){if(product.contentWindow?.renderDemoAt)product.contentWindow.renderDemoAt(tl.time());}
+  tl.eventCallback('onUpdate',draw);
+  window.addEventListener('message',event=>{if(event.origin===location.origin&&event.data?.type==='jarvis-demo-ready')draw();});
+  window.addEventListener('hf-seek',event=>{if(product.contentWindow?.renderDemoAt)product.contentWindow.renderDemoAt(event.detail.time);});
+  window.__timelines=window.__timelines||{};
+  window.__timelines['jarvis-agents']=tl;
+</script>
+</body></html>
