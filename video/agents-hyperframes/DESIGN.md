@@ -15,11 +15,13 @@ The island keeps its original palette. No recoloring or invented accent.
 
 ## Typography
 Inter for application text, Pixelify Sans for the existing island labels.
-Conversation type is 36px on the logical 1440px canvas; rail type is 24–28px,
-and island message text is 32px. Small auxiliary labels have a 24px floor.
+Conversation type is 42px on the logical 1440px canvas; rail type is 24–28px,
+and island message text is 36px. Small auxiliary labels have a 24px floor.
 Judge readability at 530px displayed width, not just at full export resolution.
 The original component hierarchy remains intact; message receipts wrap instead
 of squeezing sender names to zero width.
+Chat scenes use the original conversation and roster as a full-window page.
+The empty Options rail and nested modal frame are omitted in this presentation.
 Section copy follows the CLI section's 22/26px optical paragraph, weight 500
 for the leading sentence and 400 for the continuation.
 
@@ -28,6 +30,9 @@ for the leading sentence and 400 for the continuation.
 messages and in-app view changes. The outer viewport stays fixed. There is no
 separate caption band. No introductory title card or separate ending. The loop returns
 to the opening app state without a black frame. Autoplay muted when visible.
+Give the cursor time to travel into the composer after opening a card. Hide it
+during the autonomous island conversation. Keep large speech bubbles attached
+to the visible nameplate of their speaker and within the island's bounds.
 
 ## What NOT to Do
 - No player controls, chapter buttons, duration labels or start screen.

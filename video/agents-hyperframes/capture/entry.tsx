@@ -83,8 +83,8 @@ const directReply=reply("direct-answer","1. Put the setup link in the first sent
 function transcript(store,items,id="demo-jarvis") {store.setState({timeline:{...EMPTY_TIMELINE,items},activeSessionId:id,activeSession:{...session,session_id:id},busy:false});}
 
 const {map}=buildIsland();
-const placements=[[-9,10],[-3,18],[3,18]];
-function pose(i,mode="rest") {const[x,z]=placements[i];setRetirementPose(roster[i].agentId,{...poseAt(x,groundY(map,x,z),z,-Math.PI/2),mode});}
+const placements=[[-9,10],[-6,19],[5,15]];
+function pose(i,mode="rest") {const[x,z]=placements[i];setRetirementPose(roster[i].agentId,{...poseAt(x,groundY(map,x,z),z,i===0?Math.PI/4:-Math.PI/2),mode});}
 roster.forEach((_,i)=>pose(i));
 useCameraStore.getState().focusOn(0,14,0);
 const known=new Set(roster.map(a=>a.agentId));
@@ -99,6 +99,26 @@ function message(from,to,text) {
   }
 }
 
+// Large movie captions follow the real figure labels and stay inside the island.
+function placeSpeechBubbles(){
+  const stage=document.querySelector<HTMLElement>(".sw-stage");
+  if(!stage)return;
+  const area=stage.getBoundingClientRect();
+  // Drei portals the label DOM beside the canvas, outside .sw-stage itself.
+  const line=document.querySelector(".sw-bubble[data-kind] .sw-bubble-kind")?.textContent?.trim();
+  const speaker=roster.find(agent=>line?.startsWith(agent.name));
+  for(const bubble of document.querySelectorAll<HTMLElement>(".sw-bubble[data-kind],.sw-bubble[data-listening]")){
+    const who=bubble.hasAttribute("data-kind")?speaker:roster.find(agent=>agent.name===(speaker?.name==="Scout"?"Archivist":"Scout"));
+    const plate=Array.from(document.querySelectorAll<HTMLElement>(".sw-nameplate")).find(node=>node.textContent?.trim()===who?.name);
+    if(!plate)continue;
+    bubble.style.translate="0px 0px";
+    const label=plate.getBoundingClientRect(),box=bubble.getBoundingClientRect();
+    const left=Math.max(area.left+24,Math.min(label.x+label.width/2-box.width/2,area.right-box.width-24));
+    const top=Math.max(area.top+96,label.top-box.height-24);
+    bubble.style.translate=`${left-box.left}px ${top-box.top}px`;
+  }
+}
+
 function Fixture() {
   const [selected,setSelected]=useState<string|null>(null);
   useEffect(()=>{void loadLocaleChunk("society");},[]);
@@ -106,6 +126,9 @@ function Fixture() {
     let ready=false;
     let disposed=false;
     const clicks:any[]=[];
+    // Drei mounts its HTML in separate React roots after a frame callback.
+    const captions=new MutationObserver(placeSpeechBubbles);
+    captions.observe(document.body,{childList:true,subtree:true});
     // Calibration is setup, not authored motion. HyperFrames freezes ordinary
     // rAF until capture; using it here would film setup clicks in each worker.
     const setupFrame=window.__HF_VIRTUAL_TIME__?.originalRequestAnimationFrame??requestAnimationFrame.bind(window);
@@ -150,14 +173,14 @@ function Fixture() {
       const selectedId=applied?.after=== "Jarvis"?"jarvis":applied?.after==="Scout"?"scout":null;
       const name=viewTime<2?"world":viewTime<7?"request":viewTime<11?"messages":viewTime<15?"answer":viewTime<21?"direct":viewTime<26?"result":"world";
       flushSync(()=>{setSelected(selectedId);scene(name);});
-      if(viewTime>=2.3&&viewTime<3.6)flushSync(()=>window.__demoComposer?.hydrate(DEMO_COPY.request.slice(0,Math.floor((viewTime-2.3)*DEMO_COPY.request.length))));
-      else if(viewTime>=15.3&&viewTime<17)flushSync(()=>window.__demoComposer?.hydrate(DEMO_COPY.direct.slice(0,Math.floor((viewTime-15.3)/1.3*DEMO_COPY.direct.length))));
+      if(viewTime>=2.7&&viewTime<4.1)flushSync(()=>window.__demoComposer?.hydrate(DEMO_COPY.request.slice(0,Math.floor((viewTime-2.7)*DEMO_COPY.request.length))));
+      else if(viewTime>=15.7&&viewTime<17.5)flushSync(()=>window.__demoComposer?.hydrate(DEMO_COPY.direct.slice(0,Math.floor((viewTime-15.7)/1.3*DEMO_COPY.direct.length))));
       else if(window.__demoComposer)flushSync(()=>window.__demoComposer.hydrate(""));
       renderCanvases(viewTime);
       // Drei's HTML labels use their own React roots; paint again after those
       // commits, still at the exact same authored time (never a wall clock).
-      queueMicrotask(()=>renderCanvases(viewTime));
-      requestAnimationFrame(()=>renderCanvases(viewTime));
+      queueMicrotask(()=>{renderCanvases(viewTime);placeSpeechBubbles();});
+      requestAnimationFrame(()=>{renderCanvases(viewTime);placeSpeechBubbles();});
       const next=clicks.find(action=>action.at>time);
       const destination=next??clicks[0];
       const from=latest??destination;
@@ -172,19 +195,19 @@ function Fixture() {
     void record().catch(error=>{console.error(error);window.parent.postMessage({type:"jarvis-demo-error",message:String(error)},location.origin);});
     const seek=(event:MessageEvent)=>{if(event.origin===location.origin&&event.data?.type==="jarvis-demo-seek")setTime(event.data.time);};
     window.addEventListener("message",seek);
-    return()=>{disposed=true;window.removeEventListener("message",seek);delete window.renderDemoAt;delete window.demoClickLog;};
+    return()=>{disposed=true;captions.disconnect();window.removeEventListener("message",seek);delete window.renderDemoAt;delete window.demoClickLog;};
   },[]);
   function scene(name) {
     useConversationStore.getState().reset();roster.forEach((_,i)=>pose(i));
     if(name==="world") {useCameraStore.getState().focusOn(0,14,0);}
     if(name==="request") {
-      const items=window.__demoTime>=3.6?[request]:[];
-      if(window.__demoTime>=4)items.push({...response,blocks:[{...response.blocks[0],text:response.blocks[0].text.slice(0,Math.floor((window.__demoTime-4)*110))}]});
+      const items=window.__demoTime>=4.1?[request]:[];
+      if(window.__demoTime>=4.45)items.push({...response,blocks:[{...response.blocks[0],text:response.blocks[0].text.slice(0,Math.floor((window.__demoTime-4.45)*110))}]});
       transcript(useAgentChatStore,items);
     }
     if(name==="messages") {message(1,2,"Which release checks are still outstanding?");}
     if(name==="answer") {message(2,1,"Only the welcome email needs a final review.");}
-    if(name==="direct") {transcript(useSocietyChatStore,[internal("lead-task",roster[0],request.text),response,...(window.__demoTime>=17?[direct]:[]),...(window.__demoTime>=17.4?[directReply]:[])],"demo-scout");}
+    if(name==="direct") {transcript(useSocietyChatStore,[internal("lead-task",roster[0],request.text),response,...(window.__demoTime>=17.5?[direct]:[]),...(window.__demoTime>=17.9?[directReply]:[])],"demo-scout");}
     if(name==="result") {transcript(useAgentChatStore,[request,internal("scout-result",roster[1],"No release blockers. Archivist confirmed the checklist."),result]);}
   }
   return <QueryClientProvider client={client}>

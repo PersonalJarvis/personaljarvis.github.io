@@ -15,8 +15,8 @@ English conversations carry the explanation without an additional caption band.
 - 21–26: Jarvis returns the combined result.
 - 26–28: return to the opening island and cursor position for the loop.
 
-Nine real controls are recorded: Jarvis at 2s, its composer at 2.3s, Send at
-3.6s, Close at 7s, Scout at 15s, its composer at 15.3s, Send at 17s, Jarvis in
+Nine real controls are recorded: Jarvis at 2s, its composer at 2.7s, Send at
+4.1s, Close at 7s, Scout at 15s, its composer at 15.7s, Send at 17.5s, Jarvis in
 the card rail at 21s, and Close at 26s. Each view responds 140ms after its
 visible press. The real composer contains the complete text before Send.
 These controls supply the cursor positions; there are no authored pixel guesses.

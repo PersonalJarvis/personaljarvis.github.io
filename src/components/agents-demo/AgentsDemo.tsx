@@ -26,7 +26,7 @@ export default function AgentsDemo() {
       // Select against the displayed card, not its 1440px design canvas.
       // Prefiltered video avoids aliased text when Chrome shrinks a large frame.
       const physicalWidth = node.getBoundingClientRect().width * window.devicePixelRatio;
-      const source = `/agents-demo/agents-feature-v6-readable${physicalWidth > 1200 ? "-2x" : ""}.mp4`;
+      const source = `/agents-demo/agents-feature-v7-focused${physicalWidth > 1200 ? "-2x" : ""}.mp4`;
       if (node.getAttribute("src") !== source) {
         resumeAt = node.currentTime;
         node.src = source;
@@ -68,7 +68,7 @@ export default function AgentsDemo() {
     onTakeOver={() => {}}>
     <WindowChrome />
     <video ref={video} autoPlay muted loop playsInline preload="none" tabIndex={-1}
-      poster="/agents-demo/agents-feature-v6-readable-poster.webp" width={CANVAS_WIDTH} height={FEATURE_CANVAS_HEIGHT - WINDOW_CHROME_HEIGHT}
+      poster="/agents-demo/agents-feature-v7-focused-poster.webp" width={CANVAS_WIDTH} height={FEATURE_CANVAS_HEIGHT - WINDOW_CHROME_HEIGHT}
       style={{ display:"block", width:"100%", height:FEATURE_CANVAS_HEIGHT - WINDOW_CHROME_HEIGHT }} aria-hidden="true" />
   </DemoStage>;
 }

@@ -29,9 +29,15 @@ The master has 2160×1896 samples for that logical body. HyperFrames renders
 a 1080px square composition at DPR 2; FFmpeg removes only its bottom padding.
 The app iframe stays at 1440×1264 with a constant 0.75 transform. Its WebGL
 canvas uses DPR 2, full internal resolution and no bloom. Conversation text
-uses 36px type and auxiliary labels use at least 24px on the logical canvas.
-This leaves roughly 13px conversation text in a 530px feature card. The original
+uses 42px type and auxiliary labels use at least 24px on the logical canvas.
+This leaves roughly 15px conversation text in a 530px feature card. The original
 application components and example conversations remain in place.
+
+The conversation is presented as a focused page: the original chat and roster
+fill the shared window, with the Options rail and nested dialog frame omitted
+by capture-only CSS. The island retains the original scene and figures, staged
+farther apart so their messages remain distinct. Speech bubbles follow the
+actual figure nameplates and stay inside the island viewport.
 
 The normal 1080×948 web rendition is prefiltered from the master-sized render
 with Lanczos, rather than relying on the browser's fast video downscaler to
@@ -44,6 +50,8 @@ This one event log drives cursor coordinates, click rings and view changes.
 The pointer tip is the target coordinate. A press stays visible for 140ms
 before the resulting view replaces it; the pointer holds during that press.
 Drafts are typed into the real contenteditable composer and complete before Send.
+Pointer travel between opening a card and focusing its composer has a longer
+lead-in. The cursor is hidden while the agents exchange messages autonomously.
 The specialist draft occupies a full-width row above the model, microphone and
 Send controls, so the entire instruction fits before it is submitted.
 Calibration uses the renderer's original browser frame clock, while authored
@@ -70,9 +78,9 @@ npm run video:agents:render
 
 FFmpeg must be available on PATH. The render script checks the composition,
 renders it and crops the padding without resampling. It writes
-`public/agents-demo/agents-feature-v6-readable.mp4` (1080×948, 30 fps),
-`public/agents-demo/agents-feature-v6-readable-2x.mp4` (2160×1896), and
-`public/agents-demo/agents-feature-v6-readable-poster.webp`.
+`public/agents-demo/agents-feature-v7-focused.mp4` (1080×948, 30 fps),
+`public/agents-demo/agents-feature-v7-focused-2x.mp4` (2160×1896), and
+`public/agents-demo/agents-feature-v7-focused-poster.webp`.
 `npm run video:agents:studio` opens the editing environment; it is separate
 from the website's single development server at port 4399.
 

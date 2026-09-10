@@ -5,12 +5,12 @@ export const DEMO_COPY = {
 };
 export const DEMO_ACTIONS = [
   { at: 2, target: "agent-jarvis", after: "Jarvis" },
-  { at: 2.3, target: "composer", after: "Jarvis" },
-  { at: 3.6, target: "send", after: "Jarvis", text: DEMO_COPY.request },
+  { at: 2.7, target: "composer", after: "Jarvis" },
+  { at: 4.1, target: "send", after: "Jarvis", text: DEMO_COPY.request },
   { at: 7, target: "close", after: null },
   { at: 15, target: "agent-scout", after: "Scout" },
-  { at: 15.3, target: "composer", after: "Scout" },
-  { at: 17, target: "send", after: "Scout", text: DEMO_COPY.direct },
+  { at: 15.7, target: "composer", after: "Scout" },
+  { at: 17.5, target: "send", after: "Scout", text: DEMO_COPY.direct },
   { at: 21, target: "agent-jarvis", after: "Jarvis" },
   { at: 26, target: "close", after: null },
 ] as const;

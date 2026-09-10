@@ -3,14 +3,17 @@ html{font-size:24px}
 /* Author for the ~530px website window, not just a full-size render preview. */
 body{font-size:34px}
 .text-xs{font-size:28px;line-height:38px}
-.text-sm{font-size:36px;line-height:48px}
-.text-base{font-size:36px;line-height:48px}
+.text-sm{font-size:42px;line-height:56px}
+.text-base{font-size:44px;line-height:56px}
 .text-lg{font-size:40px;line-height:52px}
 .text-xl{font-size:44px;line-height:56px}
 /* Preserve compact app chrome while keeping the conversation readable. */
 [data-testid="society-roster-rail"] .text-sm{font-size:28px;line-height:36px}
 [data-testid="society-roster-rail"] .text-xs{font-size:24px;line-height:32px}
-[data-testid="agent-card"]>.grid{grid-template-columns:320px minmax(0,1fr) 320px}
+/* Present the original conversation as a focused page in the shared window. */
+[data-testid="agent-card"]{inset:0!important;border:0;border-radius:0;box-shadow:none}
+[data-testid="agent-card"]>.grid{grid-template-columns:280px minmax(0,1fr)}
+[data-testid="agent-card"]>.grid>aside:last-child{display:none}
 [data-testid="society-chat"]>.grid{display:flex}
 [data-testid="society-chat"]>.grid>:first-child{flex:1;min-width:0}
 [data-testid="society-chat"]>.grid>:not(:first-child){flex-shrink:0}
@@ -30,6 +33,6 @@ body{font-size:34px}
 [data-demo-composer="society"]>button:last-child{grid-column:4}
 .sw-nameplate{font-size:24px;line-height:1.2}
 .sw-placelabel{font-size:24px;line-height:1.2}
-.sw-bubble{width:max-content;max-width:480px;font-size:32px;line-height:1.35}
+.sw-bubble{width:max-content;max-width:560px;font-size:36px;line-height:1.35}
 .sw-bubble-kind,.sw-bubble-digest{font-size:24px}
 *,*::before,*::after{animation:none!important;transition:none!important}
