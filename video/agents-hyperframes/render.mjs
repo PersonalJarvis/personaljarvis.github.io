@@ -7,7 +7,7 @@ const project = dirname(fileURLToPath(import.meta.url));
 const website = resolve(project, "../..");
 const scratch = resolve(website, ".video-output");
 const media = resolve(website, "public/agents-demo");
-const name = "agents-feature-v4-sharp";
+const name = "agents-feature-v5-readable";
 const cli = resolve(project, "node_modules/hyperframes/bin/hyperframes.mjs");
 
 function run(command, args, requireReady = false) {
@@ -41,13 +41,21 @@ await run(process.execPath, [cli, "render", "--resolution", "square-4k", "--qual
   "--crf", "10", "--fps", "30", "--workers", "1", "--output", square], true);
 // HyperFrames exposes fixed resolution presets. Crop export padding only:
 // no resampling, zoom, sharpening filter or change to the native UI's geometry.
-const movie = resolve(scratch, `${name}.mp4`);
+const master = resolve(scratch, `${name}-2x.mp4`);
 await run("ffmpeg", ["-hide_banner", "-loglevel", "warning", "-y", "-i", square,
   "-vf", "crop=2160:1896:0:0", "-an", "-c:v", "libx264", "-preset", "slow",
-  "-crf", "14", "-pix_fmt", "yuv420p", "-movflags", "+faststart", movie]);
+  "-crf", "12", "-pix_fmt", "yuv420p", "-movflags", "+faststart", master]);
+// A browser's fast video downscaler aliases small type at the 530px card size.
+// Prefilter the normal web rendition; retain the master for larger/HiDPI cards.
+const movie = resolve(scratch, `${name}.mp4`);
+await run("ffmpeg", ["-hide_banner", "-loglevel", "warning", "-y", "-i", square,
+  "-vf", "crop=2160:1896:0:0,scale=1080:948:flags=lanczos+accurate_rnd+full_chroma_int",
+  "-an", "-c:v", "libx264", "-preset", "slow", "-crf", "10", "-pix_fmt", "yuv420p",
+  "-movflags", "+faststart", movie]);
 const poster = resolve(scratch, `${name}-poster.webp`);
 await run("ffmpeg", ["-hide_banner", "-loglevel", "warning", "-y", "-ss", "11.8", "-i", movie,
   "-frames:v", "1", "-quality", "94", poster]);
 await rename(movie, resolve(media, `${name}.mp4`));
+await rename(master, resolve(media, `${name}-2x.mp4`));
 await rename(poster, resolve(media, `${name}-poster.webp`));
-console.log(`Rendered ${name}: 2160x1896, 30fps, 28 seconds.`);
+console.log(`Rendered ${name}: 1080x948 web / 2160x1896 master, 30fps, 28 seconds.`);

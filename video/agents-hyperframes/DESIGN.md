@@ -15,8 +15,11 @@ The island keeps its original palette. No recoloring or invented accent.
 
 ## Typography
 Inter for application text, Pixelify Sans for the existing island labels.
-Conversation type is 26–28px on the logical 1440px canvas; rail type is 16–20px,
-and island message text is 22px. The original component hierarchy remains intact.
+Conversation type is 36px on the logical 1440px canvas; rail type is 24–28px,
+and island message text is 32px. Small auxiliary labels have a 24px floor.
+Judge readability at 530px displayed width, not just at full export resolution.
+The original component hierarchy remains intact; message receipts wrap instead
+of squeezing sender names to zero width.
 Section copy follows the CLI section's 22/26px optical paragraph, weight 500
 for the leading sentence and 400 for the continuation.
 
@@ -37,6 +40,8 @@ to the opening app state without a black frame. Autoplay muted when visible.
 The website uses the shared 1440×1340 canvas, including the same 76px
 `WindowChrome` as Plugins, Skills and CLIs. The rendered video fills the
 remaining 1440×1264 body. No outer pan, zoom, stretch or letterbox.
-Export at 2160×1896, with full-resolution WebGL and crisp vector cursor edges.
+Render the master at 2160×1896 with full-resolution WebGL and vector cursor edges.
+Prefilter the default 1080×948 web rendition with Lanczos to prevent downscale
+aliasing at the actual card size. Retain the master for larger/HiDPI cards.
 Record cursor destinations from native DOM bounds, never hand-place a click.
 Keep the press visible for 140ms before applying its recorded view change.

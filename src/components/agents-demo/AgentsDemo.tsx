@@ -11,14 +11,24 @@ export default function AgentsDemo() {
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let visible = false;
     let disposed = false;
+    let resumeAt: number | null = null;
+    const restorePosition = () => {
+      if (disposed || resumeAt === null) return;
+      node.currentTime = Math.min(resumeAt, Math.max(0, node.duration - 0.01));
+      resumeAt = null;
+    };
     const sync = () => {
       if (disposed) return;
       if (!visible || document.hidden || motion.matches) {
         node.pause();
         return;
       }
-      const source = "/agents-demo/agents-feature-v4-sharp.mp4";
+      // Select against the displayed card, not its 1440px design canvas.
+      // Prefiltered video avoids aliased text when Chrome shrinks a large frame.
+      const physicalWidth = node.getBoundingClientRect().width * window.devicePixelRatio;
+      const source = `/agents-demo/agents-feature-v5-readable${physicalWidth > 1200 ? "-2x" : ""}.mp4`;
       if (node.getAttribute("src") !== source) {
+        resumeAt = node.currentTime;
         node.src = source;
         node.load();
       }
@@ -33,15 +43,22 @@ export default function AgentsDemo() {
       sync();
     }, { threshold: 0.1 });
     observer.observe(node);
+    const resize = new ResizeObserver(sync);
+    resize.observe(node.closest("[data-demo-window]") ?? node);
+    window.addEventListener("resize", sync);
     motion.addEventListener("change", sync);
     document.addEventListener("visibilitychange", sync);
     node.addEventListener("canplay", sync);
+    node.addEventListener("loadedmetadata", restorePosition);
     return () => {
       disposed = true;
       observer.disconnect();
+      resize.disconnect();
+      window.removeEventListener("resize", sync);
       motion.removeEventListener("change", sync);
       document.removeEventListener("visibilitychange", sync);
       node.removeEventListener("canplay", sync);
+      node.removeEventListener("loadedmetadata", restorePosition);
       node.pause();
     };
   }, []);
@@ -51,7 +68,7 @@ export default function AgentsDemo() {
     onTakeOver={() => {}}>
     <WindowChrome />
     <video ref={video} autoPlay muted loop playsInline preload="none" tabIndex={-1}
-      poster="/agents-demo/agents-feature-v4-sharp-poster.webp" width={CANVAS_WIDTH} height={FEATURE_CANVAS_HEIGHT - WINDOW_CHROME_HEIGHT}
+      poster="/agents-demo/agents-feature-v5-readable-poster.webp" width={CANVAS_WIDTH} height={FEATURE_CANVAS_HEIGHT - WINDOW_CHROME_HEIGHT}
       style={{ display:"block", width:"100%", height:FEATURE_CANVAS_HEIGHT - WINDOW_CHROME_HEIGHT }} aria-hidden="true" />
   </DemoStage>;
 }

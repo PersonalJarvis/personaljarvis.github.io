@@ -20,12 +20,18 @@ as Plugins, Skills and CLIs. The movie occupies the 1440×1264 body, without
 an additional caption band or moving crop. The English example conversations
 explain the workflow within the app itself.
 
-The final media has 2160×1896 samples for that logical body. HyperFrames renders
+The master has 2160×1896 samples for that logical body. HyperFrames renders
 a 1080px square composition at DPR 2; FFmpeg removes only its bottom padding.
 The app iframe stays at 1440×1264 with a constant 0.75 transform. Its WebGL
 canvas uses DPR 2, full internal resolution and no bloom. Conversation text
-uses the same 24–32px scale as the upper feature demos; compact rails retain
-smaller type and the original application components.
+uses 36px type and auxiliary labels use at least 24px on the logical canvas.
+This leaves roughly 13px conversation text in a 530px feature card. The original
+application components and example conversations remain in place.
+
+The normal 1080×948 web rendition is prefiltered from the master-sized render
+with Lanczos, rather than relying on the browser's fast video downscaler to
+shrink four source pixels into one display pixel. Cards needing more than
+1200 physical pixels switch to the 2160px rendition while retaining playback time.
 
 Before rendering, `capture/actions.ts` records nine clicks on the actual app
 controls, checks their hit targets and validates both real Send handlers.
@@ -57,8 +63,9 @@ npm run video:agents:render
 
 FFmpeg must be available on PATH. The render script checks the composition,
 renders it and crops the padding without resampling. It writes
-`public/agents-demo/agents-feature-v4-sharp.mp4` (2160×1896, 30 fps) and
-`public/agents-demo/agents-feature-v4-sharp-poster.webp`.
+`public/agents-demo/agents-feature-v5-readable.mp4` (1080×948, 30 fps),
+`public/agents-demo/agents-feature-v5-readable-2x.mp4` (2160×1896), and
+`public/agents-demo/agents-feature-v5-readable-poster.webp`.
 `npm run video:agents:studio` opens the editing environment; it is separate
 from the website's single development server at port 4399.
 
