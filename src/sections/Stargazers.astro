@@ -83,12 +83,10 @@
  */
 import Container from "@/components/Container.astro";
 import SectionTrack from "@/components/SectionTrack.astro";
-import { StarCount, StarGlobe } from "@/components/globe/StarGlobe";
+import { StarCount, StarGlobe, StarMapNote } from "@/components/globe/StarGlobe";
 import stargazers from "@/data/stargazers.json";
 
-const { repo, count, placed, clusters } = stargazers;
-
-const places = placed === 1 ? "one place" : `${clusters.length} places`;
+const { repo, count } = stargazers;
 ---
 
 {/*
@@ -158,9 +156,7 @@ const places = placed === 1 ? "one place" : `${clusters.length} places`;
               </p>
 
               <p class="stargazers-note stargazers-note-muted">
-                The globe marks {places}. Most GitHub profiles carry no location
-                at all, so most stargazers cannot be placed — and none are
-                placed by guesswork.
+                <StarMapNote client:visible />
               </p>
             </div>
 
@@ -168,7 +164,7 @@ const places = placed === 1 ? "one place" : `${clusters.length} places`;
               <!-- client:visible, not client:load: the globe is most of the way
                    down the page, and a rotation nobody is looking at is a frame
                    budget spent on nothing. -->
-              <StarGlobe client:visible clusters={clusters} />
+              <StarGlobe client:visible />
             </div>
           </div>
         </div>

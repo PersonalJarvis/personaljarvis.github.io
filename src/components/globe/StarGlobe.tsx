@@ -14,11 +14,9 @@
  * animates on every page load is decoration, one that animates when the figure
  * has actually changed is information.
  *
- * The MARKERS are from the build. Finding out where a stargazer lives needs a
- * token, and a token cannot live in a page anyone can read the source of;
- * `scripts/fetch-stargazers.mjs` explains the whole reasoning. A scheduled
- * workflow re-runs the fetch and the site rebuilds, so they trail the count by
- * hours rather than by releases.
+ * The MARKERS start with the build snapshot, then follow an anonymous aggregate
+ * feed. The app repository refreshes that feed on each star and hourly, using
+ * its own short-lived Actions token. No credential reaches the browser.
  *
  * The section says so out loud rather than implying the map is complete.
  *
@@ -68,6 +66,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useStargazerFeed } from "./useStargazerFeed";
 
 import { LAND_LAT_CELLS, LAND_LON_CELLS, LAND_MASK_BASE64 } from "@/data/land-mask";
 import { trackProgress } from "@/lib/scrollSpan";
@@ -254,11 +253,21 @@ export function StarCount({ repo, value }: CountProps) {
 
 /* ------------------------------------------------------------------ globe */
 
-interface GlobeProps {
-  clusters: Cluster[];
+export function StarMapNote() {
+  const { clusters, placed, count, generatedAt } = useStargazerFeed();
+  const places = clusters.length === 1 ? "1 place" : `${clusters.length} places`;
+  return (
+    <>
+      The globe marks {places}, covering {placed} of {count} stargazers.
+      {" "}Only public locations we can resolve are shown. New stars update the map
+      automatically; processing can take a few minutes.
+      {" "}Locations checked <time dateTime={generatedAt}>{new Date(generatedAt).toISOString().slice(0, 16).replace("T", " ")} UTC</time>.
+    </>
+  );
 }
 
-export function StarGlobe({ clusters }: GlobeProps) {
+export function StarGlobe() {
+  const { clusters } = useStargazerFeed();
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const markerRefs = useRef<(HTMLDivElement | null)[]>([]);

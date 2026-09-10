@@ -64,10 +64,9 @@ and a sentence saying seven is a fact.
    reader to believe seven is the number. The standfirst names how many places
    are marked and why the rest are not there.
 
-**No arithmetic against the live count in the copy.** "7 places" describes the
-marks, which come from the same build as the sentence. "24 of 31 could not be
-placed" would be wrong the moment someone stars the repository — which is the
-one thing this section promises will show up immediately.
+**No arithmetic against a different snapshot.** The place count and coverage
+both describe the same aggregate snapshot as the marks. Its timestamp stays
+visible because the independently fetched headline count can be newer.
 
 ---
 
@@ -76,7 +75,7 @@ one thing this section promises will show up immediately.
 | | Where it comes from | How fresh |
 |---|---|---|
 | The number | The browser asks GitHub directly | To the minute |
-| The marks | `scripts/fetch-stargazers.mjs`, at build | Hours |
+| The marks and caption | Public aggregate feed; static build fallback | Star event + processing/cache delay |
 
 The split is forced, not chosen. GitHub gives a repository's star count to
 anyone who asks — one unauthenticated request, no key. It does **not** give you
@@ -90,13 +89,19 @@ by everyone who receives it, and "it's only a read-only token" is not an
 argument — it is still ours, still rate-limited against our account, and still
 revocable by someone else's misuse.
 
-So the map is drawn where a token is safe, and `.github/workflows/stargazers.yml`
-re-runs the fetch every six hours and commits the result if it changed.
+The app repository's `Stargazer map` workflow collects locations with its own
+short-lived Actions token on every new star and hourly for reconciliation.
+It publishes aggregates to its `stargazer-map` branch. The website polls that
+public feed through one shared store; markers, accessible list, place count,
+and snapshot timestamp change together. It never skips profile checks merely
+because the total star count stayed unchanged. See [deployment](deploy.md)
+for the pinned collector revision and activation order.
 
-**If the site ever gains a server** — an edge function, a worker — the marks can
-become live too, and the only thing that has to change is where
-`src/data/stargazers.json` comes from. The shape it has now is the shape such an
-endpoint should return. Do not change that shape casually.
+The six-hourly website workflow now copies the public feed into
+`src/data/stargazers.json` for static rendering. Live markers need no rebuild.
+Responses with invalid totals, duplicate places, impossible coordinates, or
+older timestamps leave the last verified map intact. The browser never
+receives GitHub credentials or identifiable profile data.
 
 ### Failure is a no-op, always
 
@@ -298,7 +303,8 @@ needs the network.**
 |---|---|---|---|
 | `build-land-mask.mjs` | Natural Earth 110m land | `src/data/land-mask.ts` | Practically never |
 | `build-gazetteer.mjs` | Natural Earth cities + countries | `scripts/gazetteer.json` | On a data refresh |
-| `fetch-stargazers.mjs` | GitHub GraphQL | `src/data/stargazers.json` | Every 6 h, by CI |
+| `fetch-stargazers.mjs` | GitHub GraphQL / REST | Aggregate feed in the app repository | Each star and hourly |
+| `sync-stargazer-feed.mjs` | Public aggregate feed | `src/data/stargazers.json` | Every 6 h, by CI |
 
 Natural Earth sources are downloaded on demand and git-ignored — 5.8 MB that
 only a data refresh ever reads. Only the generated files are committed.

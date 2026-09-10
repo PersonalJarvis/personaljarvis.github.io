@@ -86,6 +86,7 @@ jobs:
 
       # The project's own build script, not `astro build` spelled out here.
       # If that script is ever replaced, this line stays correct.
+      - run: node --experimental-strip-types --test scripts/test-stargazer-feed.mjs
       - run: npm run build
 
       - uses: actions/configure-pages@v5

@@ -17,7 +17,7 @@ An organisation's Pages site is served at the root only from a repository named
 | Workflow | When | What it does |
 | --- | --- | --- |
 | `deploy` | push to `main`, or after any of the three below | builds with `npm ci && npm run build`, publishes `dist/` |
-| `stargazers` | every 6 hours | rewrites `src/data/stargazers.json` — the globe's markers |
+| `stargazers` | every 6 hours | copies the public map feed into the static fallback |
 | `social-counts` | daily | rewrites `src/data/social-counts.json` — the stat row |
 | `lockfile` | by hand | resolves `package-lock.json` on Linux |
 
@@ -37,18 +37,28 @@ missing the entries a Linux build needs — Tailwind's wasm32 fallback, sharp's
 of re-running `npm install` locally fixes it. Change a dependency, then run the
 `lockfile` workflow once.
 
-**The globe needs a token; the number does not.** A repository's star COUNT is
-public, which is why the page asks GitHub for it directly on every visit and
-needs no server of ours. The LIST of who starred it is not: it answers an
-anonymous caller with 401, and a workflow's own `GITHUB_TOKEN` — scoped to the
-repository it runs in, not to the app's — with 403 on both GraphQL and REST.
-All three measured, 2026-08-29.
+**Location collection runs in the app repository.** Its `Stargazer map`
+workflow handles `watch: started`, an hourly reconciliation, and manual runs.
+The built-in `GITHUB_TOKEN` can read that repository's stargazers and write its
+own `stargazer-map` branch. No cross-repository personal token is required.
+The workflow checks out a pinned website revision for its existing collector
+and geocoder, then publishes only aggregate counts and places to
+`data/stargazers.json` on that branch. Advancing the pinned revision is required
+when changing the collector or gazetteer used by the live map.
 
-So `stargazers` requires the repository secret **`STARGAZERS_TOKEN`**: a
-fine-grained personal access token with public-repository read access, which
-can read only what is already public and write nothing. Without it the workflow
-fails on purpose and says so in one line, because a globe that quietly stops
-refreshing looks exactly like a globe nobody is starring.
+The browser reads that public raw JSON on hydration and every 60–75 seconds
+while the tab is visible. It retains the last verified snapshot on errors.
+GitHub Actions queues and the raw-content cache can add several minutes;
+the UI shows the location snapshot's UTC timestamp. The six-hourly website
+workflow only copies the feed into the static/no-JavaScript fallback and fails
+if the source is invalid or more than a day old.
+
+**Activation order:** publish the app workflow to its default branch, run
+`Stargazer map` once, and verify the public feed. Then publish the website
+changes. Verify a successful automatic run on the next star and an hourly run
+for profile edits/unstars. Tests of browser fixtures do not verify hosted
+Actions permissions. The old missing `STARGAZERS_TOKEN` check caused all
+scheduled refreshes to fail while the browser's star count kept increasing.
 
 ## DNS
 

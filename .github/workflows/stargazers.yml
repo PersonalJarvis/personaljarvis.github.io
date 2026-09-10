@@ -1,23 +1,12 @@
-# Keep the globe's markers roughly current.
-#
-# The star COUNT on the page is live already — the browser asks GitHub for it
-# on every visit. This workflow is only about the MARKERS, which need a token
-# to work out and so are settled at build time. See
-# scripts/fetch-stargazers.mjs for the full reasoning.
-#
-# Every six hours, and on demand. It commits only when the file actually
-# changed, so a quiet day leaves no commit behind and no rebuild is triggered.
+# Star events in the app repository update the live feed. This job only
+# refreshes the static/no-JavaScript fallback used at build time.
 name: stargazers
 
 on:
   schedule:
-    # Six-hourly. A marker that is four hours stale is not a defect; a workflow
-    # that runs every ten minutes to move nothing is.
     - cron: "17 */6 * * *"
   workflow_dispatch:
 
-# Least privilege: this job writes one JSON file back to its own branch and
-# needs nothing else.
 permissions:
   contents: write
 
@@ -28,43 +17,14 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      # One line of English instead of a stack trace. Without the token this
-      # job cannot do its work at all, and the person reading a red run should
-      # learn why from the first thing they see.
-      - name: Check the token this job cannot work without
-        env:
-          STARGAZERS_TOKEN: ${{ secrets.STARGAZERS_TOKEN }}
-        run: |
-          if [ -z "$STARGAZERS_TOKEN" ]; then
-            echo "::error::STARGAZERS_TOKEN is not set. The globe's markers need a personal access token with public repository read access — this workflow's own GITHUB_TOKEN may not read another repository's stargazers, and there is no anonymous route."
-            exit 1
-          fi
-
-      - name: Fetch stargazer locations
-        # STARGAZERS_TOKEN is REQUIRED, and the step above says so plainly
-        # rather than letting this one fail in a stack trace.
-        #
-        # The repository being read is a DIFFERENT one — the app, not this
-        # site — and that is what decides the token. A workflow's built-in
-        # GITHUB_TOKEN is scoped to the repository it runs in, so against the
-        # app's repository it is not weaker, it is wrong: GraphQL and REST both
-        # answer "Resource not accessible by integration". Nor is there an
-        # anonymous way round it — a repository's star COUNT is open to anyone,
-        # but the LIST of stargazers answers 401. All three measured here.
-        #
-        # A fine-grained token with public repository read access is enough.
-        # It reads what is already public; it can write nothing.
-        env:
-          STARGAZERS_TOKEN: ${{ secrets.STARGAZERS_TOKEN }}
-        run: node scripts/fetch-stargazers.mjs
-
+      - name: Read the public aggregate feed
+        run: node --experimental-strip-types scripts/sync-stargazer-feed.mjs
       - name: Commit if it changed
         run: |
           if git diff --quiet -- src/data/stargazers.json; then
@@ -73,10 +33,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # The message goes BEFORE the `--`. Everything after that separator is
-          # a pathspec, so `-m` there is read as a filename and the commit fails
-          # with "pathspec '-m' did not match any file(s)" — which is what the
-          # first real run of this workflow did.
           git commit -m "chore(stargazers): refresh the globe's markers" \
             --only -- src/data/stargazers.json
+          git pull --rebase --ff-only
           git push
