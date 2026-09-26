@@ -12,12 +12,13 @@
     "check": "astro check",
     "check:style": "node scripts/check-style.mjs",
     "check:geocode": "node scripts/test-geocode.mjs",
+    "check:downloads": "node --test scripts/test-downloads.mjs",
     "data:stargazers": "node scripts/fetch-stargazers.mjs",
     "data:app-catalog": "node scripts/extract-app-catalog.mjs",
     "data:repo-map": "node scripts/fetch-repo-map.mjs",
     "data:gazetteer": "node scripts/build-gazetteer.mjs",
     "data:land-mask": "node scripts/build-land-mask.mjs",
-    "verify": "npm run check:style && npm run check:geocode && astro check && npm run build"
+    "verify": "npm run check:style && npm run check:geocode && npm run check:downloads && astro check && npm run build"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.4",
