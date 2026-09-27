@@ -1,11 +1,6 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import test from "node:test";
-import ts from "typescript";
-
-const source = await readFile(new URL("../src/lib/install.ts", import.meta.url), "utf8");
-const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText;
-const { detectOs, detectArchitecture, installerFor, releaseDownloads, INSTALLERS, REPO, downloadLabelFor, INSTALL_TARGETS, INSTALL_COMMANDS } = await import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`);
+import { detectOs, detectArchitecture, installerFor, releaseDownloads, INSTALLERS, REPO, downloadLabelFor, INSTALL_TARGETS, INSTALL_COMMANDS } from "../src/lib/install.ts";
 const names = [...INSTALLERS.map((item) => item.asset), "installers-SHA256SUMS.txt", "installers-SHA256SUMS.txt.cosign.sig", "release-qualification.json"];
 function release() {
   return { tag_name: "v1.2.3", draft: false, prerelease: false, assets: names.map((name) => ({ name, size: 100, browser_download_url: `${REPO}/releases/download/v1.2.3/${name}` })) };

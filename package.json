@@ -12,7 +12,7 @@
     "check": "astro check",
     "check:style": "node scripts/check-style.mjs",
     "check:geocode": "node scripts/test-geocode.mjs",
-    "check:downloads": "node --test scripts/test-downloads.mjs",
+    "check:downloads": "node --experimental-strip-types --test scripts/test-downloads.mjs",
     "data:stargazers": "node scripts/fetch-stargazers.mjs",
     "data:app-catalog": "node scripts/extract-app-catalog.mjs",
     "data:repo-map": "node scripts/fetch-repo-map.mjs",
