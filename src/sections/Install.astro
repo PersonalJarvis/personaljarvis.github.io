@@ -49,12 +49,12 @@ import { REPO } from "@/lib/install";
 
 const steps = [
   {
-    title: "Choose how to install",
+    title: "One command",
     // README § Install: "One command on Windows, macOS, or Linux. You need
     // Python 3.11 or newer and Git; the installer checks for both and stops
     // with a download link if one is missing." Plus the note under the
     // one-liners: it creates a venv, prefetches the voice models, launches.
-    body: "On Windows and Linux, download and open the installer without a terminal command. On macOS, use the command-line installer. The command-line option remains available on every platform.",
+    body: "Windows, macOS or Linux, one line. You need Python 3.11 or newer and Git; the installer checks for both and stops with a download link if either is missing. It asks nothing else, builds its own environment, fetches the voice models and opens the app.",
     cta: true,
   },
   {
@@ -80,7 +80,7 @@ const steps = [
     // README § Run it: `jarvis` is the full desktop with voice and the Orb
     // overlay; `jarvis serve` is the headless server whose full experience,
     // microphone included, lives in the browser.
-    body: "Open Personal Jarvis from your applications. Available updates appear in the app and install after your confirmation.",
+    body: "`jarvis` opens the desktop window with voice and the Orb overlay. On a server, `jarvis serve` runs the same assistant in a browser tab, microphone and all.",
     cta: false,
   },
 ];
@@ -571,12 +571,10 @@ function segments(body: string) {
 
   /* The measured guard. Same four declarations as the query above, because
      "not pinned" has to look identical however it was arrived at. */
-  :global(#install:has([data-cli-install][open])) [data-track],
   [data-unpinned] [data-track] {
     height: auto;
   }
 
-  :global(#install:has([data-cli-install][open])) [data-viewport],
   [data-unpinned] [data-viewport] {
     position: static;
     height: auto;
