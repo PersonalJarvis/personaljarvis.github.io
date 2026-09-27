@@ -8,6 +8,14 @@ export async function initializeDownloads() {
   initialized = true;
   const nav = navigator as NavigatorHints;
   const os = detectOs(nav.userAgent, nav.maxTouchPoints);
+  if (os === "macos") {
+    const cli = document.querySelector<HTMLDetailsElement>("[data-cli-install]");
+    cli?.setAttribute("open", "");
+    document.querySelectorAll<HTMLAnchorElement>("[data-download-cta]").forEach((link) => {
+      link.href = "#cli-install";
+      link.addEventListener("click", () => cli?.setAttribute("open", ""));
+    });
+  }
   let arch = detectArchitecture(nav.userAgent);
   if (nav.userAgentData) {
     try {
@@ -34,9 +42,9 @@ export async function initializeDownloads() {
     });
     const target = installerFor(os, arch);
     if (target) document.querySelectorAll<HTMLAnchorElement>("[data-download-cta]").forEach((link) => { link.href = downloads.get(target.asset)!; });
-    statuses.forEach((status) => { status.textContent = `${release.tag_name} · ${target ? "Ready to download." : "Choose your platform and processor below."}`; });
+    statuses.forEach((status) => { status.textContent = `${release.tag_name} · ${target ? "Ready to download." : os === "macos" ? "macOS installation is available via the command line below." : "Choose your platform and processor below."}`; });
   } catch {
     // Never use an unchecked latest/download URL or substitute another OS.
-    statuses.forEach((status) => { status.textContent = "No complete approved release could be verified. Please try again later."; });
+    statuses.forEach((status) => { status.textContent = "No complete approved installer release could be verified. Command-line installation remains available below."; });
   }
 }

@@ -1,20 +1,31 @@
 ---
 import { INSTALLERS, REPO } from "@/lib/install";
+import CliInstall from "./CliInstall.astro";
 ---
 <div class="installer" data-installer>
   <p class="installer__status" data-download-status role="status">Checking the latest approved release...</p>
-  <p>Choose your platform and processor. Open the downloaded installer to continue.</p>
+  <p>Windows and Linux: choose your platform and processor, then open the downloaded installer.</p>
   <ul class="installer__choices" aria-label="Platforms and processor architectures">
     {INSTALLERS.map((item) => (
       <li><a data-installer-asset={item.asset} aria-disabled="true">{item.label}</a></li>
     ))}
   </ul>
-  <p class="installer__help">On macOS, choose Apple Silicon or Intel from "About This Mac". On Linux, enable "Allow executing file as program" in the AppImage's file properties, then open it.</p>
+  <p class="installer__help">On Linux, enable "Allow executing file as program" in the AppImage's file properties, then open it. macOS uses the command-line installation below.</p>
   <noscript><p>Enable JavaScript to check available installers, or <a href={`${REPO}/releases`}>choose a release and platform on GitHub</a>.</p></noscript>
 </div>
+<details id="cli-install" class="cli-install" data-cli-install>
+  <summary>Install via command line · Windows, macOS and Linux</summary>
+  <p>Use this method on macOS, or choose it as an alternative on Windows and Linux. The script checks Python and Git, sets up the app and guides you through missing prerequisites.</p>
+  <CliInstall />
+</details>
 <script>
   import { initializeDownloads } from "@/lib/downloads";
   initializeDownloads();
+  const cli = document.querySelector<HTMLDetailsElement>("[data-cli-install]");
+  cli?.addEventListener("toggle", () => {
+    // Explicit expansion needs its full height, including in the pinned steps.
+    if (cli.open) document.getElementById("install")?.setAttribute("data-unpinned", "");
+  });
 </script>
 <style>
   .installer { border: 1px solid var(--hairline); border-radius: var(--radius-lg); background: var(--surface-card); padding: var(--space-base); }
@@ -26,4 +37,7 @@ import { INSTALLERS, REPO } from "@/lib/install";
   .installer__choices a[href]:hover { background: var(--surface-strong); }
   .installer__choices a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
   .installer__help { margin-top: var(--space-sm); }
+  .cli-install { margin-top: var(--space-base); }
+  .cli-install summary { cursor: pointer; color: var(--ink); }
+  .cli-install p { margin-block: var(--space-sm); font-size: var(--text-caption); color: var(--muted); }
 </style>

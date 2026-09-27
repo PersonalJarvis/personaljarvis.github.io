@@ -2,13 +2,20 @@
 export const REPO = "https://github.com/PersonalJarvis/PersonalJarvis";
 export type OsId = "windows" | "macos" | "linux";
 export type Architecture = "x64" | "arm64";
+const RAW = "https://raw.githubusercontent.com/PersonalJarvis/PersonalJarvis/main";
+export const INSTALL_COMMANDS = {
+  windows: `irm ${RAW}/install/install.ps1 | iex`,
+  unix: `curl -fsSL ${RAW}/install/install.sh | bash`,
+} as const;
+export const DEFAULT_OS: OsId = "macos";
 export const INSTALL_TARGETS = [
-  { id: "windows", label: "Windows" }, { id: "macos", label: "macOS" }, { id: "linux", label: "Linux" },
+  { id: "windows", label: "Windows", shell: "PowerShell", prompt: "PS>", command: INSTALL_COMMANDS.windows },
+  { id: "macos", label: "macOS", shell: "Terminal", prompt: "$", command: INSTALL_COMMANDS.unix },
+  { id: "linux", label: "Linux", shell: "Shell", prompt: "$", command: INSTALL_COMMANDS.unix },
 ] as const;
+export function targetFor(os: OsId) { return INSTALL_TARGETS.find((target) => target.id === os)!; }
 export const INSTALLERS = [
   { os: "windows", arch: "x64", label: "Windows · Intel / AMD 64-bit", asset: "PersonalJarvis-Setup-x64.exe" },
-  { os: "macos", arch: "arm64", label: "macOS · Apple Silicon", asset: "PersonalJarvis-macOS-arm64.dmg" },
-  { os: "macos", arch: "x64", label: "macOS · Intel", asset: "PersonalJarvis-macOS-x64.dmg" },
   { os: "linux", arch: "x64", label: "Linux · AppImage · Intel / AMD 64-bit", asset: "PersonalJarvis-Linux-x86_64.AppImage" },
 ] as const;
 export const OS_SIGNATURES = [
@@ -37,6 +44,7 @@ export function installerFor(os: OsId | null, arch: Architecture | null) {
   return INSTALLERS.find((item) => item.os === os && item.arch === arch && !item.asset.endsWith(".deb")) ?? null;
 }
 export function downloadLabelFor(os: OsId, language = "en") {
+  if (os === "macos") return language.startsWith("de") ? "macOS per CLI installieren" : "Install on macOS via CLI";
   const name = INSTALL_TARGETS.find((item) => item.id === os)!.label;
   return `${language.startsWith("de") ? "Download für" : "Download for"} ${name}`;
 }

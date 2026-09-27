@@ -5,7 +5,7 @@ import ts from "typescript";
 
 const source = await readFile(new URL("../src/lib/install.ts", import.meta.url), "utf8");
 const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText;
-const { detectOs, detectArchitecture, installerFor, releaseDownloads, INSTALLERS, REPO, downloadLabelFor } = await import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`);
+const { detectOs, detectArchitecture, installerFor, releaseDownloads, INSTALLERS, REPO, downloadLabelFor, INSTALL_TARGETS, INSTALL_COMMANDS } = await import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`);
 const names = [...INSTALLERS.map((item) => item.asset), "installers-SHA256SUMS.txt", "installers-SHA256SUMS.txt.cosign.sig", "release-qualification.json"];
 function release() {
   return { tag_name: "v1.2.3", draft: false, prerelease: false, assets: names.map((name) => ({ name, size: 100, browser_download_url: `${REPO}/releases/download/v1.2.3/${name}` })) };
@@ -14,13 +14,23 @@ test("desktop labels and downloads always match the detected OS", () => {
   for (const [ua, os, arch, extension] of [
     ["Windows NT 10.0; Win64; x64", "windows", "x64", ".exe"],
     ["X11; Linux x86_64", "linux", "x64", ".AppImage"],
-    ["Macintosh; ARM64 Mac OS X", "macos", "arm64", ".dmg"],
   ]) {
     assert.equal(detectOs(ua), os);
     assert.equal(detectArchitecture(ua), arch);
     assert.ok(installerFor(os, arch).asset.endsWith(extension));
     assert.match(downloadLabelFor(os, "de-DE"), /^Download f\u00fcr /);
   }
+});
+
+test("macOS uses CLI only and every platform retains a command", () => {
+  assert.equal(detectOs("Macintosh; ARM64 Mac OS X"), "macos");
+  for (const arch of ["x64", "arm64", null]) assert.equal(installerFor("macos", arch), null);
+  assert.equal(downloadLabelFor("macos", "de-DE"), "macOS per CLI installieren");
+  assert.equal(INSTALL_TARGETS.length, 3);
+  assert.equal(INSTALL_TARGETS.find((item) => item.id === "windows").command, INSTALL_COMMANDS.windows);
+  for (const os of ["macos", "linux"]) assert.equal(INSTALL_TARGETS.find((item) => item.id === os).command, INSTALL_COMMANDS.unix);
+  assert.ok(!names.some((name) => name.endsWith(".dmg")));
+  assert.equal(releaseDownloads(release()).size, 5);
 });
 test("mobile, ChromeOS and unknown UAs never receive a desktop default", () => {
   for (const ua of ["Android Linux", "iPhone Mac OS X", "iPad", "CrOS X11", "unknown", ""]) assert.equal(detectOs(ua), null);
