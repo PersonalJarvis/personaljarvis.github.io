@@ -114,15 +114,17 @@ const year = new Date().getFullYear();
 
             {/*
               A claim about THIS page, and true of this build: no analytics
-              script, no font CDN, no cookie is set anywhere in `src/`, and the
-              video section holds a local JPEG until the reader presses play —
-              see the comment on the stage in BuiltInPublic.astro. If any of
-              that changes, this sentence changes with it.
+              script, no font CDN, no cookie is set anywhere in `src/`; the
+              live counters call api.github.com and discord.com on load
+              (LiveCount.tsx, StarGlobe.tsx), and the video section holds a
+              local JPEG until the reader presses play. The earlier wording
+              said nothing was contacted before play, which the counters made
+              untrue. If any of this changes, this sentence changes with it.
             */}
             <p>
-              This page sets no cookies and runs no analytics. It loads nothing
-              from anyone else until you press play on a video, which is the
-              moment YouTube is contacted and not before.
+              This page sets no cookies and runs no analytics. It asks GitHub
+              and Discord for its live counts, and contacts YouTube only when
+              you press play on a video.
             </p>
           </div>
         </div>
