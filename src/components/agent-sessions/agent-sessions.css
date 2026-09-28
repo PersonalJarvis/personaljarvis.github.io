@@ -234,7 +234,6 @@
   padding: 0 8px 12px;
   scrollbar-width: thin;
   scrollbar-color: var(--session-border) transparent;
-  overscroll-behavior: contain;
 }
 
 .as-lead {
@@ -634,7 +633,6 @@
   padding: 20px 24px;
   scrollbar-width: thin;
   scrollbar-color: var(--session-border) transparent;
-  overscroll-behavior: contain;
 }
 
 .as-measure {
