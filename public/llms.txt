@@ -1,0 +1,32 @@
+# Personal Jarvis
+
+> Personal Jarvis is a free, open-source (Apache 2.0) desktop app for Windows, macOS and Linux that turns your computer into an AI agent. You talk to it by chat or by voice; it can use the browser and desktop, run coding agents, call connected tools, and bring the result back to one workspace. It works with any single model provider key or with local models through Ollama.
+
+- Source code, install commands and documentation: https://github.com/PersonalJarvis/PersonalJarvis
+- Releases: https://github.com/PersonalJarvis/PersonalJarvis/releases
+- Python package: https://pypi.org/project/personal-jarvis/
+
+## What it does
+
+- Voice and chat assistant with a custom wake phrase and local speech-to-text
+- Dictation into any app
+- Agentic IDE: run CLI coding agents such as Claude Code, Codex, Gemini CLI and OpenCode side by side in terminal panes, with git worktrees
+- Background agents and scheduled routines
+- Computer use in the browser and on the desktop
+- Plugins, skills and MCP
+- Memory and a personal knowledge wiki
+- Run agents on other computers over SSH, such as a VPS or a local VM
+- A `jarvis` command line interface for scripting the app
+
+## Install
+
+- Windows (PowerShell): `irm https://raw.githubusercontent.com/PersonalJarvis/PersonalJarvis/main/install/install.ps1 | iex`
+- macOS and Linux: `curl -fsSL https://raw.githubusercontent.com/PersonalJarvis/PersonalJarvis/main/install/install.sh | bash`
+
+## Site
+
+- [Home](https://personaljarvis.ai/)
+- [Supported coding CLIs](https://personaljarvis.ai/clis/)
+- [Plugins](https://personaljarvis.ai/plugins/)
+- [Skills](https://personaljarvis.ai/skills/)
+- [Marketplace](https://personaljarvis.ai/marketplace/)
