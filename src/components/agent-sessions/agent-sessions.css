@@ -755,6 +755,16 @@
   padding-block: 2px;
 }
 
+/* While the thought runs, each new step fades in and the newest one reads
+   brighter than the ones already done. */
+.as-trace--live li {
+  animation: as-in 320ms ease both;
+}
+
+.as-trace--live li[data-current] {
+  color: var(--session-fg);
+}
+
 .as-turn {
   display: flex;
   flex-direction: column;

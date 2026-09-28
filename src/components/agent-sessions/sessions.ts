@@ -146,7 +146,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
     routines: [["Weekly KPI report", "Mondays 08:30"]],
     items: [
       { k: "stamp", text: "Today 09:03" },
-      { k: "from", agent: "jarvis" },
+      { k: "user", text: "Before Tuesday's launch: where do we stand? I want a baseline to measure against." },
       {
         k: "thought",
         secs: "22s",
@@ -171,7 +171,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
       },
       { k: "to", agent: "jarvis", status: "Delivered" },
       { k: "user", text: "Which page loses them?" },
-      { k: "thought", secs: "6s" },
+      { k: "thought", secs: "6s", steps: ["Opened the funnel for /docs/installation.", "Split exits by OS tab: Windows loses the most.", "Replayed three sessions: the command wraps and gets copied in half."] },
       {
         k: "reply",
         blocks: [{ p: "`/docs/installation` — 41 % leave on the Windows tab. The install command wraps on small screens, and people copy only half of it." }],
@@ -203,7 +203,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
     routines: [],
     items: [
       { k: "stamp", text: "Today 09:04" },
-      { k: "from", agent: "jarvis" },
+      { k: "user", text: "Write the announcement post for v1.4. Plain, no hype." },
       {
         k: "thought",
         secs: "31s",
@@ -219,7 +219,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
         done: "31s",
       },
       { k: "user", text: "Shorter. Two sentences max." },
-      { k: "thought", secs: "4s" },
+      { k: "thought", secs: "4s", steps: ["Kept the headline, it carries the idea.", "Cut the feature list; it belongs in the release notes."] },
       {
         k: "reply",
         blocks: [{ p: "**Your agents now work as a team.** Give Jarvis one goal — it hands out the work and only comes back when something needs you." }],
@@ -251,7 +251,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
     routines: [],
     items: [
       { k: "stamp", text: "Today 09:05" },
-      { k: "from", agent: "jarvis" },
+      { k: "user", text: "Make a 30-second clip for the launch. Show the agents working together." },
       {
         k: "thought",
         secs: "48s",
@@ -265,7 +265,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
         done: "48s",
       },
       { k: "user", text: "Open on the dark theme." },
-      { k: "thought", secs: "9s" },
+      { k: "thought", secs: "9s", steps: ["Swapped frame 1 to the dark theme.", "Re-rendered only frame 1; frames 2–5 are unchanged."] },
       { k: "reply", blocks: [{ p: "Done. Frame 1 now opens on the dark theme; the other four are unchanged." }], done: "9s" },
     ],
     replies: [
@@ -360,6 +360,17 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
         done: "36s",
       },
       { k: "memory", file: "experiments.md" },
+      { k: "user", text: "Why revert the nav button? It looked good." },
+      {
+        k: "thought",
+        secs: "7s",
+        steps: ["Compared both variants over 2,410 visits.", "The button pulled clicks away from the install command below it."],
+      },
+      {
+        k: "reply",
+        blocks: [{ p: "It looked good, but it cost us: people clicked it, landed on a page without the command, and **4 %** fewer finished the install. The command itself is the better button." }],
+        done: "7s",
+      },
     ],
     replies: [
       "I'll set that up as a test with a 50/50 split and report next Monday.",
@@ -386,7 +397,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
     items: [
       { k: "routine", title: "Morning inbox sweep", schedule: "daily 07:30" },
       { k: "stamp", text: "Today 07:30" },
-      { k: "thought", secs: "12s" },
+      { k: "thought", secs: "12s", steps: ["Read 38 unread mails and sorted them by sender and urgency.", "Matched 11 of them to your reply templates.", "Filed receipts to Drive before archiving."] },
       { k: "tool", text: "gmail · search · 38 unread" },
       {
         k: "reply",
@@ -403,7 +414,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
         done: "12s",
       },
       { k: "user", text: "What's the most urgent one?" },
-      { k: "thought", secs: "3s" },
+      { k: "thought", secs: "3s", steps: ["Checked deadlines mentioned in the pinned mails.", "The venue wants a number by 12:00 today."] },
       {
         k: "reply",
         blocks: [{ p: "The venue for Thursday wants a headcount by 12:00 today. Your calendar says 14 people." }],
@@ -442,7 +453,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
     routines: [["Review new pull requests", "on every PR"]],
     items: [
       { k: "stamp", text: "Today 10:21" },
-      { k: "from", agent: "jarvis" },
+      { k: "user", text: "Review PR 412 before I merge it. Is it safe?" },
       {
         k: "thought",
         secs: "1m 12s",
@@ -580,7 +591,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
     items: [
       { k: "stamp", text: "Today 10:17" },
       { k: "from", agent: "scout" },
-      { k: "thought", secs: "28s" },
+      { k: "thought", secs: "28s", steps: ["Weighed the three signals against what we can show today.", "Approvals is the one worry we answer better than anyone."] },
       {
         k: "reply",
         blocks: [

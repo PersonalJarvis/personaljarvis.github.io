@@ -152,9 +152,7 @@ function Blocks({ blocks, budget }: { blocks: readonly Block[]; budget: number }
 
 function Thought({ secs, steps, pending }: { secs: string; steps?: readonly string[]; pending?: boolean }) {
   const [open, setOpen] = useState(false);
-  if (pending) {
-    return <p className="as-thought as-thought--live"><span className="as-shimmer">Thinking…</span></p>;
-  }
+  if (pending) return <LiveThought steps={steps} />;
   return (
     <div className="as-thought-wrap">
       <button type="button" className="as-thought" onClick={() => steps && setOpen((o) => !o)} aria-expanded={steps ? open : undefined}>
@@ -164,6 +162,48 @@ function Thought({ secs, steps, pending }: { secs: string; steps?: readonly stri
       {open && steps && (
         <ol className="as-trace">
           {steps.map((s) => <li key={s}>{s}</li>)}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+/** How long a trace line stays on screen before the next one arrives. */
+const TRACE_STEP_MS = 1100;
+
+/** How long a thought runs before the answer starts: long enough to read its trace. */
+function thinkingTime(item: Item | undefined): number {
+  if (item?.k !== "thought") return 0;
+  return 1200 + (item.steps?.length ?? 1) * TRACE_STEP_MS;
+}
+
+/**
+ * A thought while it is happening: the shimmering "Thinking…" line with the
+ * reasoning trace growing under it, one step at a time — the way the app
+ * streams a trace before it collapses into "Thought for Ns".
+ */
+function LiveThought({ steps }: { steps?: readonly string[] }) {
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    if (!steps?.length) return;
+    const first = window.setTimeout(() => setShown(1), 450);
+    const tick = window.setInterval(() => setShown((n) => Math.min(steps.length, n + 1)), TRACE_STEP_MS);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(tick);
+    };
+  }, [steps]);
+  return (
+    <div className="as-thought-wrap">
+      <p className="as-thought as-thought--live">
+        <span className="as-thought__chev" data-open="true"><I.ChevronRight size={12} /></span>
+        <span className="as-shimmer">Thinking…</span>
+      </p>
+      {steps && shown > 0 && (
+        <ol className="as-trace as-trace--live">
+          {steps.slice(0, shown).map((step, i) => (
+            <li key={step} data-current={i === shown - 1 ? "true" : undefined}>{step}</li>
+          ))}
         </ol>
       )}
     </div>
@@ -335,7 +375,7 @@ function Transcript({
           </div>
         )}
         {visible.map((item, i) => render(item, i))}
-        {next?.k === "thought" && <Thought key="pending" secs={next.secs} pending />}
+        {next?.k === "thought" && <Thought key="pending" secs={next.secs} steps={next.steps} pending />}
         {next?.k === "reply" && progress.words > 0 && render(next, visible.length, progress.words)}
       </div>
     </div>
@@ -557,7 +597,7 @@ export default function AgentSessions() {
       for (const id of active) {
         if (!next[id]) {
           next[id] = reduced ? { shown: convosRef.current[id].length, words: 0 } : { shown: 0, words: 0 };
-          waitUntil.current[id] = performance.now() + 250;
+          waitUntil.current[id] = performance.now() + 250 + thinkingTime(convosRef.current[id][0]);
           changed = true;
         }
       }
@@ -584,7 +624,7 @@ export default function AgentSessions() {
           } else {
             const upcoming = items[p.shown + 1];
             waitUntil.current[id] =
-              now + (upcoming?.k === "thought" ? 1300 : upcoming?.k === "reply" ? 200 : upcoming ? 420 : 0);
+              now + (upcoming?.k === "thought" ? thinkingTime(upcoming) : upcoming?.k === "reply" ? 200 : upcoming ? 420 : 0);
             next[id] = { shown: p.shown + 1, words: 0 };
           }
           changed = true;
@@ -658,7 +698,11 @@ export default function AgentSessions() {
       [id]: [
         ...all[id],
         { k: "user", text },
-        { k: "thought", secs: `${2 + (turn % 3)}s` },
+        {
+          k: "thought",
+          secs: `${2 + (turn % 3)}s`,
+          steps: [`Read your message and my notes on ${AGENTS[id].title.toLowerCase()}.`, "Checked what the team already knows about it."],
+        },
         { k: "reply", blocks: [{ p: reply }], done: `${2 + (turn % 3)}s` },
       ],
     }));
