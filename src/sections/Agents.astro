@@ -1,21 +1,116 @@
 ---
+/**
+ * Section — the Agents screen, hands on.
+ *
+ * A working clone of the app's Agents view: the team rail with the lead on
+ * top, the conversation, and the Options panel with each agent's live
+ * browser, chats and routines. The team is preconfigured and every agent has
+ * its own conversation. It plays itself until the visitor takes the mouse.
+ * See src/components/agent-sessions/.
+ *
+ * ONE SCREEN, LIKE THE GLOBE. `section-full-height` sets the floor and the
+ * window is the flex-1 child that takes whatever the header leaves, so the
+ * app fills the screen the way it fills a desktop. The floor is a minimum:
+ * on a short window the section grows and the page scrolls.
+ *
+ * A BOUNDED SECTION — both rules an inset inside its own edges. CLIs above is
+ * the open end of the feature run and draws no closing rule, so this
+ * section's opening rule is the one line at that joint. See docs/layout.md §
+ * "One boundary, one shape".
+ */
 import Container from "@/components/Container.astro";
 import SectionTrack from "@/components/SectionTrack.astro";
-import AgentsDemo from "@/components/agents-demo/AgentsDemo";
+import AgentSessions from "@/components/agent-sessions/AgentSessions";
 ---
 
-<!-- Last feature in the shared run: copy and painted well match CLIs. -->
-<section id="agents" class="relative flex flex-col" aria-label="Jarvis Agents">
-  <SectionTrack open />
+<section id="agents" class="section-full-height relative flex flex-col" aria-labelledby="agents-heading">
   <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
-    <div class="grid grid-cols-[minmax(0,1fr)] items-center gap-12 px-8 lg:aspect-[16/9] lg:min-h-[560px] lg:grid-cols-12 lg:grid-rows-[minmax(0,1fr)] lg:p-14">
-      <div class="lg:col-span-5">
-        <p class="text-[22px] leading-snug sm:text-[26px]">
-          <span class="font-medium text-ink">Your agents work as a team.</span>{" "}
-          <span class="text-body">Give Jarvis a goal. Its specialists exchange messages, share context and report back. Open any agent's chat to steer the work directly.</span>
+    <div class="section-bounds section-bounds--fill agents-body flex flex-col">
+      <SectionTrack nested />
+
+      <div class="agents-head">
+        <div>
+          <p class="agents-eyebrow">Agents</p>
+          <h2 id="agents-heading" class="agents-headline text-balance">A team that works while you don't.</h2>
+        </div>
+        <p class="agents-standfirst text-pretty">
+          Each agent has its own chat, model, browser and routines. Jarvis
+          leads, they talk to each other, and anything that sends waits for
+          your OK. Click around — it's the real screen, with sample data.
         </p>
       </div>
-      <div class="min-h-0 min-w-0 lg:col-span-7 lg:h-full"><AgentsDemo client:visible /></div>
+
+      <div class="agents-window">
+        <!-- client:visible: the window runs a playback clock and a tour, and
+             neither should spend a frame before anyone can see it. -->
+        <AgentSessions client:visible />
+      </div>
     </div>
   </Container>
 </section>
+
+<style>
+  .agents-body {
+    gap: clamp(1.25rem, 2.6svh, 2rem);
+  }
+
+  /* The copy stands off the rails; the window keeps the same inset so the
+     two share one left edge. */
+  .agents-head,
+  .agents-window {
+    padding-inline: clamp(0rem, 2.2vw, 2.5rem);
+  }
+
+  .agents-head {
+    display: grid;
+    gap: 0.75rem 3rem;
+  }
+
+  @media (min-width: 1024px) {
+    .agents-head {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: end;
+    }
+  }
+
+  .agents-eyebrow {
+    color: var(--muted);
+    font-size: var(--text-caption-upper);
+    font-weight: 600;
+    letter-spacing: var(--tracking-caption-upper);
+    text-transform: uppercase;
+  }
+
+  .agents-headline {
+    margin-block-start: 0.5rem;
+    color: var(--ink);
+    font-size: clamp(1.75rem, 1.2rem + 1.4vw, var(--text-display-lg));
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: var(--tracking-display-lg);
+  }
+
+  .agents-standfirst {
+    color: var(--body);
+    font-size: var(--text-body);
+    line-height: 1.55;
+  }
+
+  /* The window takes what the header leaves, down to a floor where the app
+     still reads as the app; below that the section grows instead. */
+  .agents-window {
+    display: flex;
+    flex: 1;
+    min-height: 28rem;
+    flex-direction: column;
+    /* Size containment: the transcript's length must never count toward the
+       section's height, or the one-screen section grows with every chat. */
+    contain: size;
+  }
+
+  @media (max-width: 699px) {
+    .agents-window {
+      min-height: 40rem;
+    }
+  }
+</style>

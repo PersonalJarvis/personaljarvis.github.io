@@ -8,10 +8,12 @@
  * from src/components/window-demo/. Two blocks that are nearly the same read as
  * a mistake; two that are exactly the same read as one product.
  *
- * The feature blocks share one run between the logo strip and voice section.
- * Agents follows CLIs, so this block now closes with the same single rule
- * as Plugins and Skills. Agents is the open end of the feature run.
- * Plugins.astro carries the whole reasoning; change it there, not here.
+ * The feature blocks share one run between the logo strip and the Agents
+ * section. CLIs is the open end of that run: it draws no closing rule and its
+ * marker runs `open`, because Agents below is a bounded section whose own
+ * opening rule is the one line at this joint. A rule here as well would put
+ * two lines at one joint. Plugins.astro carries the whole reasoning; change it
+ * there, not here.
  *
  * See docs/feature-section.md.
  */
@@ -22,11 +24,11 @@ import { ClisDemo } from "@/components/clis-demo/ClisDemo";
 ---
 
 <!--
-  One closing rule separates CLIs from Agents. The marker follows this
-  section's boundary, just as it does for Plugins and Skills.
+  No closing rule: the Agents section below opens with its own. The marker
+  runs open straight into it.
 -->
-<section id="clis" class="section-run-rule relative flex flex-col">
-  <SectionTrack />
+<section id="clis" class="relative flex flex-col">
+  <SectionTrack open />
   <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
     <!--
       `lg:p-14` and not `lg:px-14`: the block padding is what keeps the well

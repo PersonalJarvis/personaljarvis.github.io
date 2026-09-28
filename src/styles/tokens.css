@@ -136,6 +136,22 @@
   --agent-teal: #79c7c4;
   --agent-eye: #101014;
 
+  /* --- Agent sessions clone ------------------------------------------------
+   * The app's Agents view as it renders today, sampled from the running
+   * build (society/chat, society/roster). Neutral greys, not the warm app
+   * values above: the Agents section is a pixel clone of that one screen,
+   * and it is drawn in these values and nothing else. */
+  --session-bg: #0a0a0a;
+  --session-panel: #0f0f0f;
+  --session-raised: #161616;
+  --session-surface: #1f1f1f;
+  --session-border: #262626;
+  --session-border-strong: #383838;
+  --session-fg: #fafafa;
+  --session-muted: #a1a1a1;
+  --session-dim: #5f5f5f;
+  --session-link: #3186ff;
+
   /* --- App mockup --------------------------------------------------------
    * The product's OWN colours, read from the running app so the hero demo is
    * a clone and not an impression.

@@ -11,7 +11,7 @@
  * interlude), two arcs once the person has approved.
  */
 
-import type { Shape } from "./team";
+export type Shape = "ghost" | "circle" | "hexagon" | "drop" | "squircle" | "triangle" | "cloud";
 
 export type Mood = "rest" | "working" | "happy";
 
@@ -39,6 +39,8 @@ function Body({ shape, fill }: { shape: Shape; fill: string }) {
   switch (shape) {
     case "ghost":
       return <path d={GHOST} transform="translate(-0.4 0.2) scale(0.17)" style={{ fill }} />;
+    case "circle":
+      return <circle cx={20} cy={20} r={16.2} style={{ fill }} />;
     case "squircle":
       return <path d={SQUIRCLE} style={{ fill }} />;
     case "triangle":
@@ -91,7 +93,7 @@ export function GlyphFace({
           strokeLinecap="round"
         />
       ) : (
-        <g transform={`translate(${gaze.x.toFixed(2)} ${gaze.y.toFixed(2)})`}>
+        <g transform={`translate(${(gaze.x + (shape === "ghost" ? 0 : 2)).toFixed(2)} ${(gaze.y - (shape === "ghost" ? 0 : 0.6)).toFixed(2)})${shape === "ghost" ? "" : ` rotate(-14 20 ${eyeY})`}`}>
           <g className="agent-glyph__eyes" style={{ fill: "var(--agent-eye)" }}>
             <ellipse cx={20 - spread} cy={eyeY} rx={1.5} ry={3.1} />
             <ellipse cx={20 + spread} cy={eyeY} rx={1.5} ry={3.1} />
