@@ -1,0 +1,99 @@
+---
+/**
+ * Imprint (legal notice).
+ *
+ * Required for a site operated from Germany: Section 5 of the Digital Services
+ * Act (DDG) and Section 18(1) of the Interstate Media Treaty (MStV). Written in
+ * English because the whole site is; the statutes are cited by their German
+ * names so a German reader can find them.
+ *
+ * The operator's details come from src/lib/legal.ts and nowhere else.
+ */
+import LegalPage from "@/components/LegalPage.astro";
+import { OPERATOR, PRIVACY_HREF } from "@/lib/legal";
+import { REPO } from "@/lib/install";
+---
+
+<LegalPage
+  title="Imprint — Personal Jarvis"
+  description="Legal notice for personaljarvis.ai: who runs this site and how to reach them."
+  heading="Imprint"
+>
+  <p>
+    Information pursuant to Section 5 of the German Digital Services Act
+    (Digitale-Dienste-Gesetz, DDG) and Section 18(1) of the German Interstate
+    Media Treaty (Medienstaatsvertrag, MStV).
+  </p>
+
+  <h2>Operator</h2>
+  <address>
+    {OPERATOR.name}<br />
+    {OPERATOR.street}<br />
+    {OPERATOR.city}<br />
+    {OPERATOR.country}
+  </address>
+
+  <h2>Contact</h2>
+  <p>Email: <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a></p>
+
+  <h2>About this project</h2>
+  <p>
+    Personal Jarvis is a free, open-source project. Nothing is sold on this
+    site: the software is published under the
+    <a href={`${REPO}/blob/main/LICENSE`}>Apache License 2.0</a> and can be
+    downloaded at no cost. This site has no editorial or journalistic content.
+  </p>
+
+  <h2>Consumer dispute resolution</h2>
+  <p>
+    We are neither obliged nor willing to take part in dispute resolution
+    proceedings before a consumer arbitration board (Section 36 of the German
+    Consumer Dispute Resolution Act, VSBG).
+  </p>
+
+  <h2>Liability for content</h2>
+  <p>
+    We write the content of these pages with care but cannot guarantee that it
+    is complete, correct or current. As a service provider we are responsible
+    for our own content under general law (Section 7(1) DDG). We are not
+    obliged to monitor third-party information we transmit or store, or to
+    investigate circumstances that point to unlawful activity (Sections 8 to 10
+    DDG). Obligations to remove or block information under general law remain
+    unaffected; liability of this kind begins only when we learn of a specific
+    infringement, and we remove such content as soon as we do.
+  </p>
+
+  <h2>Liability for links</h2>
+  <p>
+    This site links to websites of third parties, such as GitHub, YouTube, X
+    and Discord. We have no influence over their content, and their operators
+    alone are responsible for it. We checked linked pages for obvious legal
+    violations when we linked them. If we become aware of an infringement, we
+    remove the link.
+  </p>
+
+  <h2>The software</h2>
+  <p>
+    Personal Jarvis is provided under the Apache License 2.0, which contains a
+    disclaimer of warranty and a limitation of liability. Both apply to the
+    extent permitted by applicable law; liability that cannot be excluded by
+    law — for example for intent, or for injury to life, body or health —
+    remains unaffected.
+  </p>
+
+  <h2>Trademarks and copyright</h2>
+  <p>
+    Third-party names and logos shown on this site belong to their owners. They
+    identify the services the software can connect to and do not imply any
+    endorsement or affiliation. See the project's
+    <a href={`${REPO}/blob/main/TRADEMARK.md`}>trademark notice</a>.
+    Content on this site that belongs to the project is published under the
+    same licence as the software unless stated otherwise.
+  </p>
+
+  <h2>Privacy</h2>
+  <p>
+    How this site handles personal data is described in the
+    <a href={PRIVACY_HREF}>privacy policy</a>.
+  </p>
+</LegalPage>

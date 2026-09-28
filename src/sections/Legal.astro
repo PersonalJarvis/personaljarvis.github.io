@@ -23,6 +23,7 @@
  */
 import Container from "@/components/Container.astro";
 import { REPO } from "@/lib/install";
+import { IMPRINT_HREF, PRIVACY_HREF } from "@/lib/legal";
 import { SOCIAL_STATS, type SocialId } from "@/lib/socialCounts";
 
 /**
@@ -66,6 +67,10 @@ const groups = [
   {
     label: "Legal",
     links: [
+      // The two pages a site run from Germany owes every visitor; they live
+      // on this site, so they open in the same tab.
+      { label: "Imprint", href: IMPRINT_HREF },
+      { label: "Privacy", href: PRIVACY_HREF },
       // README § License: "Apache 2.0. Free to use, modify, and distribute…"
       { label: "License", href: `${REPO}/blob/main/LICENSE` },
       // README § License names NOTICE alongside LICENSE.
@@ -119,12 +124,13 @@ const year = new Date().getFullYear();
               (LiveCount.tsx, StarGlobe.tsx), and the video section holds a
               local JPEG until the reader presses play. The earlier wording
               said nothing was contacted before play, which the counters made
-              untrue. If any of this changes, this sentence changes with it.
+              untrue. If any of this changes, this sentence and
+              src/pages/privacy.astro change with it.
             */}
             <p>
               This page sets no cookies and runs no analytics. It asks GitHub
               and Discord for its live counts, and contacts YouTube only when
-              you press play on a video.
+              you press play on a video. Details in the privacy policy.
             </p>
           </div>
         </div>
@@ -139,7 +145,11 @@ const year = new Date().getFullYear();
                 <ul aria-labelledby={`legal-${group.label.toLowerCase()}`}>
                   {group.links.map((link) => (
                     <li>
-                      <a href={link.href} target="_blank" rel="noopener">
+                      <a
+                        href={link.href}
+                        target={link.href.startsWith("/") ? undefined : "_blank"}
+                        rel={link.href.startsWith("/") ? undefined : "noopener"}
+                      >
                         {link.label}
                       </a>
                     </li>

@@ -1,0 +1,171 @@
+---
+/**
+ * Privacy policy.
+ *
+ * Written against the GDPR, the German Federal Data Protection Act (BDSG) and
+ * the Telecommunications Digital Services Data Protection Act (TDDDG), with a
+ * short section for visitors elsewhere. Every data flow below is read from
+ * the code; if one changes, this page changes in the same commit:
+ *
+ *   hosting        GitHub Pages serves every file (public/CNAME, deploy.yml);
+ *                  the domain's DNS is at Cloudflare, requests go to GitHub.
+ *   live counts    LiveCount.tsx and StarGlobe.tsx call api.github.com and
+ *                  discord.com from the browser on load, and cache the numbers
+ *                  in sessionStorage.
+ *   videos         BuiltInPublic.astro creates the youtube-nocookie.com iframe
+ *                  only when the visitor presses play; posters are local.
+ *   nothing else   no cookies, no analytics, no web fonts from a CDN, no forms.
+ */
+import LegalPage from "@/components/LegalPage.astro";
+import { IMPRINT_HREF, OPERATOR } from "@/lib/legal";
+---
+
+<LegalPage
+  title="Privacy policy — Personal Jarvis"
+  description="What personaljarvis.ai does with personal data: no cookies, no analytics, and exactly which services your browser talks to."
+  heading="Privacy policy"
+>
+  <h2>In short</h2>
+  <ul>
+    <li>This site sets <strong>no cookies</strong> and runs <strong>no analytics or tracking</strong>.</li>
+    <li>There are no accounts, no forms and no newsletter.</li>
+    <li>
+      Your browser talks to three other services: GitHub (which hosts the site
+      and supplies the star count), Discord (member count) and — only if you
+      press play on a video — YouTube.
+    </li>
+    <li>We never receive a record of your visit ourselves.</li>
+  </ul>
+
+  <h2>Who is responsible</h2>
+  <p>The controller under the General Data Protection Regulation (GDPR) is:</p>
+  <address>
+    {OPERATOR.name}<br />
+    {OPERATOR.street}<br />
+    {OPERATOR.city}<br />
+    {OPERATOR.country}<br />
+    <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>
+  </address>
+  <p>
+    See also the <a href={IMPRINT_HREF}>imprint</a>. We are not required to
+    appoint a data protection officer.
+  </p>
+
+  <h2>Hosting</h2>
+  <p>
+    This site is hosted on GitHub Pages, a service of GitHub, Inc., 88 Colin P.
+    Kelly Jr. Street, San Francisco, CA 94107, USA. To deliver the pages,
+    GitHub processes your IP address, the date and time of the request, the
+    page requested, the referring page and your browser's user agent, and may
+    keep this in server logs for security purposes. We have no access to these
+    logs.
+  </p>
+  <p>
+    The legal basis is Article 6(1)(f) GDPR: our legitimate interest in
+    delivering the site securely and reliably. GitHub is certified under the
+    EU–U.S. Data Privacy Framework, so transfers to the USA rely on the
+    European Commission's adequacy decision (Article 45 GDPR). Details:
+    <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub General Privacy Statement</a>.
+  </p>
+  <p>
+    The domain's DNS is provided by Cloudflare, Inc. Your requests for this
+    site are not routed through Cloudflare.
+  </p>
+
+  <h2>Live counts from GitHub and Discord</h2>
+  <p>
+    Some numbers on this page are fetched live when the page loads: the
+    project's star count from GitHub's public API (api.github.com) and the
+    member count of our Discord server from Discord's public API
+    (discord.com). For this, your browser connects directly to these services,
+    which receive your IP address and browser information. No login and no
+    cookie is involved, and we do not receive any of this data.
+  </p>
+  <p>
+    The legal basis is Article 6(1)(f) GDPR: our legitimate interest in
+    showing current figures instead of outdated ones. Both providers are based
+    in the USA (GitHub, Inc.; Discord Inc., 444 De Haro Street, San Francisco,
+    CA 94107) and are certified under the EU–U.S. Data Privacy Framework. See
+    <a href="https://discord.com/privacy">Discord's privacy policy</a>.
+  </p>
+  <p>
+    So that the numbers are not fetched again on every page view, your browser
+    keeps them in its session storage until you close the tab. This stores
+    only the public numbers, no personal data, and is strictly necessary for
+    the function you see (Section 25(2) No. 2 TDDDG).
+  </p>
+
+  <h2>Videos</h2>
+  <p>
+    The video section shows a still image stored on this site. Nothing is
+    loaded from YouTube until you press play. When you do, the video is
+    embedded from youtube-nocookie.com, operated by Google Ireland Limited,
+    Gordon House, Barrow Street, Dublin 4, Ireland. Google then receives your
+    IP address and device information and may store information on your
+    device, including for playback statistics.
+  </p>
+  <p>
+    Pressing play is your consent to this (Article 6(1)(a) GDPR, Section 25(1)
+    TDDDG). Data may be transferred to Google LLC in the USA, which is
+    certified under the EU–U.S. Data Privacy Framework. You can withdraw your
+    consent at any time with effect for the future by not playing videos and
+    clearing your browser data. Details:
+    <a href="https://policies.google.com/privacy">Google Privacy Policy</a>.
+  </p>
+
+  <h2>Links to other sites</h2>
+  <p>
+    Downloads and the source code are on GitHub; the site also links to X,
+    Discord and YouTube. Once you follow such a link, the privacy policy of
+    that provider applies.
+  </p>
+
+  <h2>Contacting us</h2>
+  <p>
+    If you email us, we use your address and message only to reply (Article
+    6(1)(f) GDPR, or Article 6(1)(b) GDPR where your message concerns a
+    contract). We delete the correspondence once it is no longer needed,
+    unless we are legally required to keep it.
+  </p>
+
+  <h2>Your rights</h2>
+  <p>Under the GDPR you have the right to:</p>
+  <ul>
+    <li>access the personal data we hold about you (Article 15),</li>
+    <li>have it corrected (Article 16) or erased (Article 17),</li>
+    <li>restrict its processing (Article 18),</li>
+    <li>receive it in a portable format (Article 20),</li>
+    <li>
+      <strong>object</strong> at any time to processing based on Article
+      6(1)(f), on grounds relating to your particular situation (Article 21),
+    </li>
+    <li>withdraw a consent at any time with effect for the future (Article 7(3)).</li>
+  </ul>
+  <p>
+    To exercise any of these, email
+    <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>. You also have
+    the right to lodge a complaint with a data protection supervisory
+    authority, in particular in the EU member state where you live or work or
+    where the alleged infringement took place (Article 77 GDPR).
+  </p>
+  <p>
+    Providing personal data is neither a legal nor a contractual requirement.
+    We do not use automated decision-making or profiling.
+  </p>
+
+  <h2>Visitors outside the EU</h2>
+  <p>
+    We apply the standards above to every visitor, wherever you are. If you
+    are in the United Kingdom, you have the same rights under the UK GDPR and
+    may complain to the Information Commissioner's Office. If you are in
+    California: we do not sell or share personal information, and we do not
+    use it for targeted advertising. Anyone can exercise the rights described
+    above by email.
+  </p>
+
+  <h2>Changes</h2>
+  <p class="legal-doc__note">
+    We update this policy when the site changes how it handles data. The date
+    at the top shows the current version.
+  </p>
+</LegalPage>

@@ -1,0 +1,111 @@
+---
+/**
+ * The frame both legal pages share: the site's chrome, one bounded band on
+ * the `prose` step, and the footer. Typography for long legal text lives
+ * here so the imprint and the privacy policy read as one document set.
+ *
+ * `display-xl` on the h1 because a page with no hero spends it there
+ * (docs/design.md § Typography); every heading under it is `display-md`.
+ */
+import Base from "@/layouts/Base.astro";
+import Container from "@/components/Container.astro";
+import Legal from "@/sections/Legal.astro";
+import { LEGAL_UPDATED } from "@/lib/legal";
+
+interface Props {
+  title: string;
+  description: string;
+  heading: string;
+}
+
+const { title, description, heading } = Astro.props;
+---
+
+<Base title={title} description={description}>
+  <main class="relative">
+    <Container width="prose" class="section-inset">
+      <article class="legal-doc">
+        <h1>{heading}</h1>
+        <p class="legal-doc__updated">Last updated {LEGAL_UPDATED}</p>
+        <slot />
+      </article>
+    </Container>
+  </main>
+  <Legal />
+</Base>
+
+<style>
+  .legal-doc {
+    padding-block: calc(var(--nav-height) + 2rem) 4rem;
+    color: var(--body);
+    font-size: var(--text-body);
+    line-height: 1.65;
+  }
+
+  .legal-doc h1 {
+    color: var(--ink);
+    font-size: clamp(2.25rem, 1.6rem + 2vw, var(--text-display-xl));
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: var(--tracking-display-xl);
+  }
+
+  .legal-doc__updated {
+    margin-top: 1rem;
+    color: var(--muted);
+    font-size: var(--text-caption);
+  }
+
+  .legal-doc :global(h2) {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--hairline);
+    color: var(--ink);
+    font-size: var(--text-display-sm);
+    font-weight: 400;
+    letter-spacing: var(--tracking-display-sm);
+  }
+
+  .legal-doc :global(h3) {
+    margin-top: 1.75rem;
+    color: var(--ink);
+    font-size: var(--text-title-sm);
+    font-weight: 600;
+  }
+
+  .legal-doc :global(p),
+  .legal-doc :global(ul),
+  .legal-doc :global(address) {
+    margin-top: 0.9rem;
+  }
+
+  .legal-doc :global(address) {
+    color: var(--ink);
+    font-style: normal;
+  }
+
+  .legal-doc :global(ul) {
+    padding-left: 1.25rem;
+    list-style: disc;
+  }
+
+  .legal-doc :global(li + li) {
+    margin-top: 0.4rem;
+  }
+
+  .legal-doc :global(a) {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .legal-doc :global(strong) {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .legal-doc :global(.legal-doc__note) {
+    color: var(--muted);
+    font-size: var(--text-body-sm);
+  }
+</style>
