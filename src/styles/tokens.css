@@ -152,6 +152,22 @@
   --session-dim: #5f5f5f;
   --session-link: #3186ff;
 
+  /* Chrome's own dark theme and the sites the agents browse, for the agent
+   * browser in the Options panel only. A thumbnail of a real browser has to
+   * wear the real browser's greys and the sites' own dark-mode colours. */
+  --chrome-frame: #202124;
+  --chrome-toolbar: #35363a;
+  --chrome-omnibox: #282a2d;
+  --chrome-text: #e8eaed;
+  --chrome-muted: #9aa0a6;
+  --site-link: #8ab4f8;
+  --site-visited: #c58af9;
+  --site-canvas: #0d1117;
+  --site-border: #30363d;
+  --site-green: #238636;
+  --site-orange: #ff4500;
+  --site-x: #1d9bf0;
+
   /* --- App mockup --------------------------------------------------------
    * The product's OWN colours, read from the running app so the hero demo is
    * a clone and not an impression.

@@ -2,156 +2,179 @@
  * The agent's own browser, as the Options panel shows it.
  *
  * In the app this is a live picture of the Chrome window the agent drives.
- * Here it is a real miniature browser: tab strip, address bar and a page with
- * real text, laid out at a fixed design width in `em` and scaled to whatever
- * width the panel gives it (the font size is a share of the container). The
- * agent's cursor works the page — it moves to the element it needs, clicks,
- * and the page answers — so it reads as browser use, not as a picture.
+ * Here it is that window in miniature: Chrome's dark tab strip with the
+ * window buttons, the toolbar with the omnibox, and a real website in the
+ * page — a search page, GitHub, Gmail, Reddit, X — laid out at a fixed design
+ * width in `em` and scaled to the panel. The agent's cursor works the page:
+ * it moves to what it needs, clicks, and the page answers.
  */
 
 import { useEffect, useState } from "react";
 import type { Preview } from "./sessions";
 import "./mini-browser.css";
 
-interface Page {
+interface Site {
   tab: string;
   url: string;
   /** Cursor stops, in % of the page area, and whether each one clicks. */
   path: readonly (readonly [number, number, boolean])[];
 }
 
-const PAGES: Readonly<Record<Preview, Page>> = {
-  search: { tab: "v1.4 launch checklist - Search", url: "search.example/?q=launch+checklist", path: [[30, 14, true], [42, 40, false], [38, 62, true]] },
-  analytics: { tab: "Weekly report · Analytics", url: "analytics.example/report/28d", path: [[70, 12, true], [58, 52, false], [26, 84, true]] },
-  docs: { tab: "CHANGELOG.md", url: "github.com/PersonalJarvis/PersonalJarvis/CHANGELOG.md", path: [[22, 18, false], [46, 46, false], [30, 72, true]] },
-  canvas: { tab: "launch-clip-storyboard.html", url: "localhost:47821/artifacts/storyboard", path: [[50, 40, true], [82, 40, false], [18, 40, true]] },
-  social: { tab: "Compose post", url: "x.com/compose/post", path: [[40, 28, false], [60, 52, false], [86, 86, true]] },
-  experiments: { tab: "Experiments", url: "experiments.example/weekly", path: [[80, 30, false], [80, 54, true], [40, 78, false]] },
-  mail: { tab: "Inbox (4)", url: "mail.google.com/mail/u/0/#inbox", path: [[40, 22, true], [40, 38, false], [40, 54, true]] },
-  pull: { tab: "Add jitter to reconnect · PR 412", url: "github.com/PersonalJarvis/PersonalJarvis/pull/412", path: [[30, 50, false], [70, 60, false], [84, 88, true]] },
-  forum: { tab: "r/LocalLLaMA", url: "reddit.com/r/LocalLLaMA/top/?t=week", path: [[48, 24, true], [48, 50, false], [48, 76, true]] },
+const SITES: Readonly<Record<Preview, Site>> = {
+  newtab: { tab: "New Tab", url: "google.com", path: [[50, 34, true], [36, 70, false], [62, 70, true]] },
+  results: { tab: "install page drop off - Google Search", url: "google.com/search?q=install+page+drop+off", path: [[34, 30, true], [30, 56, false], [30, 80, true]] },
+  github: { tab: "CHANGELOG.md · PersonalJarvis", url: "github.com/PersonalJarvis/PersonalJarvis/blob/main/CHANGELOG.md", path: [[22, 14, false], [40, 56, false], [30, 80, true]] },
+  stock: { tab: "Dark desk setup videos", url: "pexels.com/search/videos/dark desk setup", path: [[20, 46, false], [52, 46, true], [84, 78, false]] },
+  compose: { tab: "Home / X", url: "x.com/compose/post", path: [[40, 30, false], [58, 60, false], [86, 86, true]] },
+  landing: { tab: "Personal Jarvis — variant B", url: "personaljarvis.ai/?variant=b", path: [[30, 40, false], [30, 66, true], [70, 20, false]] },
+  mail: { tab: "Inbox (4) - Gmail", url: "mail.google.com/mail/u/0/", path: [[60, 22, true], [60, 38, false], [60, 54, true]] },
+  pull: { tab: "Add jitter to reconnect · Pull Request 412", url: "github.com/PersonalJarvis/PersonalJarvis/pull/412", path: [[30, 50, false], [70, 60, false], [82, 88, true]] },
+  forum: { tab: "r/LocalLLaMA", url: "reddit.com/r/LocalLLaMA/top/?t=week", path: [[50, 26, true], [50, 52, false], [50, 78, true]] },
 };
 
-function PageBody({ kind, step }: { kind: Preview; step: number }) {
+function Site({ kind, step }: { kind: Preview; step: number }) {
   switch (kind) {
-    case "search":
+    case "newtab":
       return (
-        <div className="mb-search">
-          <div className="mb-field">v1.4 launch checklist<i /></div>
+        <div className="ws-newtab">
+          <b className="ws-wordmark">Google</b>
+          <div className="ws-searchbox">Search Google or type a URL</div>
+          <div className="ws-tiles">
+            {["GitHub", "Gmail", "Docs", "Calendar"].map((t) => (
+              <span key={t}><i />{t}</span>
+            ))}
+          </div>
+        </div>
+      );
+    case "results":
+      return (
+        <div className="ws-results">
+          <div className="ws-results__bar"><b>Google</b><span className="ws-query">install page drop off windows</span></div>
+          <div className="ws-results__tabs"><b>All</b><span>Images</span><span>Videos</span><span>News</span></div>
           {[
-            ["Product launch checklist: 21 steps", "blog.example › launch-checklist", "Plan the announcement, schedule posts, measure the first week…"],
-            ["How to write release notes people read", "docs.example › release-notes", "Lead with what changed for the user, not the commit log…"],
-            ["Launch day: what to measure", "analytics.example › guides", "Baseline your traffic the week before so you can tell…"],
-          ].map(([title, url, text], i) => (
-            <div key={title} className="mb-result" data-hot={step === 2 && i === 1 ? "true" : undefined}>
-              <span className="mb-result__url">{url}</span>
-              <span className="mb-result__title">{title}</span>
-              <span className="mb-result__text">{text}</span>
+            ["web.dev", "Why users abandon install steps", "Long commands that wrap on small screens are copied in part and fail silently…"],
+            ["stackoverflow.com", "PowerShell one-liner breaks when copied", "The line wraps and the pipe to iex is lost; wrap it in a code block with…"],
+            ["nngroup.com", "Copy buttons beat selectable text", "Users trust a copy button more than a highlighted command…"],
+          ].map(([site, title, text], i) => (
+            <div key={title} className="ws-result" data-hot={i === step ? "true" : undefined}>
+              <span className="ws-result__site">{site}</span>
+              <span className="ws-result__title">{title}</span>
+              <span className="ws-result__text">{text}</span>
             </div>
           ))}
         </div>
       );
-    case "analytics":
+    case "github":
       return (
-        <div className="mb-analytics">
-          <div className="mb-kpis">
-            {[["Visitors / day", "1,284"], ["Download rate", "6.8 %"], ["Docs → install", "22 %"]].map(([k, v]) => (
-              <div key={k}><span>{k}</span><b>{v}</b></div>
+        <div className="ws-github">
+          <div className="ws-gh__repo"><span className="ws-gh__book" /> PersonalJarvis / <b>PersonalJarvis</b></div>
+          <div className="ws-gh__nav"><b>Code</b><span>Issues</span><span>Pull requests</span><span>Actions</span></div>
+          <div className="ws-gh__file">
+            <div className="ws-gh__filehead">CHANGELOG.md</div>
+            <div className="ws-gh__md">
+              <b className="ws-h1">Changelog</b>
+              <b className="ws-h2">1.4.0 — unreleased</b>
+              <ul>
+                <li>Group chats between agents</li>
+                <li>A live browser for every agent</li>
+                <li>Routines that run on a schedule</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      );
+    case "stock":
+      return (
+        <div className="ws-stock">
+          <div className="ws-stock__search">dark desk setup</div>
+          <div className="ws-stock__grid">
+            {["a", "b", "c", "d", "e", "f"].map((k, i) => (
+              <span key={k} className={`ws-shot ws-shot--${k}`} data-hot={i === (step === 1 ? 1 : step === 2 ? 5 : 0) ? "true" : undefined}>
+                <i>▶ 0:{12 + i * 3}</i>
+              </span>
             ))}
           </div>
-          <svg viewBox="0 0 300 80" preserveAspectRatio="none" className="mb-chart">
-            <polyline className="mb-chart__ghost" points="0,70 50,66 100,62 150,60 200,56 250,52 300,50" />
-            <polyline points="0,64 25,58 50,60 75,46 100,50 125,36 150,40 175,28 200,32 225,20 250,24 275,14 300,18" />
-          </svg>
-          <div className="mb-legend"><span>Last 28 days</span><span>v1.3 launch week</span></div>
         </div>
       );
-    case "docs":
+    case "compose":
       return (
-        <div className="mb-docs">
-          <b className="mb-h1">Changelog</b>
-          <b className="mb-h2">1.4.0 — unreleased</b>
-          <ul>
-            <li>Group chats between agents</li>
-            <li>A live browser for every agent</li>
-            <li>Routines that run on a schedule</li>
-            <li>Approvals wait for the person, always</li>
-          </ul>
-          <b className="mb-h2">1.3.2</b>
-          <ul><li>Faster cold start on Windows</li></ul>
-        </div>
-      );
-    case "canvas":
-      return (
-        <div className="mb-canvas">
-          {["Goal", "Split", "Group chat", "Approve", "Done", "End card"].map((f, i) => (
-            <div key={f} data-hot={i === (step % 3 === 2 ? 0 : 2) ? "true" : undefined}><i /><span>{i + 1}. {f}</span></div>
-          ))}
-        </div>
-      );
-    case "social":
-      return (
-        <div className="mb-social">
-          <span className="mb-social__avatar" />
-          <div className="mb-social__body">
-            <p><b>Your agents now work as a team.</b> Give Jarvis one goal — it hands out the work and only comes back when something needs you.</p>
-            <div className="mb-social__media">▶ launch-clip.mp4 · 0:30</div>
-            <div className="mb-social__bar"><span>Scheduled · Tue 16:00</span><b data-hot={step === 2 ? "true" : undefined}>Schedule</b></div>
+        <div className="ws-x">
+          <div className="ws-x__rail"><b>𝕏</b><span /><span /><span /><span /></div>
+          <div className="ws-x__main">
+            <div className="ws-x__head">For you <span>Following</span></div>
+            <div className="ws-x__compose">
+              <span className="ws-x__avatar" />
+              <div>
+                <p><b>Your agents now work as a team.</b> Give Jarvis one goal — it hands out the work and only comes back when something needs you.</p>
+                <div className="ws-x__media">▶ launch-clip.mp4</div>
+                <div className="ws-x__bar"><span>Scheduled · Tue 16:00</span><b data-hot={step === 2 ? "true" : undefined}>Schedule</b></div>
+              </div>
+            </div>
           </div>
         </div>
       );
-    case "experiments":
+    case "landing":
       return (
-        <table className="mb-table">
-          <thead><tr><th>Test</th><th>Result</th><th>Call</th></tr></thead>
-          <tbody>
-            <tr><td>Shorter hero headline</td><td className="mb-up">+11 %</td><td>Keep</td></tr>
-            <tr data-hot={step >= 1 ? "true" : undefined}><td>Install button in nav</td><td className="mb-down">−4 %</td><td>{step >= 1 ? "Reverted" : "Revert"}</td></tr>
-            <tr><td>Video above the fold</td><td>+2 %</td><td>—</td></tr>
-          </tbody>
-        </table>
+        <div className="ws-landing">
+          <div className="ws-landing__nav"><b>Personal Jarvis</b><span>Plugins</span><span>Agents</span><i>Download</i></div>
+          <b className="ws-landing__h">A voice assistant that runs on your machine.</b>
+          <span className="ws-landing__sub">Speak to your computer. It answers, types and uses your apps.</span>
+          <span className="ws-landing__cmd" data-hot={step >= 1 ? "true" : undefined}>irm https://…/install.ps1 | iex <em>Copy</em></span>
+          <span className="ws-landing__badge">Variant B · one install command</span>
+        </div>
       );
     case "mail":
       return (
-        <div className="mb-mail">
-          {[
-            ["Venue Lindenhof", "Headcount for Thursday by 12:00", true],
-            ["Sam (design)", "Storyboard feedback", true],
-            ["Newsletter", "Your weekly digest", false],
-            ["Receipts", "Your order has shipped", false],
-            ["Team", "Offsite RSVPs — 14 yes", false],
-          ].map(([from, subject, unread], i) => (
-            <div key={String(subject)} className="mb-mail__row" data-unread={unread ? "true" : undefined} data-hot={i === (step === 0 ? 0 : step === 1 ? 1 : 0) ? "true" : undefined}>
-              <b>{from}</b><span>{subject}</span>
-            </div>
-          ))}
+        <div className="ws-gmail">
+          <div className="ws-gmail__side">
+            <b className="ws-gmail__compose">✎ Compose</b>
+            <span data-on="true">Inbox <em>4</em></span>
+            <span>Starred</span>
+            <span>Sent</span>
+            <span>Drafts</span>
+          </div>
+          <div className="ws-gmail__list">
+            {[
+              ["Venue Lindenhof", "Headcount for Thursday — please reply by 12:00", true],
+              ["Sam", "Storyboard feedback — frame 3 is great", true],
+              ["Team", "Offsite RSVPs: 14 yes", true],
+              ["Receipts", "Your order has shipped", false],
+              ["Newsletter", "This week in local AI", false],
+            ].map(([from, subject, unread], i) => (
+              <div key={String(subject)} className="ws-gmail__row" data-unread={unread ? "true" : undefined} data-hot={i === step ? "true" : undefined}>
+                <b>{from}</b><span>{subject}</span>
+              </div>
+            ))}
+          </div>
         </div>
       );
     case "pull":
       return (
-        <div className="mb-pull">
-          <b className="mb-h1">Add jitter to reconnect</b>
-          <span className="mb-pull__meta"><i>Open</i> wants to merge 1 commit into main</span>
-          <pre>
+        <div className="ws-github">
+          <div className="ws-gh__repo"><span className="ws-gh__book" /> PersonalJarvis / <b>PersonalJarvis</b></div>
+          <b className="ws-h1">Add jitter to reconnect <span className="ws-gh__num">412</span></b>
+          <span className="ws-gh__meta"><i>Open</i> wants to merge 1 commit into main</span>
+          <pre className="ws-gh__diff">
             <span>{"  def reconnect(self):"}</span>
             <span data-diff="del">{"-     retry(delay=1.0)"}</span>
             <span data-diff="add">{"+     retry(delay=1.0 + random() * 0.5)"}</span>
           </pre>
-          <span className="mb-pull__checks">✓ All checks have passed · 1,184 tests</span>
-          <b className="mb-merge" data-hot={step === 2 ? "true" : undefined}>Merge pull request</b>
+          <span className="ws-gh__checks">✓ All checks have passed</span>
+          <b className="ws-gh__merge" data-hot={step === 2 ? "true" : undefined}>Merge pull request</b>
         </div>
       );
     case "forum":
       return (
-        <div className="mb-forum">
+        <div className="ws-reddit">
+          <div className="ws-reddit__head"><i /> <b>r/LocalLLaMA</b><span>Top · This week</span></div>
           {[
             ["212", "A local voice assistant that can actually use my apps?", "48 comments"],
             ["96", "Local speech-to-text latency — real numbers?", "31 comments"],
             ["74", "Agents that ask before they act", "22 comments"],
           ].map(([votes, title, meta], i) => (
-            <div key={title} className="mb-thread" data-hot={i === step ? "true" : undefined}>
-              <span className="mb-votes">▲<b>{votes}</b></span>
-              <span className="mb-thread__body"><b>{title}</b><span>r/LocalLLaMA · {meta}</span></span>
+            <div key={title} className="ws-post" data-hot={i === step ? "true" : undefined}>
+              <span className="ws-post__votes">▲<b>{votes}</b></span>
+              <span className="ws-post__body"><b>{title}</b><span>{meta} · Share</span></span>
             </div>
           ))}
         </div>
@@ -159,22 +182,20 @@ function PageBody({ kind, step }: { kind: Preview; step: number }) {
   }
 }
 
-export function BrowserPreview({ kind, live }: { kind: Preview; url?: string; live: boolean }) {
-  const page = PAGES[kind];
+export function BrowserPreview({ kind, live }: { kind: Preview; live: boolean }) {
+  const site = SITES[kind];
   const [step, setStep] = useState(0);
   const [press, setPress] = useState(false);
 
   useEffect(() => {
     setStep(0);
-    if (!live) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) return;
+    if (!live || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     let i = 0;
     const timers: number[] = [];
     const tick = window.setInterval(() => {
-      i = (i + 1) % page.path.length;
+      i = (i + 1) % site.path.length;
       setStep(i);
-      if (page.path[i]![2]) {
+      if (site.path[i]![2]) {
         timers.push(window.setTimeout(() => setPress(true), 900));
         timers.push(window.setTimeout(() => setPress(false), 1150));
       }
@@ -183,22 +204,34 @@ export function BrowserPreview({ kind, live }: { kind: Preview; url?: string; li
       window.clearInterval(tick);
       timers.forEach((t) => window.clearTimeout(t));
     };
-  }, [kind, live, page]);
+  }, [kind, live, site]);
 
-  const [x, y] = page.path[step] ?? [50, 50];
+  const [x, y] = site.path[step] ?? [50, 50];
   return (
-    <div className="mb" data-live={live ? "true" : undefined}>
+    <div className="mb">
       <div className="mb-window">
         <div className="mb-tabs">
-          <span className="mb-dots"><i /><i /><i /></span>
-          <span className="mb-tab"><i className="mb-favicon" />{page.tab}</span>
+          <span className="mb-tab">
+            <i className="mb-favicon" />
+            <span className="mb-tab__title">{site.tab}</span>
+            <span className="mb-tab__x">×</span>
+          </span>
+          <span className="mb-newtab">+</span>
+          <span className="mb-winctl"><i>—</i><i>☐</i><i>✕</i></span>
         </div>
-        <div className="mb-address">
-          <span className="mb-nav">‹ › ↻</span>
-          <span className="mb-url"><i className="mb-lock" />{page.url}</span>
+        <div className="mb-toolbar">
+          <span className="mb-nav">←</span>
+          <span className="mb-nav">→</span>
+          <span className="mb-nav">↻</span>
+          <span className="mb-omnibox">
+            <i className="mb-siteinfo" />
+            <span className="mb-omnibox__url">{site.url}</span>
+            <span className="mb-star">☆</span>
+          </span>
+          <span className="mb-profile" />
         </div>
         <div className="mb-page">
-          <PageBody kind={kind} step={live ? step : 0} />
+          <Site kind={kind} step={live ? step : 0} />
           {live && (
             <span className="mb-cursor" data-press={press ? "true" : undefined} style={{ left: `${x}%`, top: `${y}%` }} aria-hidden="true" />
           )}

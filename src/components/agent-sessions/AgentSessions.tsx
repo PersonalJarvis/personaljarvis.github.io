@@ -447,15 +447,21 @@ function Options({ agent }: { agent: Agent }) {
           <span>{agent.name} · <em data-live={agent.live ? "true" : undefined}>{agent.live ? "Live" : "Idle"}</em></span>
           <I.Expand size={13} />
         </p>
-        <BrowserPreview kind={agent.preview} url={agent.url} live={agent.live} />
+        <BrowserPreview kind={agent.preview} live={agent.live} />
         <p className="as-options__take">{agent.live ? "Take control / sign in" : "Opens when the agent browses"}</p>
 
-        <p className="as-options__label">Chats <span>{agent.chats.length}</span><I.Plus size={14} /></p>
-        <ul className="as-options__list">
-          {agent.chats.map(([title, date]) => (
-            <li key={title}><I.Chat size={13} /><span>{title}</span><time>{date}</time></li>
-          ))}
-        </ul>
+        {/* Only the lead keeps a chat history here; a specialist's card has
+            its browser and its routines, nothing else. */}
+        {agent.id === "jarvis" && (
+          <>
+            <p className="as-options__label">Chats <span>{agent.chats.length}</span><I.Plus size={14} /></p>
+            <ul className="as-options__list">
+              {agent.chats.map(([title, date]) => (
+                <li key={title}><I.Chat size={13} /><span>{title}</span><time>{date}</time></li>
+              ))}
+            </ul>
+          </>
+        )}
 
         <p className="as-options__label">Routines<I.Plus size={14} /></p>
         {agent.routines.length === 0 ? (
@@ -478,6 +484,11 @@ const START: Record<AgentId, Item[]> = Object.fromEntries(
   Object.values(AGENTS).map((a) => [a.id, [...a.items]]),
 ) as Record<AgentId, Item[]>;
 
+/** The width the app's Agents screen is laid out at before it is scaled. */
+const DESIGN_WIDTH = 1360;
+/** Below this the window stops scaling and lays itself out for the width. */
+const MIN_SCALED_WIDTH = 760;
+
 function paneIds(session: SessionId): AgentId[] {
   return session === "group" ? [...GROUP.members] : [session];
 }
@@ -485,9 +496,12 @@ function paneIds(session: SessionId): AgentId[] {
 export default function AgentSessions() {
   const reduced = usePrefersReducedMotion();
   const win = useRef<HTMLDivElement>(null);
+  const frame = useRef<HTMLDivElement>(null);
+  const scaleRef = useRef(1);
+  const [fit, setFit] = useState<{ scale: number; height: number } | null>(null);
   const rail = useRef<HTMLDivElement>(null);
 
-  const [session, setSession] = useState<SessionId>("jarvis");
+  const [session, setSession] = useState<SessionId>(TOUR[0]!);
   const [convos, setConvos] = useState<Record<AgentId, Item[]>>(START);
   const [progress, setProgress] = useState<Partial<Record<AgentId, Progress>>>({});
   const [decisions, setDecisions] = useState<Record<string, "yes" | "no">>({});
@@ -502,6 +516,29 @@ export default function AgentSessions() {
   const replyTurn = useRef<Partial<Record<AgentId, number>>>({});
   const convosRef = useRef(convos);
   convosRef.current = convos;
+
+  /* The clone is laid out at the app's own width and scaled as one picture,
+     so its proportions are the app's at any size. Below a tablet the scale
+     would make the type unreadable, so the window lays itself out instead. */
+  useEffect(() => {
+    const node = frame.current;
+    if (!node) return;
+    const measure = () => {
+      const { width, height } = node.getBoundingClientRect();
+      if (width < MIN_SCALED_WIDTH) {
+        scaleRef.current = 1;
+        setFit(null);
+        return;
+      }
+      const scale = Math.min(1, width / DESIGN_WIDTH);
+      scaleRef.current = scale;
+      setFit({ scale, height: height / scale });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     const node = win.current;
@@ -587,11 +624,12 @@ export default function AgentSessions() {
            of flying in from the window's corner. */
         const box = root.getBoundingClientRect();
         const lead = cursorRef.current ? 0 : 260;
-        if (!cursorRef.current) setCursor({ x: box.width * 0.55, y: box.height * 0.6, press: false });
+        const k = scaleRef.current;
+        if (!cursorRef.current) setCursor({ x: (box.width / k) * 0.55, y: (box.height / k) * 0.6, press: false });
         timers.push(
           window.setTimeout(() => {
             const r = row.getBoundingClientRect();
-            setCursor({ x: r.left - box.left + Math.min(56, r.width / 2), y: r.top - box.top + r.height / 2, press: false });
+            setCursor({ x: (r.left - box.left) / k + Math.min(56, r.width / k / 2), y: (r.top - box.top + r.height / 2) / k, press: false });
             timers.push(window.setTimeout(() => setCursor((c) => (c ? { ...c, press: true } : c)), 950));
             timers.push(
               window.setTimeout(() => {
@@ -706,9 +744,16 @@ export default function AgentSessions() {
   };
 
   return (
+    <div ref={frame} className="as-frame">
     <div
       ref={win}
       className="as-window"
+      data-scaled={fit ? "true" : undefined}
+      style={
+        fit
+          ? { width: DESIGN_WIDTH, height: fit.height, transform: `scale(${fit.scale})` }
+          : undefined
+      }
       onPointerDown={takeOver}
       onKeyDown={takeOver}
       onWheel={takeOver}
@@ -729,7 +774,6 @@ export default function AgentSessions() {
           <span className="as-station" aria-hidden="true">Communications station</span>
         </span>
         <span className="as-topbar__right">
-          <span className="as-sample">Sample data · no model is called</span>
           <I.Sun size={15} />
           <I.Refresh size={15} />
         </span>
@@ -823,6 +867,7 @@ export default function AgentSessions() {
           <svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 2.5 19.5 12l-6.8 1.6L9.4 20z" /></svg>
         </span>
       )}
+    </div>
     </div>
   );
 }

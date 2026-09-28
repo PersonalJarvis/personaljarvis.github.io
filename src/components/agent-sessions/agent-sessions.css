@@ -9,6 +9,24 @@
  * the Options panel folds away first, then the rail becomes a strip.
  */
 
+/* The box the section gives the window. When it is wide enough, the window
+   inside is laid out at the app's width and scaled down to fill it exactly. */
+.as-frame {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.as-window[data-scaled] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  flex: none;
+  transform-origin: 0 0;
+}
+
 .as-window {
   position: relative;
   display: flex;
@@ -103,10 +121,6 @@
   color: var(--session-fg);
 }
 
-.as-sample {
-  font-size: 11px;
-  color: var(--session-dim);
-}
 
 /* --- Body grid ------------------------------------------------------------ */
 
@@ -114,13 +128,14 @@
   display: grid;
   flex: 1;
   min-height: 0;
-  grid-template-columns: 16.5rem minmax(0, 1fr) 15.5rem;
+  /* The app's own split at 1600px: rail 300, options 320, the rest the chat. */
+  grid-template-columns: 19% minmax(0, 1fr) 20%;
   grid-template-rows: minmax(0, 1fr);
 }
 
 @container as-window (max-width: 1100px) {
   .as-body {
-    grid-template-columns: 16rem minmax(0, 1fr);
+    grid-template-columns: 256px minmax(0, 1fr);
   }
 
   .as-options {
@@ -134,8 +149,7 @@
     grid-template-rows: auto minmax(0, 1fr);
   }
 
-  .as-topbar__center,
-  .as-sample {
+  .as-topbar__center {
     display: none;
   }
 }
@@ -228,7 +242,7 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  width: 8.25rem;
+  width: 132px;
   margin: 0 auto 8px;
   padding: 12px 8px 12px;
   border: 1px solid transparent;
@@ -627,7 +641,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-width: 44rem;
+  max-width: 704px;
   margin-inline: auto;
 }
 
@@ -652,7 +666,7 @@
 }
 
 .as-user p {
-  max-width: min(85%, 42rem);
+  max-width: min(85%, 672px);
   padding: 10px 16px;
   border-radius: 16px 16px 6px 16px;
   background: var(--session-surface);
@@ -749,7 +763,7 @@
 
 .as-answer {
   align-self: flex-start;
-  max-width: min(92%, 40rem);
+  max-width: min(92%, 640px);
   padding: 12px 16px;
   border-radius: 16px;
   background: var(--session-surface);
@@ -885,7 +899,7 @@
 
 .as-artifact {
   align-self: flex-start;
-  width: min(100%, 30rem);
+  width: min(100%, 480px);
   overflow: hidden;
   border: 1px solid var(--session-border);
   border-radius: 12px;
@@ -951,7 +965,7 @@
 
 .as-approval {
   align-self: flex-start;
-  width: min(100%, 26rem);
+  width: min(100%, 416px);
   padding: 12px;
   border: 1px solid var(--session-border);
   border-radius: 12px;
@@ -1160,7 +1174,7 @@
 
 .as-voicebar {
   display: flex;
-  width: min(100%, 44rem);
+  width: min(100%, 704px);
   margin-top: 26px;
   flex-direction: column;
   gap: 26px;

@@ -41,7 +41,7 @@ export type Item =
   | { k: "routine"; title: string; schedule: string }
   | { k: "approval"; id: string; ask: string; yes: string; no: string; afterYes: string; afterNo: string };
 
-export type Preview = "search" | "analytics" | "docs" | "canvas" | "social" | "experiments" | "mail" | "pull" | "forum";
+export type Preview = "newtab" | "results" | "github" | "stock" | "compose" | "landing" | "mail" | "pull" | "forum";
 
 export interface Model {
   provider: string;
@@ -77,7 +77,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
     shape: "ghost",
     color: "--ink",
     model: GEMINI,
-    preview: "search",
+    preview: "newtab",
     url: "search · new tab",
     live: true,
     chats: [
@@ -135,7 +135,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
     shape: "circle",
     color: "--agent-orange",
     model: GEMINI,
-    preview: "analytics",
+    preview: "results",
     url: "analytics · weekly report",
     live: true,
     chats: [
@@ -192,7 +192,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
     shape: "circle",
     color: "--agent-rose",
     model: OPENAI,
-    preview: "docs",
+    preview: "github",
     url: "docs · CHANGELOG.md",
     live: false,
     chats: [
@@ -241,7 +241,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
     shape: "drop",
     color: "--agent-lime",
     model: GEMINI,
-    preview: "canvas",
+    preview: "stock",
     url: "artifact · storyboard",
     live: true,
     chats: [
@@ -281,7 +281,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
     shape: "hexagon",
     color: "--agent-violet",
     model: OPENAI,
-    preview: "social",
+    preview: "compose",
     url: "x.com · compose",
     live: true,
     chats: [
@@ -331,7 +331,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
     shape: "hexagon",
     color: "--agent-sage",
     model: LOCAL,
-    preview: "experiments",
+    preview: "landing",
     url: "experiments · dashboard",
     live: false,
     chats: [
@@ -572,7 +572,7 @@ export const AGENTS: Readonly<Record<AgentId, Agent>> = {
     shape: "circle",
     color: "--agent-violet",
     model: GEMINI,
-    preview: "docs",
+    preview: "github",
     url: "docs · campaign-brief.md",
     live: false,
     chats: [],
@@ -616,5 +616,6 @@ export const GROUP = {
 
 export type SessionId = AgentId | "group";
 
-/** The order the self-running tour walks when nobody is driving. */
-export const TOUR: readonly SessionId[] = ["jarvis", "group", ...ROSTER];
+/** The order the self-running tour walks when nobody is driving. It opens on
+ * a specialist, not on the lead: the section is about the team. */
+export const TOUR: readonly SessionId[] = [...ROSTER, "group", "jarvis"];
