@@ -346,12 +346,10 @@ function Transcript({
 
 function Composer({
   agent,
-  effort,
   onSend,
   busy,
 }: {
   agent: Agent;
-  effort: string;
   onSend: (text: string) => void;
   busy: boolean;
 }) {
@@ -376,7 +374,6 @@ function Composer({
       <span className="as-modelchip" aria-hidden="true">
         <span className="as-modelchip__mark"><I.Sparkle size={11} /></span>
         {agent.model.chip}
-        <span className="as-modelchip__effort">{effort}</span>
         <I.ChevronDown size={12} />
       </span>
       <span className="as-iconbtn" aria-hidden="true"><I.Mic size={15} /></span>
@@ -494,7 +491,6 @@ export default function AgentSessions() {
   const [convos, setConvos] = useState<Record<AgentId, Item[]>>(START);
   const [progress, setProgress] = useState<Partial<Record<AgentId, Progress>>>({});
   const [decisions, setDecisions] = useState<Record<string, "yes" | "no">>({});
-  const [effort, setEffort] = useState<Partial<Record<AgentId, string>>>({});
   const [leadMode, setLeadMode] = useState<"chat" | "voice">("chat");
   const [query, setQuery] = useState("");
   const [visible, setVisible] = useState(false);
@@ -648,7 +644,6 @@ export default function AgentSessions() {
 
   const pane = (id: AgentId, side?: "LEFT CHAT" | "RIGHT CHAT") => {
     const agent = AGENTS[id];
-    const level = effort[id] ?? "Medium";
     return (
       <section key={id} className="as-pane" aria-label={`Chat with ${agent.name}`}>
         {side ? (
@@ -661,37 +656,36 @@ export default function AgentSessions() {
             </span>
             <button type="button" className="as-link" onClick={() => setSession(id)}>Open</button>
           </header>
-        ) : (
-          <header className="as-pane__head">
-            <span className="as-provider">
-              <span className="as-provider__mark"><I.Sparkle size={12} /></span>
-              {agent.model.provider}
-              <span className="as-mono as-provider__default">provider default</span>
+        ) : id === "jarvis" ? (
+          /* Only the lead's card has a header, exactly as JarvisChat draws it:
+             model on the left, Voice | Chat in the middle, new chat on the
+             right. In voice mode the left cell is the voice-brain note. The
+             other agents have no header at all — transcript and composer. */
+          <header className="as-pane__head as-pane__head--lead">
+            <span className="as-pane__cell">
+              {leadMode === "voice" ? (
+                <span className="as-voicenote">Voice runs on Jarvis' voice brain, not on the model picked for the typed chat.</span>
+              ) : (
+                <span className="as-provider">
+                  <span className="as-provider__mark"><I.Sparkle size={12} /></span>
+                  {agent.model.provider}
+                  <span className="as-mono as-provider__default">provider default</span>
+                </span>
+              )}
             </span>
-            <span className="as-seg" role="group" aria-label="Effort">
-              {["Low", "Medium", "High"].map((l) => (
-                <button key={l} type="button" data-on={level === l ? "true" : undefined} onClick={() => setEffort((e) => ({ ...e, [id]: l }))}>
-                  {l}
-                </button>
-              ))}
+            <span className="as-seg" role="tablist" aria-label="Voice or chat">
+              <button type="button" role="tab" aria-selected={leadMode === "voice"} data-on={leadMode === "voice" ? "true" : undefined} onClick={() => setLeadMode("voice")}>
+                <I.Mic size={12} /> Voice
+              </button>
+              <button type="button" role="tab" aria-selected={leadMode === "chat"} data-on={leadMode === "chat" ? "true" : undefined} onClick={() => setLeadMode("chat")}>
+                <I.Chat size={12} /> Chat
+              </button>
             </span>
-            {id === "jarvis" && (
-              <span className="as-seg" role="tablist" aria-label="Voice or chat">
-                <button type="button" role="tab" aria-selected={leadMode === "voice"} data-on={leadMode === "voice" ? "true" : undefined} onClick={() => setLeadMode("voice")}>
-                  <I.Mic size={12} /> Voice
-                </button>
-                <button type="button" role="tab" aria-selected={leadMode === "chat"} data-on={leadMode === "chat" ? "true" : undefined} onClick={() => setLeadMode("chat")}>
-                  <I.Chat size={12} /> Chat
-                </button>
-              </span>
-            )}
-            <span className="as-pane__agent">
-              <Avatar agent={agent} size={20} />
-              <span>{agent.name}</span>
+            <span className="as-pane__cell as-pane__cell--end">
+              {leadMode === "chat" && <span className="as-iconbtn" aria-hidden="true"><I.Refresh size={14} /></span>}
             </span>
-            <span className="as-iconbtn" aria-hidden="true"><I.Refresh size={14} /></span>
           </header>
-        )}
+        ) : null}
         {id === "jarvis" && leadMode === "voice" && !side ? (
           <VoiceStage reduced={reduced} />
         ) : (
@@ -704,7 +698,7 @@ export default function AgentSessions() {
               onDecide={decide}
             />
             {side && <p className="as-buildmode">Build mode</p>}
-            <Composer agent={agent} effort={level} busy={busy(id)} onSend={(t) => send(id, t)} />
+            <Composer agent={agent} busy={busy(id)} onSend={(t) => send(id, t)} />
           </>
         )}
       </section>
