@@ -8,7 +8,9 @@
  * its own conversation. It plays itself until the visitor takes the mouse.
  * See src/components/agent-sessions/.
  *
- * ONE SCREEN, LIKE THE GLOBE. `section-full-height` sets the floor and the
+ * ONE SCREEN, LIKE THE GLOBE, AND IT HOLDS LIKE THE GLOBE: a track with a
+ * sticky child keeps the window still for a beat of scrolling while the tour
+ * plays. `section-full-height` sets the floor and the
  * window is the flex-1 child that takes whatever the header leaves, so the
  * app fills the screen the way it fills a desktop. The floor is a minimum:
  * on a short window the section grows and the page scrolls.
@@ -23,7 +25,12 @@ import SectionTrack from "@/components/SectionTrack.astro";
 import AgentSessions from "@/components/agent-sessions/AgentSessions";
 ---
 
-<section id="agents" class="section-full-height relative flex flex-col" aria-labelledby="agents-heading">
+<section id="agents" class="relative" aria-labelledby="agents-heading">
+  <!-- The scroll track: its height is the pause. The window holds still for
+       about a screen of scrolling while the tour plays, the same construction
+       and the same length as the globe's. -->
+  <div data-track data-scroll-span>
+  <div data-viewport class="section-full-height flex flex-col">
   <Container width="content" class="section-inset flex min-h-0 flex-1 flex-col">
     <div class="section-bounds section-bounds--fill agents-body flex flex-col">
       <SectionTrack nested />
@@ -47,9 +54,40 @@ import AgentSessions from "@/components/agent-sessions/AgentSessions";
       </div>
     </div>
   </Container>
+  </div>
+  </div>
 </section>
 
 <style>
+  /* --- The pause ----------------------------------------------------------
+     Same numbers as Stargazers: 180svh of track is 0.8 of a screen held
+     still, pinned at the nav so the frame lands where every one-screen
+     section rests. Where pinning would trap the reader — narrow or short
+     windows, reduced motion — the track collapses and the section scrolls
+     like any other. */
+  [data-track] {
+    --track: 180svh;
+
+    height: var(--track);
+  }
+
+  [data-viewport] {
+    position: sticky;
+    top: var(--nav-height);
+    height: var(--section-height);
+  }
+
+  @media (max-width: 1023px), (max-height: 751px), (prefers-reduced-motion: reduce) {
+    [data-track] {
+      height: auto;
+    }
+
+    [data-viewport] {
+      position: static;
+      height: auto;
+    }
+  }
+
   .agents-body {
     gap: clamp(1.25rem, 2.6svh, 2rem);
   }
