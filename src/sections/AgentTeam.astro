@@ -1,0 +1,81 @@
+---
+/**
+ * Section — the team, hands on.
+ *
+ * The Agents block above SHOWS the team in a recorded demo; this one hands the
+ * visitor the controls. A goal goes in, the specialists pass it around on a
+ * live stage, the timeline fills lane by lane, and the run stops where every
+ * real run stops: on an approval that waits for the person. Any agent can be
+ * opened and messaged. See src/components/team-board/ for the board itself.
+ *
+ * A BOUNDED SECTION, like Stargazers: both rules held an inset inside its own
+ * edges (`.section-bounds` on the content column), so it meets the open-ended
+ * Agents block above and the pinned frame of VoiceSwitch below with exactly
+ * one line at each joint. See docs/layout.md § "One boundary, one shape".
+ *
+ * Not in the nav on purpose: the row is already at its 1024px limit with
+ * eight links, and this section sits directly under "Agents", which the nav
+ * already names.
+ */
+import Container from "@/components/Container.astro";
+import SectionTrack from "@/components/SectionTrack.astro";
+import TeamBoard from "@/components/team-board/TeamBoard";
+---
+
+<section id="team" class="relative" aria-labelledby="team-heading">
+  <Container width="content" class="section-inset">
+    <div class="section-bounds">
+      <SectionTrack nested />
+
+      <div class="team-head grid gap-6 px-8 lg:grid-cols-12 lg:items-end lg:gap-10 lg:px-14">
+        <div class="lg:col-span-6">
+          <p class="team-eyebrow">Try the team</p>
+          <h2 id="team-heading" class="team-headline text-balance">
+            One goal in.<br />Six agents on it.
+          </h2>
+        </div>
+        <p class="team-standfirst text-pretty lg:col-span-5 lg:col-start-8">
+          Hand Jarvis a goal and watch it delegate. Specialists message each
+          other, share what they find and report back — and anything that
+          matters waits for your OK. Hover an agent to meet it, click one to
+          talk to it directly.
+        </p>
+      </div>
+
+      <div class="team-frame sm:px-8 lg:px-14">
+        <!-- client:visible: the board runs a clock, and one nobody can see
+             is a frame budget spent on nothing. -->
+        <TeamBoard client:visible />
+      </div>
+    </div>
+  </Container>
+</section>
+
+<style>
+  .team-eyebrow {
+    color: var(--muted);
+    font-size: var(--text-caption-upper);
+    font-weight: 600;
+    letter-spacing: var(--tracking-caption-upper);
+    text-transform: uppercase;
+  }
+
+  .team-headline {
+    margin-block-start: 1rem;
+    color: var(--ink);
+    font-size: clamp(2rem, 1.4rem + 1.6vw, var(--text-display-lg));
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: var(--tracking-display-lg);
+  }
+
+  .team-standfirst {
+    color: var(--body);
+    font-size: 1.0625rem;
+    line-height: 1.55;
+  }
+
+  .team-frame {
+    margin-block-start: 2.5rem;
+  }
+</style>

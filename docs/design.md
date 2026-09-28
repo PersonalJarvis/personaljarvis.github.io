@@ -144,6 +144,13 @@ cross a rail". Everything narrower keeps `--hairline`.
 These mark agent stages inside timeline visualisations. They are **not** status
 colours, **not** decoration, and never appear outside a timeline.
 
+### Agent identity — the team section only
+`--agent-*` (violet, sage, orange, sky, rose, lime, lilac, teal) and
+`--agent-eye`. The app's companion palette, value for value, so an agent on
+this page wears the colour it wears in the product. They fill agent symbols in
+the team board (`src/sections/AgentTeam.astro`) and nothing else — never text,
+never chrome, never a second action colour.
+
 ### Semantic
 `--success` `#3fb98d` · `--error` `#ea5e7e`. Validation and confirmation only.
 

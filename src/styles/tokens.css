@@ -121,6 +121,21 @@
   --stage-edit: #c0a8dd;     /* lavender */
   --stage-done: #c08532;     /* gold     */
 
+  /* --- Agent identity ----------------------------------------------------
+   * The app's companion palette (society/companion/appearance.ts), value for
+   * value, so an agent on this page wears the colour it wears in the product.
+   * Scoped to agent symbols in the team section — never text, never chrome,
+   * never a second action colour. The eye ink is the app's own near-black. */
+  --agent-violet: #8b5cf6;
+  --agent-sage: #c5dfd4;
+  --agent-orange: #f2a65a;
+  --agent-sky: #7ab6ef;
+  --agent-rose: #ed91aa;
+  --agent-lime: #b7cb78;
+  --agent-lilac: #bba7ed;
+  --agent-teal: #79c7c4;
+  --agent-eye: #101014;
+
   /* --- App mockup --------------------------------------------------------
    * The product's OWN colours, read from the running app so the hero demo is
    * a clone and not an impression.
