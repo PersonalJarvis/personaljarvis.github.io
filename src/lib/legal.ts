@@ -11,15 +11,18 @@
  */
 
 export const OPERATOR = {
-  name: "",
-  street: "",
-  city: "",
+  name: "Ruben Samuel Lütke",
+  street: "Bahnhofstraße 27",
+  city: "86666 Burgheim",
   country: "Germany",
-  email: "",
+  /* A Cloudflare Email Routing address on the site's own domain, forwarded
+     to the operator's inbox, so the published contact is not a personal
+     mailbox. */
+  email: "contact@personaljarvis.ai",
 } as const;
 
 /** The date the legal texts were last reviewed against the code. */
-export const LEGAL_UPDATED = "28 September 2026";
+export const LEGAL_UPDATED = "29 September 2026";
 
 export const IMPRINT_HREF = "/imprint";
 export const PRIVACY_HREF = "/privacy";
