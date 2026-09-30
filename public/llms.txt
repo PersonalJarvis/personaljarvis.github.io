@@ -29,4 +29,6 @@
 - [Supported coding CLIs](https://personaljarvis.ai/clis/)
 - [Plugins](https://personaljarvis.ai/plugins/)
 - [Skills](https://personaljarvis.ai/skills/)
+- [Blog](https://personaljarvis.ai/blog/)
+- [Jarvis Verse launch post](https://personaljarvis.ai/blog/jarvis-verse/)
 - [Marketplace](https://personaljarvis.ai/marketplace/)

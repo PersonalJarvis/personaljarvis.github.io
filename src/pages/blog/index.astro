@@ -1,0 +1,166 @@
+---
+/**
+ * The blog's index: every post, newest first, from `src/lib/blog.ts`.
+ *
+ * The heading stays on `prose`; the list is on `content` because each entry
+ * leads with a picture (docs/layout.md: images and cards go on `content`).
+ */
+import Base from "@/layouts/Base.astro";
+import Container from "@/components/Container.astro";
+import Legal from "@/sections/Legal.astro";
+import { BLOG_POSTS, formatPostDate } from "@/lib/blog";
+---
+
+<Base
+  title="Blog — Personal Jarvis"
+  description="News from the Personal Jarvis project: new features, releases and how they came about."
+>
+  <main class="relative">
+    <Container width="prose">
+      <header class="blog-head">
+        <h1>Blog</h1>
+        <p>New features, releases and how they came about.</p>
+      </header>
+    </Container>
+
+    <Container width="content">
+      <ol class="blog-list">
+        {
+          BLOG_POSTS.map((post) => (
+            <li>
+              <a class="blog-card" href={post.href}>
+                <img
+                  src={post.image}
+                  alt={post.imageAlt}
+                  width="1920"
+                  height="1080"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <div class="blog-card__text">
+                  <time datetime={post.published}>{formatPostDate(post.published)}</time>
+                  <h2>{post.title}</h2>
+                  <p>{post.description}</p>
+                  <span class="blog-card__more">
+                    Read the post <span aria-hidden="true">&#8594;</span>
+                  </span>
+                </div>
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </Container>
+  </main>
+  <Legal />
+</Base>
+
+<style>
+  .blog-head {
+    padding-block: calc(var(--nav-height) + 3rem) 3rem;
+  }
+
+  .blog-head h1 {
+    color: var(--ink);
+    font-size: clamp(2.25rem, 1.6rem + 2vw, var(--text-display-xl));
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: var(--tracking-display-xl);
+  }
+
+  .blog-head p {
+    margin-top: 1rem;
+    color: var(--body);
+    font-size: var(--text-title-md);
+  }
+
+  .blog-list {
+    display: grid;
+    gap: var(--space-xxl);
+    padding-bottom: var(--space-section);
+  }
+
+  /* Picture left, words right; one column on a phone. */
+  .blog-card {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: var(--space-xl);
+    align-items: center;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .blog-card img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    /* `--rule`: the picture's left edge stands on the left rail, and a
+       hairline there would stop the rail for the card's height
+       (docs/layout.md § "Blocks that cross a rail"). */
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-lg);
+    background: var(--surface-card);
+    transition: border-color 160ms ease;
+  }
+
+  .blog-card:hover img,
+  .blog-card:focus-visible img {
+    border-color: var(--ink);
+  }
+
+  /* The text column ends at the right rail; a gutter keeps the words off it. */
+  .blog-card__text {
+    padding-inline-end: var(--space-xl);
+  }
+
+  .blog-card time {
+    color: var(--muted);
+    font-size: var(--text-caption-upper);
+    font-weight: 600;
+    letter-spacing: var(--tracking-caption-upper);
+    text-transform: uppercase;
+  }
+
+  .blog-card h2 {
+    margin-top: 0.75rem;
+    color: var(--ink);
+    font-size: var(--text-display-md);
+    font-weight: 400;
+    line-height: 1.25;
+    letter-spacing: var(--tracking-display-md);
+    text-wrap: balance;
+  }
+
+  .blog-card p {
+    margin-top: 0.75rem;
+    color: var(--body);
+    line-height: 1.6;
+  }
+
+  .blog-card__more {
+    display: inline-block;
+    margin-top: 1.25rem;
+    color: var(--ink);
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+  }
+
+  @media (max-width: 767px) {
+    .blog-card {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-lg);
+    }
+
+    .blog-card__text {
+      padding-inline-end: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blog-card img {
+      transition: none;
+    }
+  }
+</style>

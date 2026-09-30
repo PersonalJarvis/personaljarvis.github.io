@@ -1,0 +1,167 @@
+---
+/**
+ * Launch post for Jarvis Verse (Personal Jarvis 2.4.0, 2026-09-30).
+ *
+ * Every claim is taken from the app repository: the 2.4.0 entry in
+ * CHANGELOG.md, docs/agent-society/office-map.md, and the office's own
+ * interface strings (i18n/locales/society/en.json, key `office`). When the
+ * office changes, this post is a dated launch note and stays as written; a
+ * later change gets a later post.
+ */
+import BlogArticle from "@/components/BlogArticle.astro";
+import BlogVideo from "@/components/BlogVideo.astro";
+import { REPO } from "@/lib/install";
+import { SOCIAL_STATS } from "@/lib/socialCounts";
+
+/* socialCounts.ts is the one place that says which account is ours. */
+const DISCORD = SOCIAL_STATS.find((s) => s.id === "discord")?.href ?? REPO;
+---
+
+<BlogArticle slug="jarvis-verse">
+  <Fragment slot="lede">
+    Until now your Jarvis agents lived in a list. From today they live in an
+    office. Personal Jarvis 2.4 ships Jarvis Verse: a walkable 3D office where
+    every agent has a desk, and every coding agent works one floor up with its
+    terminal live on its monitor.
+  </Fragment>
+
+  <BlogVideo
+    slot="media"
+    src="/blog/jarvis-verse/jarvis-verse-launch.mp4"
+    poster="/blog/jarvis-verse/poster.webp"
+    width={1920}
+    height={1080}
+    label="Launch film: a one-minute walk through both floors of Jarvis Verse."
+    caption="The launch film: one minute through both floors of Jarvis Verse."
+  />
+
+  <h2>Why an office</h2>
+  <p>
+    A list tells you which agents exist. It does not tell you, at a glance, who
+    is working, who is waiting for you and who has nothing to do. Jarvis Verse
+    answers that in one picture. Every agent has a desk, desks are grouped into
+    departments, and each figure shows its state where it is:
+  </p>
+  <ul>
+    <li>
+      <strong>Working</strong> agents sit at their screen, and the monitor shows
+      the latest lines of their chat as they come in.
+    </li>
+    <li>
+      <strong>Waiting for you</strong> agents stand at their desk and wave.
+    </li>
+    <li>
+      <strong>Idle</strong> agents take a break: coffee, the couch, the window,
+      the bookshelf, the water cooler or the arcade.
+    </li>
+    <li><strong>Paused</strong> agents nap on a couch.</li>
+  </ul>
+  <p>
+    The office shows your team as it is. It never starts, stops or invents
+    work. The walking, the coffee breaks and the naps are animation, worked out
+    by the app on your own machine, and they cost no tokens.
+  </p>
+
+  <h2>The agents floor</h2>
+  <p>
+    Each department is a model provider, so agents that run on the same
+    provider sit together, local models through Ollama included. Around the
+    desks are the rooms you use to run the team:
+  </p>
+  <ul>
+    <li>
+      <strong>Spawn point.</strong> Hire a new agent here: give it a job, a
+      brain and a look. It appears on the pad in the middle of the floor and
+      walks to a free desk.
+    </li>
+    <li>
+      <strong>Lead office.</strong> Jarvis, your lead agent, has the corner
+      suite. Walk up to the desk and you can take the chair yourself.
+    </li>
+    <li>
+      <strong>Team room.</strong> Pick two or more agents and they become a team
+      with a shared chat. They meet at the table right away.
+    </li>
+    <li>
+      <strong>Wardrobe.</strong> Dress your own character or any agent: outfit,
+      colours, hair, skin tone and glasses.
+    </li>
+    <li>
+      <strong>Reception and the agent board.</strong> Help, the full list of
+      agents, and agent management.
+    </li>
+    <li>
+      <strong>Break room.</strong> Couches, a coffee bar, a water cooler and an
+      arcade cabinet running a game called Asteroid Run.
+    </li>
+  </ul>
+  <p>
+    There is also an office dog. It moves between its baskets in the lead
+    office, the team room and the break room. Pet it and it follows you around
+    for a while. The treat jar next to the coffee bar is there for a reason.
+  </p>
+
+  <h2>The coding floor</h2>
+  <p>
+    Take the elevator up. Every coding agent running in the Agentic IDE, such
+    as Claude Code, Codex or Gemini CLI, is a character here, and every IDE
+    workspace is a studio of its own.
+  </p>
+  <p>
+    A seated agent shows its terminal live on its monitor: the last lines, the
+    cursor, and its name and state in the title bar. Click the monitor and the
+    session opens as a window you can move, resize and type into. Send it a
+    prompt, stop the current step, or use a quick order: Continue, Status?,
+    Run tests or Commit. Jarvis can sharpen a prompt for you before it goes
+    out.
+  </p>
+  <p>
+    <strong>Mission Control</strong> is the room for the whole fleet. Its
+    launcher starts new coding agents: pick the tool, the workspace and how
+    many, add a first task if you like, and drop in files for them to start
+    from. You can also message several agents at once. The wall shows every
+    session side by side, and the desk monitors run three parts of the app
+    live: Spend, Agents and the Agentic IDE.
+  </p>
+  <p>
+    The coding floor also lives inside the Agentic IDE, as a tab in its side
+    panel. Clicking a monitor there brings that terminal forward in the grid
+    right next to it.
+  </p>
+
+  <h2>Walk in, or don't</h2>
+  <p>
+    You get a character of your own. Move with <kbd>W</kbd>&nbsp;<kbd
+      >A</kbd
+    >&nbsp;<kbd>S</kbd>&nbsp;<kbd>D</kbd> or the arrow keys, hold <kbd
+      >Shift</kbd
+    > to run, press <kbd>Space</kbd> to jump and <kbd>E</kbd> to use whatever is
+    next to you. Press <kbd>M</kbd> for the map and <kbd>H</kbd> for help and
+    settings. You can also click the floor to walk there.
+  </p>
+  <p>
+    Walking is optional. Zoom out and you get the whole floor at once, and every
+    agent and every room is still one click away. Click any agent to open its
+    chat, walk over, call it to you, show it on the map or add it to a new team.
+  </p>
+
+  <h2>Where to find it</h2>
+  <p>
+    Jarvis Verse is part of Personal Jarvis 2.4, released on 30 September 2026.
+    Install or update, open <strong>Agents</strong> and switch to <strong
+      >Jarvis Verse</strong
+    >. In the Agentic IDE, add the <strong>Jarvis Verse</strong> tab to the side
+    panel from its <strong>+</strong> menu.
+  </p>
+  <p>
+    It runs inside the app on Windows, macOS and Linux. On a machine that
+    cannot draw 3D, the agents list keeps showing every agent's state, so
+    nothing is hidden behind the graphics.
+  </p>
+  <p>
+    Jarvis Verse is brand new. If something looks wrong, or you have an idea
+    for the office, <a href={`${REPO}/issues`}>open an issue on GitHub</a> or <a
+      href={DISCORD}>tell us on Discord</a
+    >.
+  </p>
+</BlogArticle>
