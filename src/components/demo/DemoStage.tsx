@@ -277,7 +277,6 @@ const PATH = {
   cpu: "M6 6h12v12H6zM9.5 9.5h5v5h-5M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3",
   settings:
     "M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zM12 3v2.4M12 18.6V21M3 12h2.4M18.6 12H21M5.6 5.6l1.7 1.7M16.7 16.7l1.7 1.7M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7",
-  image: "M3 5h18v14H3zM8.3 11a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2zM21 16.5L15.5 11 7 19",
   share:
     "M18 8a2.6 2.6 0 1 0 0-5.2A2.6 2.6 0 0 0 18 8zM6 14.6a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2zM18 21.2a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2zM8.4 13.3l7.2 4.2M15.6 6.5L8.4 10.7",
   messageAlert: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM12 7v4M12 13.5h.01",
@@ -661,7 +660,6 @@ const NAV_GROUPS: { label: string; icon: string }[][] = [
     { label: "Local models", icon: PATH.cpu },
     { label: "Settings", icon: PATH.settings },
     { label: "Jarvis Voice", icon: PATH.mic },
-    { label: "Wallpaper", icon: PATH.image },
   ],
   // 4) Social links and in-app feedback.
   [
