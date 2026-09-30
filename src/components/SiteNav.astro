@@ -45,6 +45,8 @@
  * Astro's scope attribute never reaches it.
  */
 import Container from "@/components/Container.astro";
+import { GitHubMark } from "@/components/logos/GitHubMark";
+import { REPO } from "@/lib/install";
 import {
   DETAIL_PAGES,
   DOCS_URL,
@@ -159,7 +161,21 @@ const activeSection = DETAIL_PAGES.find((page) => pathname.startsWith(page.href)
         does. See the script in InstallCommand.astro.
       */
     }
-    <a class="site-nav__cta" href={`#${INSTALL_ID}`} data-download-cta>Download</a>
+    {
+      /*
+        The GitHub mark sits WITH the button, not in the links: the links are
+        put away below 1024px and the repository is the one destination that
+        must survive on every width. Grouping the two keeps the row at three
+        children for `space-between`, so nothing else moves. Icon-only, so
+        the name travels in aria-label and title.
+      */
+    }
+    <div class="site-nav__actions">
+      <a class="site-nav__github" href={REPO} aria-label="Personal Jarvis on GitHub" title="Personal Jarvis on GitHub">
+        <GitHubMark className="site-nav__github-icon" />
+      </a>
+      <a class="site-nav__cta" href={`#${INSTALL_ID}`} data-download-cta>Download</a>
+    </div>
   </Container>
 </header>
 

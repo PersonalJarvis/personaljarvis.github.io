@@ -759,6 +759,34 @@ body > section {
 }
 
 /*
+ * The repository link beside the Download button. Same ink as a nav label at
+ * rest, full ink on hover, like every other link in the row. It costs the row
+ * about 40px (a 20px mark and the gap), taken from the 103px margin the
+ * 1024px breakpoint below leaves, so the section links still fit where they
+ * render.
+ */
+.site-nav__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.site-nav__github {
+  display: inline-flex;
+  color: var(--body);
+  transition: color 200ms ease;
+}
+
+.site-nav__github:hover {
+  color: var(--ink);
+}
+
+.site-nav__github-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/*
  * Below 1024px the section links go and the wordmark and the download button
  * stay.
  *
