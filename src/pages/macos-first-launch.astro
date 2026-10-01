@@ -1,0 +1,95 @@
+---
+/**
+ * What to do when macOS refuses to open the downloaded app.
+ *
+ * This page exists because the refusal does not read like a policy decision.
+ * Gatekeeper's wording for an app it cannot verify is "damaged and can't be
+ * opened" — which describes a corrupt download, not an unsigned one. Without
+ * a page to land on, the honest reading of that message is "the file is
+ * broken", and the download is thrown away.
+ *
+ * It is linked from under the macOS download button rather than buried in
+ * docs, because the moment it is needed is thirty seconds after the click.
+ *
+ * TEMPORARY. Once the Developer ID notarization in the app repo's
+ * `.github/workflows/macos-release.yml` is live, the first launch is an
+ * ordinary double-click and this page should be deleted, along with the link
+ * to it in `DownloadNote.astro`.
+ */
+import LegalPage from "@/components/LegalPage.astro";
+import { CODE_SIGNING_HREF } from "@/lib/legal";
+import { REPO } from "@/lib/install";
+---
+
+<LegalPage
+  title="Opening Personal Jarvis the first time on macOS — Personal Jarvis"
+  description="macOS blocks the Personal Jarvis disk image on first launch because it is not yet notarized by Apple. Here is what the warning means and how to open the app."
+  heading="Opening Personal Jarvis the first time on macOS"
+>
+  <p>
+    The first time you open Personal Jarvis on a Mac, macOS may refuse it and
+    say the app <strong>&ldquo;is damaged and can&rsquo;t be opened&rdquo;</strong>,
+    or that it <strong>cannot be checked for malicious software</strong>.
+  </p>
+  <p>
+    The download is not damaged. That message is what macOS shows for any app
+    that has not been through Apple&rsquo;s notarization service, and Personal
+    Jarvis has not — notarization requires a paid Apple Developer membership,
+    which this project does not hold yet. The wording is Apple&rsquo;s, not
+    ours, and it is the same for every unnotarized app. Our
+    <a href={CODE_SIGNING_HREF}>code signing policy</a> tracks where this
+    stands.
+  </p>
+  <p>
+    You can verify the file you downloaded against the checksums published
+    with each release on the
+    <a href={`${REPO}/releases/latest`}>release page</a>, and the app is built
+    in public from the source in
+    <a href={REPO}>this repository</a>.
+  </p>
+
+  <h2>Opening it on macOS 15 Sequoia or newer</h2>
+  <ol>
+    <li>
+      Drag Personal Jarvis into your Applications folder, then double-click it
+      once and dismiss the warning. <strong>Do not skip this step.</strong>
+      macOS only offers the override below for an app you have actually tried
+      to open, so on a fresh install the button in step 3 is not there yet.
+    </li>
+    <li>
+      Open <strong>System Settings &rsaquo; Privacy &amp; Security</strong> and
+      scroll to the <strong>Security</strong> section near the bottom.
+    </li>
+    <li>
+      You will see a line naming Personal Jarvis as blocked, with an
+      <strong>Open Anyway</strong> button next to it. Click it and authenticate.
+    </li>
+    <li>Open the app again and confirm once more. From then on it opens normally.</li>
+  </ol>
+  <p class="legal-doc__note">
+    On macOS 14 Sonoma and earlier you can instead right-click the app and
+    choose <strong>Open</strong>, which offers the override directly. Apple
+    removed that shortcut in Sequoia, so on current systems use the steps above.
+  </p>
+
+  <h2>Or from the terminal</h2>
+  <p>
+    If you prefer one command, this removes the quarantine flag that your
+    browser attached to the download:
+  </p>
+  <pre><code>xattr -dr com.apple.quarantine "/Applications/Personal Jarvis.app"</code></pre>
+  <p class="legal-doc__note">
+    Run this only on software you meant to install and obtained from a source
+    you trust. It switches off a safety check, so it is worth understanding
+    rather than pasting by habit — here it clears the flag your browser sets on
+    every download, which is what makes macOS treat the app as unverified.
+  </p>
+
+  <h2>When this goes away</h2>
+  <p>
+    Once the project holds an Apple Developer membership, releases will be
+    signed with a Developer ID and notarized by Apple. The first launch then
+    becomes an ordinary double-click with no warning and no extra steps, and
+    this page is retired.
+  </p>
+</LegalPage>

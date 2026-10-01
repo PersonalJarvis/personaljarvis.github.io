@@ -75,6 +75,8 @@ const { title, description, heading } = Astro.props;
 
   .legal-doc :global(p),
   .legal-doc :global(ul),
+  .legal-doc :global(ol),
+  .legal-doc :global(pre),
   .legal-doc :global(address) {
     margin-top: 0.9rem;
   }
@@ -89,8 +91,30 @@ const { title, description, heading } = Astro.props;
     list-style: disc;
   }
 
+  /* Numbered steps, for the one document here that is a procedure rather
+     than a statement. The marker has to be a number: "step 3" in the prose
+     is unfollowable against a row of identical bullets. */
+  .legal-doc :global(ol) {
+    padding-left: 1.25rem;
+    list-style: decimal;
+  }
+
   .legal-doc :global(li + li) {
     margin-top: 0.4rem;
+  }
+
+  /* A command block scrolls inside its own box. A long one-liner must never
+     widen the page: that scrolls the whole document sideways on a phone. */
+  .legal-doc :global(pre) {
+    overflow-x: auto;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    /* Framed by the hairline alone, with no fill: the surface tokens are
+       single fixed values rather than per-theme ones, so a background here
+       would be wrong in one of the two modes. */
+    color: var(--ink);
+    line-height: 1.5;
   }
 
   .legal-doc :global(a) {
