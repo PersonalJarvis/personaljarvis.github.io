@@ -22,7 +22,6 @@
  * See docs/footer.md.
  */
 import Container from "@/components/Container.astro";
-import { BLOG_HREF } from "@/lib/blog";
 import { REPO } from "@/lib/install";
 import { IMPRINT_HREF, PRIVACY_HREF } from "@/lib/legal";
 import { SOCIAL_STATS, type SocialId } from "@/lib/socialCounts";
@@ -62,8 +61,11 @@ const groups = [
       { label: "Source", href: REPO },
       // The docs live in the repository; this site has no /docs route yet.
       { label: "Docs", href: `${REPO}/tree/main/docs` },
-      // The blog is a route on this site (src/pages/blog/).
-      { label: "Blog", href: BLOG_HREF },
+      // The blog is its own repository (PersonalJarvis/blog), which GitHub
+      // Pages publishes under this domain at /blog/, so it opens in the same
+      // tab. This site must never ship a /blog route of its own: the blog's
+      // Pages site takes that path and would hide it.
+      { label: "Blog", href: "/blog/" },
       { label: "Security", href: `${REPO}/blob/main/SECURITY.md` },
     ],
   },
