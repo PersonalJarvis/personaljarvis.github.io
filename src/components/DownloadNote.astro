@@ -1,0 +1,90 @@
+---
+/**
+ * The one line under the hero's download button: what the file is, and the
+ * two ways out of it.
+ *
+ * - WHAT THE FILE IS, because a 250 MB download that turns out to be for the
+ *   wrong machine is the failure this line exists to prevent.
+ * - THE OTHER MAC BUILD, because a user agent cannot tell Apple silicon from
+ *   Intel (see `DownloadCta.astro`). An Intel Mac visitor whose browser could
+ *   not say so picks their build here.
+ * - THE COMMAND LINE, because the one-liner is still the install path for
+ *   people who prefer a terminal, and it lives further down at `#install`.
+ *
+ * Chosen by the same `data-download` attribute as the button, so the line and
+ * the button above it can never describe two different machines.
+ */
+import {
+  DOWNLOAD_TARGETS,
+  DEFAULT_DOWNLOAD,
+  INSTALLER_ASSETS,
+  installerUrl,
+  type DownloadId,
+} from "@/lib/install";
+import { INSTALL_ID } from "@/lib/nav";
+
+/** The other Mac build, named for the visitor who is on it. */
+const otherMac: Partial<Record<DownloadId, { label: string; href: string }>> = {
+  "macos-arm64": { label: "Intel Mac?", href: installerUrl(INSTALLER_ASSETS["macos-x64"]) },
+  "macos-x64": { label: "Apple silicon?", href: installerUrl(INSTALLER_ASSETS["macos-arm64"]) },
+};
+---
+
+<p class="download-note">
+  {
+    DOWNLOAD_TARGETS.map((target) => (
+      <span
+        class="download-note__line"
+        data-download-for={target.id}
+        data-fallback={target.id === DEFAULT_DOWNLOAD ? "" : undefined}
+      >
+        {target.note}
+        {otherMac[target.id] && (
+          <>
+            {" · "}
+            <a href={otherMac[target.id]!.href}>{otherMac[target.id]!.label}</a>
+          </>
+        )}
+        {" · "}
+        <a href={`#${INSTALL_ID}`}>Install from the command line</a>
+      </span>
+    ))
+  }
+</p>
+
+<style>
+  .download-note {
+    margin-top: var(--space-sm);
+    color: var(--muted);
+    font-size: var(--text-caption);
+    line-height: 1.5;
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .download-note a {
+    color: var(--body);
+    text-decoration: underline;
+    text-decoration-color: var(--hairline-strong);
+    text-underline-offset: 3px;
+    transition: color 200ms ease;
+  }
+
+  .download-note a:hover {
+    color: var(--ink);
+  }
+
+  .download-note__line {
+    display: none;
+  }
+
+  /* Same table as DownloadCta.astro, for the same reason. */
+  :global(html[data-download="macos-arm64"]) .download-note__line[data-download-for="macos-arm64"],
+  :global(html[data-download="macos-x64"]) .download-note__line[data-download-for="macos-x64"],
+  :global(html[data-download="windows"]) .download-note__line[data-download-for="windows"],
+  :global(html[data-download="linux"]) .download-note__line[data-download-for="linux"],
+  :global(html[data-download="other"]) .download-note__line[data-download-for="other"],
+  :global(html:not([data-download])) .download-note__line[data-fallback] {
+    display: inline;
+  }
+</style>

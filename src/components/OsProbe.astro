@@ -17,8 +17,15 @@
  * correct one is the only one the visitor ever sees.
  *
  * IT MUST STAY THE SIZE IT IS. This is the one script that blocks parsing, so
- * it does the minimum: three regular expressions and one attribute. Anything
- * that can wait belongs in a module script that does not hold the page up.
+ * it does the minimum: two short tables of regular expressions and two
+ * attributes. Anything that can wait belongs in a module script that does not
+ * hold the page up.
+ *
+ * TWO ATTRIBUTES, BECAUSE THEY ANSWER TWO QUESTIONS. `data-os` picks the tab of
+ * the install box — an iPhone lands on macOS there, which is the closest true
+ * answer. `data-download` picks the installer the buttons at the top hand
+ * over — and an iPhone gets none, because no desktop installer runs on it.
+ * The rules for both live in `src/lib/install.ts`.
  *
  * WITHOUT JAVASCRIPT the attribute is simply never set, and the CSS falls back
  * to `DEFAULT_OS` — a real label pointing at a real command, not a blank
@@ -28,19 +35,31 @@
  * has no imports, so the table from `src/lib/install.ts` is serialised into the
  * markup instead of being retyped here. There is one copy of the rules.
  */
-import { OS_SIGNATURES, DEFAULT_OS } from "@/lib/install";
+import { OS_SIGNATURES, DEFAULT_OS, DOWNLOAD_SIGNATURES, DEFAULT_DOWNLOAD } from "@/lib/install";
 ---
 
-<script is:inline define:vars={{ signatures: OS_SIGNATURES, fallback: DEFAULT_OS }}>
+<script
+  is:inline
+  define:vars={{
+    signatures: OS_SIGNATURES,
+    fallback: DEFAULT_OS,
+    downloads: DOWNLOAD_SIGNATURES,
+    downloadFallback: DEFAULT_DOWNLOAD,
+  }}
+>
   (function () {
     var agent = navigator.userAgent || "";
-    var os = fallback;
-    for (var i = 0; i < signatures.length; i++) {
-      if (new RegExp(signatures[i][1], "i").test(agent)) {
-        os = signatures[i][0];
-        break;
+    function pick(table, otherwise) {
+      for (var i = 0; i < table.length; i++) {
+        if (new RegExp(table[i][1], "i").test(agent)) return table[i][0];
       }
+      return otherwise;
     }
-    document.documentElement.setAttribute("data-os", os);
+    var download = pick(downloads, downloadFallback);
+    // iPadOS reports itself as a Mac; its touch screen gives it away.
+    if (download === "macos-arm64" && navigator.maxTouchPoints > 1) download = "other";
+    var root = document.documentElement;
+    root.setAttribute("data-os", pick(signatures, fallback));
+    root.setAttribute("data-download", download);
   })();
 </script>
