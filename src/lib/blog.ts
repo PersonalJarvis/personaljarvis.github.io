@@ -35,6 +35,18 @@ export interface BlogPost {
 
 export const BLOG_POSTS: readonly BlogPost[] = [
   {
+    slug: "self-learning-loop",
+    href: `${BLOG_HREF}/self-learning-loop`,
+    title: "Jarvis now learns who you are, without burning your budget",
+    description:
+      "Jarvis keeps two small notebooks about you and updates them after your conversations. Most conversations cost nothing, and every change has to quote your own words.",
+    published: "2026-10-01",
+    image: "/blog/self-learning-loop/poster.webp",
+    imageAlt:
+      "A spoken sentence passes a free filter and a single review, and lands in Jarvis' USER.md notebook with the user's own words quoted as evidence.",
+    socialImage: "/blog/self-learning-loop/og.jpg",
+  },
+  {
     slug: "jarvis-verse",
     href: `${BLOG_HREF}/jarvis-verse`,
     title: "Jarvis Verse: your agents now have a world to live in",
