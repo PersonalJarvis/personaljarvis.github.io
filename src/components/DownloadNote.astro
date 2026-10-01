@@ -18,6 +18,7 @@ import {
   DOWNLOAD_TARGETS,
   DEFAULT_DOWNLOAD,
   INSTALLER_ASSETS,
+  MACOS_FIRST_LAUNCH_HREF,
   installerUrl,
   type DownloadId,
 } from "@/lib/install";
@@ -28,6 +29,13 @@ const otherMac: Partial<Record<DownloadId, { label: string; href: string }>> = {
   "macos-arm64": { label: "Intel Mac?", href: installerUrl(INSTALLER_ASSETS["macos-x64"]) },
   "macos-x64": { label: "Apple silicon?", href: installerUrl(INSTALLER_ASSETS["macos-arm64"]) },
 };
+
+/**
+ * Mac-only, and temporary: see `MACOS_FIRST_LAUNCH_HREF`. It sits on this
+ * line rather than in a banner because a warning shown to everyone about a
+ * problem two of five platforms have reads as a defect in the product.
+ */
+const MAC_IDS: readonly DownloadId[] = ["macos-arm64", "macos-x64"];
 ---
 
 <p class="download-note">
@@ -43,6 +51,12 @@ const otherMac: Partial<Record<DownloadId, { label: string; href: string }>> = {
           <>
             {" · "}
             <a href={otherMac[target.id]!.href}>{otherMac[target.id]!.label}</a>
+          </>
+        )}
+        {MAC_IDS.includes(target.id) && (
+          <>
+            {" · "}
+            <a href={MACOS_FIRST_LAUNCH_HREF}>Opening it the first time</a>
           </>
         )}
         {" · "}

@@ -13,7 +13,7 @@
  */
 import LegalPage from "@/components/LegalPage.astro";
 import { PRIVACY_HREF } from "@/lib/legal";
-import { REPO, RELEASES } from "@/lib/install";
+import { REPO, RELEASES, MACOS_FIRST_LAUNCH_HREF } from "@/lib/install";
 
 const ORG = "https://github.com/PersonalJarvis";
 ---
@@ -44,6 +44,28 @@ const ORG = "https://github.com/PersonalJarvis";
     Nothing built elsewhere, and nothing from another project, is signed with
     this certificate. Third-party open source libraries bundled in the
     installer keep their own signatures, or none.
+  </p>
+
+  <h2>macOS</h2>
+  <p>
+    <strong>Status:</strong> the macOS disk images are <strong>not</strong>
+    signed with an Apple Developer ID and are not notarized by Apple, because
+    the project does not hold an Apple Developer membership yet. Apple&rsquo;s
+    signing programme is separate from the SignPath certificate above and
+    cannot be covered by it.
+  </p>
+  <p>
+    The practical consequence is that macOS refuses the app on first launch,
+    usually with the words &ldquo;damaged and can&rsquo;t be opened&rdquo;. The
+    download is not damaged; that is the message Gatekeeper shows for any
+    unnotarized app. <a href={MACOS_FIRST_LAUNCH_HREF}>How to open it anyway</a>
+    explains the override.
+  </p>
+  <p>
+    Until then, verify the disk image against the checksums published with each
+    release on the <a href={RELEASES}>release page</a>. That is a weaker
+    guarantee than notarization — it proves the file matches what the release
+    workflow published, not that Apple scanned it — but it is checkable today.
   </p>
 
   <h2>Team roles</h2>
