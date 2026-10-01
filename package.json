@@ -15,12 +15,15 @@
     "video:agents:render": "node video/agents-hyperframes/render.mjs",
     "check:style": "node scripts/check-style.mjs",
     "check:geocode": "node scripts/test-geocode.mjs",
+    "test:download": "node --experimental-strip-types --test scripts/test-download.mjs",
+    "test:download:dist": "node --experimental-strip-types --test scripts/test-download-dist.mjs",
+    "test:download:live": "node --experimental-strip-types --test scripts/test-download-live.mjs",
     "data:stargazers": "node scripts/fetch-stargazers.mjs",
     "data:app-catalog": "node scripts/extract-app-catalog.mjs",
     "data:repo-map": "node scripts/fetch-repo-map.mjs",
     "data:gazetteer": "node scripts/build-gazetteer.mjs",
     "data:land-mask": "node scripts/build-land-mask.mjs",
-    "verify": "npm run check:style && npm run check:geocode && astro check && npm run build"
+    "verify": "npm run check:style && npm run check:geocode && npm run test:download && astro check && npm run build && npm run test:download:dist"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.4",
