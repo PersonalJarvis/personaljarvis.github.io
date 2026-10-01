@@ -54,6 +54,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta name="generator" content={Astro.generator} />
+    {/* A page's own head tags, such as a blog post's social image. */}
+    <slot name="head" />
 
     {/*
       LAST IN THE HEAD, AND IT HAS TO BE IN THE HEAD. It names the visitor's
