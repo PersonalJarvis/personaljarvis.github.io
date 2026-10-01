@@ -230,6 +230,20 @@ export const DOWNLOAD_TARGETS: readonly DownloadTarget[] = [
   },
 ];
 
+/**
+ * Where a Mac visitor goes when macOS refuses the app on first launch.
+ *
+ * TEMPORARY, and only for the two macOS targets. Until the builds are
+ * notarized, Gatekeeper calls an unsigned app "damaged" — wording that
+ * describes a corrupt download, so the rational response to it is to delete
+ * the file. The link is offered BEFORE the click, because afterwards the
+ * visitor has no reason to believe the site has anything useful to say.
+ *
+ * Remove this, its two uses in `DownloadNote.astro`, and
+ * `src/pages/macos-first-launch.astro`, once notarized builds ship.
+ */
+export const MACOS_FIRST_LAUNCH_HREF = "/macos-first-launch";
+
 /** What the page shows before it knows the machine, and with scripting off. */
 export const DEFAULT_DOWNLOAD: DownloadId = "other";
 
