@@ -1,0 +1,85 @@
+---
+/**
+ * Code signing policy.
+ *
+ * Required by the SignPath Foundation, which signs open source projects'
+ * Windows releases for free (https://signpath.org/terms.html): a page titled
+ * "Code signing policy", linked from the home page and the download page,
+ * that names who may commit, review and approve a signing request, and says
+ * what the program does with data.
+ *
+ * Every statement below is read from the app repository; if the release
+ * workflow or the app's network behaviour changes, this page changes with it.
+ */
+import LegalPage from "@/components/LegalPage.astro";
+import { PRIVACY_HREF } from "@/lib/legal";
+import { REPO, RELEASES } from "@/lib/install";
+
+const ORG = "https://github.com/PersonalJarvis";
+---
+
+<LegalPage
+  title="Code signing policy — Personal Jarvis"
+  description="How the Windows installer of Personal Jarvis is signed, who approves a signature, and what the program does with your data."
+  heading="Code signing policy"
+>
+  <p>
+    Free code signing provided by <a href="https://signpath.io">SignPath.io</a>,
+    certificate by <a href="https://signpath.org">SignPath Foundation</a>.
+  </p>
+  <p>
+    <strong>Status:</strong> the project has applied to the SignPath Foundation.
+    Until the application is approved, the Windows installer is published
+    unsigned, and Windows SmartScreen may warn before it runs.
+  </p>
+
+  <h2>What is signed</h2>
+  <p>
+    Only files built from this project's own source code by its public release
+    workflow on GitHub Actions: the Windows installer
+    <code>PersonalJarvis-Setup-x64.exe</code> and the program files it
+    installs. They are built from the
+    <a href={REPO}>PersonalJarvis/PersonalJarvis</a> repository at the tag of
+    each release and published on the <a href={RELEASES}>release page</a>.
+    Nothing built elsewhere, and nothing from another project, is signed with
+    this certificate. Third-party open source libraries bundled in the
+    installer keep their own signatures, or none.
+  </p>
+
+  <h2>Team roles</h2>
+  <ul>
+    <li>
+      <strong>Committers and reviewers:</strong> members of the
+      <a href={`${ORG}`}>PersonalJarvis GitHub organization</a> with write
+      access to the repository. Every change reaches the release branch through
+      the repository's pull request and required-check rules.
+    </li>
+    <li>
+      <strong>Approvers:</strong> owners of the
+      <a href={`${ORG}`}>PersonalJarvis GitHub organization</a>. Each signing
+      request is approved by hand, once per release.
+    </li>
+  </ul>
+  <p>
+    Everyone in these roles must use multi-factor authentication for GitHub and
+    for SignPath.
+  </p>
+
+  <h2>Privacy</h2>
+  <p>
+    Personal Jarvis contains no telemetry, analytics or crash reporting. It
+    sends data only to services you connect yourself — for example the AI
+    provider whose key or subscription you add, or a channel such as Telegram —
+    and only when you use them. To offer updates it asks GitHub for the latest
+    release. Nothing else is transferred to other networked systems unless you
+    request it. This website's own data practices are in the
+    <a href={PRIVACY_HREF}>privacy policy</a>.
+  </p>
+
+  <h2>Reporting a problem</h2>
+  <p>
+    If you believe a signed file was not built from this repository, or
+    behaves in a way this page does not describe, report it through the
+    <a href={`${REPO}/blob/main/SECURITY.md`}>security policy</a>.
+  </p>
+</LegalPage>

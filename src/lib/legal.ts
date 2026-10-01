@@ -26,3 +26,4 @@ export const LEGAL_UPDATED = "29 September 2026";
 
 export const IMPRINT_HREF = "/imprint";
 export const PRIVACY_HREF = "/privacy";
+export const CODE_SIGNING_HREF = "/code-signing";

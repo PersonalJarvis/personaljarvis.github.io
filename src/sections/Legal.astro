@@ -23,7 +23,7 @@
  */
 import Container from "@/components/Container.astro";
 import { REPO } from "@/lib/install";
-import { IMPRINT_HREF, PRIVACY_HREF } from "@/lib/legal";
+import { CODE_SIGNING_HREF, IMPRINT_HREF, PRIVACY_HREF } from "@/lib/legal";
 import { SOCIAL_STATS, type SocialId } from "@/lib/socialCounts";
 
 /**
@@ -76,6 +76,9 @@ const groups = [
       // on this site, so they open in the same tab.
       { label: "Imprint", href: IMPRINT_HREF },
       { label: "Privacy", href: PRIVACY_HREF },
+      // Required by the SignPath Foundation, which signs the Windows
+      // installer: a "Code signing policy" link on the home page.
+      { label: "Code signing policy", href: CODE_SIGNING_HREF },
       // README § License: "Apache 2.0. Free to use, modify, and distribute…"
       { label: "License", href: `${REPO}/blob/main/LICENSE` },
       // README § License names NOTICE alongside LICENSE.
