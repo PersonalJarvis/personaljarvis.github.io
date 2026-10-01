@@ -1458,6 +1458,16 @@ const figures = [
     calm.addEventListener("change", () => (painted = -1));
 
     raf = requestAnimationFrame(loop);
-    window.addEventListener("pagehide", () => cancelAnimationFrame(raf), { once: true });
+
+    /* Stopped on leaving, started again when "Back" restores the page from the
+     * back/forward cache — the script does not run a second time, so a loop
+     * cancelled for good would leave the wipe frozen. Same as SectionMarker. */
+    window.addEventListener("pagehide", () => cancelAnimationFrame(raf));
+    window.addEventListener("pageshow", (event) => {
+      if (!event.persisted) return;
+      cancelAnimationFrame(raf);
+      painted = -1;
+      raf = requestAnimationFrame(loop);
+    });
   }
 </script>

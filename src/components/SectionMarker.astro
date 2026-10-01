@@ -445,6 +445,20 @@
     }
 
     frame = requestAnimationFrame(loop);
-    addEventListener("pagehide", () => cancelAnimationFrame(frame), { once: true });
+
+    /* THE LOOP IS STOPPED ON LEAVING AND STARTED AGAIN ON COMING BACK. A page
+     * left for another one is often kept whole in the back/forward cache, and
+     * "Back" restores it without running this script again — so a `pagehide`
+     * that cancels the loop for good leaves the square frozen wherever the
+     * reader last was, for the rest of the visit. That is what happened after
+     * a round trip to the blog (maintainer, 2026-10-01). Restored, the layout
+     * is re-measured too: the window may have been resized while away. */
+    addEventListener("pagehide", () => cancelAnimationFrame(frame));
+    addEventListener("pageshow", (event) => {
+      if (!event.persisted) return;
+      cancelAnimationFrame(frame);
+      invalidate();
+      frame = requestAnimationFrame(loop);
+    });
   }
 </script>
