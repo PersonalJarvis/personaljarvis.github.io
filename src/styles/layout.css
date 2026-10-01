@@ -481,6 +481,18 @@ body > section {
   pointer-events: none;
 }
 
+/* The square's second home: a layer at the document's origin that scrolls with
+ * the page, for while it rides a line that does too. Zero-sized, so it adds
+ * nothing to the layout or the scroll width. See SectionMarker.astro. */
+.section-marker--page {
+  position: absolute;
+  inset: auto;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+}
+
 .section-marker__dot {
   position: absolute;
   top: 0;
