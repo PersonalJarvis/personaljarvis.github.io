@@ -87,12 +87,7 @@ jobs:
       # The project's own build script, not `astro build` spelled out here.
       # If that script is ever replaced, this line stays correct.
       - run: node --experimental-strip-types --test scripts/test-stargazer-feed.mjs
-      # The download buttons: the rules first, then the built page. Offline on
-      # purpose — the live release check lives in `downloads.yml`, because a
-      # release in flight must not stop the site from publishing.
-      - run: node --experimental-strip-types --test scripts/test-download.mjs
       - run: npm run build
-      - run: node --experimental-strip-types --test scripts/test-download-dist.mjs
 
       - uses: actions/configure-pages@v5
 

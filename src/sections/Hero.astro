@@ -23,7 +23,6 @@ import { Image } from "astro:assets";
 import Container from "@/components/Container.astro";
 import DemoStage from "@/components/demo/DemoStage";
 import DownloadCta from "@/components/DownloadCta.astro";
-import DownloadNote from "@/components/DownloadNote.astro";
 import SectionTrack from "@/components/SectionTrack.astro";
 import { DOCS_URL, TOP_ID } from "@/lib/nav";
 import backdrop from "@/assets/hero/stage-backdrop.webp";
@@ -114,14 +113,13 @@ const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <
 
         <div class="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
           {/*
-            THE BUTTON DOWNLOADS THE READER'S OWN INSTALLER. It read
-            "Download for Windows" on every screen until 2026-09-01, then only
-            scrolled to the install command; since 2026-10-01 it hands over
-            the native installer for the visitor's machine directly. The
-            component holds the detection, the labels and the links; this
-            file keeps only the pill, because the shape is the hero's
-            business and the words are not. See DownloadCta.astro and
-            docs/hero.md § "CTAs".
+            THE LABEL NAMES THE READER'S OWN MACHINE. It read "Download for
+            Windows" on every screen until 2026-09-01 — a lie to most of the
+            people who saw it, and a button that dropped a Mac visitor onto a
+            PowerShell line. The component holds the detection, the three
+            labels and the link to the matching command; this file keeps only
+            the pill, because the shape is the hero's business and the words
+            are not. See DownloadCta.astro and docs/hero.md § "CTAs".
           */}
           <DownloadCta class="inline-flex min-h-[44px] items-center justify-center rounded-full bg-ink px-6 text-[15px] font-medium text-on-ink transition-colors hover:bg-ink-active" />
           {/*
@@ -137,11 +135,6 @@ const backdropSizes = "(min-width: 1400px) 1280px, 100vw"; // layout-allow: an <
             Read the docs
           </a>
         </div>
-        {/*
-          What the file is, the other Mac build, and the way to the
-          command-line install further down. See DownloadNote.astro.
-        */}
-        <DownloadNote />
       </Container>
     </div>
 

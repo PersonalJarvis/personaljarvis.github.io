@@ -138,45 +138,22 @@ hold the stage on any screen, which is what the crop was hiding.
 - First filled (ink on cream, per `design.md`), second outline or ghost
 - Below 640px they stack, each at full `prose` width
 
-**The first one downloads the reader's installer.** "Download for macOS",
-"Download for Windows" or "Download for Linux", and a click hands over the
-native installer for that machine — no terminal. Since 2026-10-01; before, it
-only scrolled to the install command, and until 2026-09-01 it said "Download
-for Windows" to everyone.
+**The first one names the reader's machine.** "Download for macOS", "Download
+for Windows" or "Download for Linux", decided in the browser and pointing at
+`#install`, where the box opens on that same machine's command. Until
+2026-09-01 it said "Download for Windows" to everyone, which was wrong for most
+visitors and sent a Mac reader to a PowerShell line.
 
-| Machine | File (from `releases/latest/download/`) |
-| --- | --- |
-| Windows (x64, and ARM under emulation) | `PersonalJarvis-Setup-x64.exe` |
-| Mac, Apple silicon (default for every Mac) | `PersonalJarvis-macOS-arm64.dmg` |
-| Mac, Intel (Chromium's architecture hint, or the note) | `PersonalJarvis-macOS-x64.dmg` |
-| Linux x86_64 | `PersonalJarvis-Linux-x86_64.AppImage` |
-| Phone, tablet, Chromebook, ARM Linux, no script | the release page, labelled "Download" |
-
-The file names are a contract with the app repository's release workflow and
-in-app updater; `scripts/test-download-live.mjs` fails when they drift.
-
-The anchor is chosen by CSS from `data-download` on `<html>`, written by an
-inline head script (`OsProbe.astro`) before the body is parsed — never by
-rewriting the link after load, which shows the wrong machine for a frame. One
-anchor per installer ships in the markup and all but one are `display: none`,
-so a screen reader announces one link. With scripting off the release-page
-anchor stands, because guessing a 250 MB file for an unknown machine is worse
-than a list. See `src/components/DownloadCta.astro`.
-
-**One line under the buttons** (`DownloadNote.astro`) says what the file is,
-offers the other Mac build ("Intel Mac?" / "Apple silicon?" — a user agent
-cannot tell them apart), and links "Install from the command line" to
-`#install`, where the one-liners stay.
+It is chosen by CSS from `data-os` on `<html>`, written by an inline head
+script (`OsProbe.astro`) before the body is parsed — never by rewriting the
+text after load, which shows the wrong machine for a frame. All three labels
+ship in the markup and two are `display: none`, so a screen reader announces
+one button. With scripting off the `DEFAULT_OS` label stands: a real button
+pointing at a real command. See `src/components/DownloadCta.astro`.
 
 The nav's button keeps the bare word "Download". That row is width-constrained
-to the character (`src/lib/nav.ts`); it is the same component, so it downloads
-the same installer as the hero's button, on every page.
-
-**Tests:** `npm run test:download` (rules over real user agents),
-`npm run test:download:dist` (the shipped probe and anchors in `dist/`), and the
-`downloads` workflow, which on Windows, both Mac architectures and Linux
-downloads the file the site picks, verifies its checksum, installs it and runs
-`jarvis --version`.
+to the character (`src/lib/nav.ts`), the short word is already true on every
+machine, and clicking it still opens the install box on the reader's own.
 
 **Shape:** pill (`rounded-full`), at least 44px tall, at least 24px of
 horizontal padding, at least 15px type. The hero is the one place that overrides

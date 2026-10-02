@@ -45,12 +45,12 @@
  * Astro's scope attribute never reaches it.
  */
 import Container from "@/components/Container.astro";
-import DownloadCta from "@/components/DownloadCta.astro";
 import { GitHubMark } from "@/components/logos/GitHubMark";
 import { REPO } from "@/lib/install";
 import {
   DETAIL_PAGES,
   DOCS_URL,
+  INSTALL_ID,
   NAV_LINKS,
   sectionHref,
   TOP_ID,
@@ -140,13 +140,14 @@ const activeSection = DETAIL_PAGES.find((page) => pathname.startsWith(page.href)
 
     {
       /*
-        IT DOWNLOADS THE READER'S OWN INSTALLER, exactly like the hero's button,
-        on every page — the same component, so the two can never hand over two
-        different files (`DownloadCta.astro`). The command-line install stays in
-        the `#install` section of each page.
+        `#install` and not `/#install` even on a detail page: every detail page
+        carries a section with that id of its own (`DetailFoot.astro`), so the
+        button always scrolls to an install command on the page the reader is
+        already on. A jump back to the front page would throw away the page they
+        came to read.
 
         IT KEEPS THE BARE WORD while the hero's button names the visitor's
-        machine. Not an oversight: this row is
+        machine (`DownloadCta.astro`). Not an oversight: this row is
         width-constrained down to the character — seven section links, the Docs
         link, the wordmark and this button share one `content` row and the row
         has no way to say it is full (src/lib/nav.ts, and the gap arithmetic in
@@ -155,6 +156,9 @@ const activeSection = DETAIL_PAGES.find((page) => pathname.startsWith(page.href)
         true on every machine, so there is nothing to fix here — only a budget
         to spend, and no reason to spend it.
 
+        `data-download-cta` still opts it into the behaviour: clicking it opens
+        the install box on the reader's own machine, exactly as the hero button
+        does. See the script in InstallCommand.astro.
       */
     }
     {
@@ -170,7 +174,7 @@ const activeSection = DETAIL_PAGES.find((page) => pathname.startsWith(page.href)
       <a class="site-nav__github" href={REPO} aria-label="Personal Jarvis on GitHub" title="Personal Jarvis on GitHub">
         <GitHubMark className="site-nav__github-icon" />
       </a>
-      <DownloadCta bare class="site-nav__cta" />
+      <a class="site-nav__cta" href={`#${INSTALL_ID}`} data-download-cta>Download</a>
     </div>
   </Container>
 </header>

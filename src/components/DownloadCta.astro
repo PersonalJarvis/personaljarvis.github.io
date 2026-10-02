@@ -1,116 +1,93 @@
 ---
 /**
- * The download button — hands the visitor the installer for their machine.
+ * The download button — named after the machine the visitor is actually on.
  *
- * HISTORY. Until 2026-09-01 it read "Download for Windows" on every screen.
- * Then it named the visitor's machine but only scrolled to the install
- * command. Since 2026-10-01 it downloads the native installer directly: a
- * `.dmg` on a Mac, the setup `.exe` on Windows, the AppImage on Linux. The
- * command-line install is still on the page, further down (`#install`).
+ * It used to read "Download for Windows" on every screen in the world, which
+ * is wrong three ways: it is a lie to two thirds of the visitors, it tells a
+ * Mac reader the product may not be for them, and it landed everyone on the
+ * same install line whatever they were holding. The maintainer's ask on
+ * 2026-09-01 was the obvious one — detect the machine, say its name, and send
+ * the reader to the command for it.
  *
- * ONE ANCHOR PER INSTALLER, CHOSEN BY CSS. `OsProbe.astro` writes
- * `data-download` on <html> from the head, before the body is parsed, and the
- * rules below reveal the one anchor that matches. An `href` cannot be swapped
- * by CSS, so every installer gets an anchor of its own, and the four that are
- * not shown are `display: none` — out of the accessibility tree as well, so a
- * screen reader announces one link with one name.
+ * THE LABEL IS CHOSEN BY CSS, NOT BY SCRIPT, AND THAT IS THE POINT.
+ * ------------------------------------------------------------------
+ * All three labels are in the markup. `OsProbe.astro` writes `data-os` on the
+ * <html> element from the head, before the body is parsed, and the rules below
+ * reveal the one that matches. Nothing is measured, nothing is rewritten after
+ * the fact, so there is no frame in which the wrong machine is on screen —
+ * which is what a `textContent =` in a deferred module script would give.
  *
- * WITHOUT JAVASCRIPT, OR ON A MACHINE WITH NO INSTALLER (a phone, a
- * Chromebook, ARM Linux), the `other` anchor stands: a plain "Download" that
- * opens the release page, which lists every package. It never offers an
- * installer the machine cannot run.
+ * The two labels that are not shown are `display: none`, so they are out of
+ * the accessibility tree as well as off the screen: a screen reader announces
+ * one button with one name, not three.
  *
- * MAC ARCHITECTURE. The user agent cannot tell Apple silicon from Intel, so
- * every Mac starts on Apple silicon. Chromium can say more, asynchronously;
- * the script below asks and corrects the attribute. Everyone else sees the
- * other build named under the hero button (`DownloadNote.astro`).
+ * WITHOUT JAVASCRIPT the attribute is never written and `[data-fallback]` — the
+ * label for `DEFAULT_OS` — stands. That is a working button pointing at a real
+ * command, which is the accessible resting state rather than a degraded one.
  *
- * A LINK AND NOT A BUTTON, because it navigates. Middle-click and "copy link
- * address" keep working, and the address is the stable
- * `releases/latest/download/<name>` one — see `src/lib/install.ts`.
+ * WHERE IT SENDS THE READER. `#install`, the section that prints the actual
+ * one-liner, on whichever page they are on: the front page has `Install.astro`
+ * and every detail page has `DetailFoot.astro`, both carrying that id and both
+ * containing an `InstallCommand`. That box opens on the visitor's machine of
+ * its own accord, and `InstallCommand.astro`'s script additionally forces its
+ * tab to match this button on the way — see the note there. So "Download for
+ * Linux" lands on the Linux line even if the reader had clicked another tab
+ * first.
+ *
+ * A LINK AND NOT A BUTTON, because it navigates. That keeps middle-click,
+ * ctrl-click and "copy link address" working, and it keeps the target reachable
+ * with scripting turned off.
  */
-import { DOWNLOAD_TARGETS, DEFAULT_DOWNLOAD, installerLabelFor } from "@/lib/install";
+import { INSTALL_TARGETS, DEFAULT_OS, downloadLabelFor } from "@/lib/install";
+import { INSTALL_ID } from "@/lib/nav";
 
 interface Props {
   /**
    * How the caller dresses it. The hero wants the pill from docs/hero.md; the
    * nav wants its own `site-nav__cta`. This component owns the words and the
-   * destination, never the looks.
+   * behaviour, never the looks — there is no house style for a CTA that two
+   * places on the page disagree about.
    */
   class?: string;
-  /**
-   * Say only "Download". The nav row is width-constrained to the character
-   * (src/lib/nav.ts); the destination is still the visitor's own installer.
-   */
-  bare?: boolean;
 }
 
-const { class: className, bare = false } = Astro.props;
+const { class: className } = Astro.props;
 ---
 
-{
-  DOWNLOAD_TARGETS.map((target) => (
-    <a
-      href={target.href}
-      class:list={["download-cta", className]}
-      data-download-for={target.id}
-      data-fallback={target.id === DEFAULT_DOWNLOAD ? "" : undefined}
-    >
-      {bare ? "Download" : installerLabelFor(target.id)}
-    </a>
-  ))
-}
+<a href={`#${INSTALL_ID}`} class:list={["download-cta", className]} data-download-cta>
+  {
+    INSTALL_TARGETS.map((target) => (
+      <span
+        class="download-cta__label"
+        data-os={target.id}
+        data-fallback={target.id === DEFAULT_OS ? "" : undefined}
+      >
+        {downloadLabelFor(target.id)}
+      </span>
+    ))
+  }
+</a>
 
 <style>
-  /* Hidden by default; exactly one rule below puts one back. An unknown
-     `data-download` value therefore shows none rather than two. */
-  .download-cta {
+  /* Hidden by default; exactly one rule below puts one back. Written this way
+     round so that an unknown `data-os` value can never show two labels at
+     once — it shows none of the three and falls through to the last rule. */
+  .download-cta__label {
     display: none;
   }
 
-  /* One line per installer, because CSS cannot compare an attribute on <html>
-     with one on a descendant. A new installer means a new line here and a new
-     entry in DOWNLOAD_TARGETS, in the same edit — the dist test checks it.
+  /* One pair per machine, because CSS cannot compare an attribute on <html>
+     against an attribute on a descendant. A fourth target means a fourth line
+     here and a fourth entry in INSTALL_TARGETS, in the same edit.
 
      `:global()` on the <html> half is required: the element is outside this
-     component, so Astro's scoping must not narrow it. */
-  :global(html[data-download="macos-arm64"]) .download-cta[data-download-for="macos-arm64"],
-  :global(html[data-download="macos-x64"]) .download-cta[data-download-for="macos-x64"],
-  :global(html[data-download="windows"]) .download-cta[data-download-for="windows"],
-  :global(html[data-download="linux"]) .download-cta[data-download-for="linux"],
-  :global(html[data-download="other"]) .download-cta[data-download-for="other"],
-  :global(html:not([data-download])) .download-cta[data-fallback] {
-    display: inline-flex;
+     component, so Astro's scoping must not narrow it. The label half stays
+     scoped, which is what keeps these rules off every other `[data-os]` on the
+     page — InstallCommand.astro uses the same attribute for its own lines. */
+  :global(html[data-os="macos"]) .download-cta__label[data-os="macos"],
+  :global(html[data-os="windows"]) .download-cta__label[data-os="windows"],
+  :global(html[data-os="linux"]) .download-cta__label[data-os="linux"],
+  :global(html:not([data-os])) .download-cta__label[data-fallback] {
+    display: inline;
   }
 </style>
-
-<script>
-  import { refineMacArchitecture, type DownloadId } from "@/lib/install";
-
-  /*
-   * Chromium only: ask for the CPU architecture and move an Intel Mac onto the
-   * Intel build. Asynchronous, so it cannot live in the head probe — by the
-   * time it answers the page is painted, and on an Apple silicon Mac (the
-   * common case) nothing changes. Any failure keeps the first guess, which the
-   * note under the hero button lets the visitor correct by hand.
-   */
-  interface UserAgentData {
-    getHighEntropyValues(hints: string[]): Promise<{ architecture?: string }>;
-  }
-
-  const root = document.documentElement;
-  const current = root.getAttribute("data-download") as DownloadId | null;
-  const uaData = (navigator as Navigator & { userAgentData?: UserAgentData }).userAgentData;
-
-  if (current?.startsWith("macos") && uaData?.getHighEntropyValues) {
-    uaData
-      .getHighEntropyValues(["architecture"])
-      .then(({ architecture }) => {
-        root.setAttribute("data-download", refineMacArchitecture(current, architecture));
-      })
-      .catch(() => {
-        /* Refused or unsupported: the first guess stands, and the hero note
-           offers the other Mac build, so there is nothing to report. */
-      });
-  }
-</script>

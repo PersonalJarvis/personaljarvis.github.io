@@ -20,15 +20,6 @@
 
 ## Install
 
-Native installers (one file, no terminal), always the latest release:
-
-- Windows 10/11 x64: https://github.com/PersonalJarvis/PersonalJarvis/releases/latest/download/PersonalJarvis-Setup-x64.exe
-- macOS, Apple silicon: https://github.com/PersonalJarvis/PersonalJarvis/releases/latest/download/PersonalJarvis-macOS-arm64.dmg
-- macOS, Intel: https://github.com/PersonalJarvis/PersonalJarvis/releases/latest/download/PersonalJarvis-macOS-x64.dmg
-- Linux x86_64 (AppImage): https://github.com/PersonalJarvis/PersonalJarvis/releases/latest/download/PersonalJarvis-Linux-x86_64.AppImage
-
-From the command line:
-
 - Windows (PowerShell): `irm https://raw.githubusercontent.com/PersonalJarvis/PersonalJarvis/main/install/install.ps1 | iex`
 - macOS and Linux: `curl -fsSL https://raw.githubusercontent.com/PersonalJarvis/PersonalJarvis/main/install/install.sh | bash`
 

@@ -8,13 +8,15 @@
  * a page to land on, the honest reading of that message is "the file is
  * broken", and the download is thrown away.
  *
- * It is linked from under the macOS download button rather than buried in
- * docs, because the moment it is needed is thirty seconds after the click.
+ * The site's download buttons lead to the command-line install, which macOS
+ * does not block (2026-10-02). This page serves visitors who take the disk
+ * image from the GitHub release page instead; the code signing policy links
+ * to it.
  *
  * TEMPORARY. Once the Developer ID notarization in the app repo's
  * `.github/workflows/macos-release.yml` is live, the first launch is an
- * ordinary double-click and this page should be deleted, along with the link
- * to it in `DownloadNote.astro`.
+ * ordinary double-click and this page should be deleted, along with
+ * `MACOS_FIRST_LAUNCH_HREF` in `src/lib/install.ts`.
  */
 import LegalPage from "@/components/LegalPage.astro";
 import { CODE_SIGNING_HREF } from "@/lib/legal";

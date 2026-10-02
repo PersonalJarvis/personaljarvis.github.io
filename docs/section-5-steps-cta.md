@@ -313,10 +313,6 @@ something to hide.
 (`detectOs()`). iOS lands on macOS and Android on Linux — neither can run the
 installer, and guessing further away would not help them.
 
-The box is the command-line route. The download buttons at the top hand over
-the native installer instead (`docs/hero.md` § "CTAs") and no longer scroll
-here; the hero's note links to this box as "Install from the command line".
-
 ### It is a radio group, and that is load-bearing
 
 Three options, one chosen. Using the real control means the switch works with
