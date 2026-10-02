@@ -186,14 +186,19 @@
    * Do not "harmonise" these with the site palette. They drift only when the
    * app's own theme drifts.
    */
-  --app-bg: #0a0a09;       /* --background: warm near-black             */
-  --app-sidebar: #11100e;  /* --sidebar: two points off the ground      */
-  --app-card: #191815;     /* --card: the Jarvis bar, the composer      */
-  --app-muted: #21201c;    /* --secondary: hover, active rows, bubbles  */
-  --app-fg: #f7f7f4;       /* --foreground: the canvas, inverted        */
-  --app-fg-muted: #9a978c; /* --muted-foreground                        */
-  --app-border: #322f2b;   /* --border                                  */
-  --app-primary: #ffffff;  /* --primary: the live mark, accent text     */
+  --app-bg: #0a0a0a;       /* --background: 0 0% 4%, the room           */
+  --app-sidebar: #0f0f0f;  /* --sidebar: 0 0% 6%, the rail              */
+  --app-card: #171717;     /* --card: 0 0% 9%, the composer, a pane     */
+  --app-muted: #1f1f1f;    /* --secondary: 0 0% 12%, hover, active rows */
+  --app-fg: #fafafa;       /* --foreground: 0 0% 98%                    */
+  --app-fg-muted: #a1a1a1; /* --muted-foreground: 0 0% 63%              */
+  --app-border: #262626;   /* --border: 0 0% 15%                        */
+  --app-primary: #fafafa;  /* --primary: 0 0% 98%, the live mark        */
+  /* The avatars of the three agents in the demo's sidebar. The app gives every
+     agent its own colour; these are three of its defaults. */
+  --app-agent-violet: #8b5cf6;
+  --app-agent-blue: #60a5fa;
+  --app-agent-green: #a3c76d;
   --app-radius: 12px;
 
   /* --- Semantic -----------------------------------------------------------

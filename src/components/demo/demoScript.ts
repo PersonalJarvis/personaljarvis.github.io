@@ -1,39 +1,35 @@
 /**
- * What the hero demo plays: TWO reruns of the same assistant, one per surface.
+ * What the hero demo plays: one errand, followed from the chat into the
+ * Agentic IDE.
  *
- * The app's front page is a single section with a single `Voice | Chat` switch
- * at the top of its sidebar (the app's own `lib/homeSurface.ts` says so in as
- * many words: "not two sections: both talk to the same assistant and share one
- * history"). The demo clones that. Each half replays a conversation that
- * already happened, continuing into one live turn — with the turn's reasoning
- * shown where it happened, exactly as the product shows it.
+ * The app's front page is ONE chat with a voice mode inside it (since
+ * 2026-10-01 — the `Voice | Chat` switch is gone: "voice mode is a state of the
+ * chat, not another place", `components/layout/navGroups.ts`). So the demo
+ * opens there: the person talks, Jarvis reads what it needs, and hands the
+ * coding part to an agent. The second scene is where that agent works — the
+ * Agentic IDE, with real coding-agent CLIs side by side in one workspace.
  *
- * The two reruns are deliberately different jobs. Voice is the thing you say
- * while your hands are busy — move a meeting, tell the team. Chat is the thing
- * you type because it has an artefact at the end — a summary, a page, a post.
- * A visitor who watches both should come away knowing they are one assistant
- * with two ways in, not two products.
+ * Two scenes, one story. A visitor who watches both should come away knowing
+ * that the assistant they talk to is also the one that puts agents to work.
  *
  * Every string here becomes real text in the DOM. Nothing is an image, so the
  * demo is selectable, searchable, and survives a failed asset load.
  */
 
+import githubLogo from "@/assets/brands/github.svg?url";
 import gmailLogo from "@/assets/brands/gmail.svg?url";
 import googleCalendarLogo from "@/assets/brands/google_calendar.svg?url";
-import linearLogo from "@/assets/brands/linear.svg?url";
-import slackLogo from "@/assets/brands/slack.svg?url";
 
-/** Which half of the front page is on screen. Mirrors the app's `HomeSurface`. */
-export type Surface = "voice" | "chat";
+/** Which scene is on screen. Each is a section of the app's sidebar. */
+export type Scene = "chat" | "ide";
 
 /**
  * One tool call, drawn as a ROW and never a card — the app's rule, because a
- * run of six calls in six boxes is a wall (`AgentTimeline`, "One tool call").
+ * run of six calls in six boxes is a wall.
  *
- * `label` is the agent's own name for it, never a prettied-up rename: the row
- * is read next to the agent's log. `logo` is the service's real mark where a
- * service was called; a call into the product itself has no logo and wears the
- * feature's glyph instead.
+ * `label` is the agent's own name for it, never a prettied-up rename. `logo` is
+ * the service's real mark where a service was called; a call into the product
+ * itself has no logo and wears the feature's glyph instead.
  */
 export interface Step {
   label: string;
@@ -41,201 +37,194 @@ export interface Step {
   /** The vendor's own SVG, bundled. Absent for the product's own tools. */
   logo?: string;
   /** Which glyph stands in when there is no vendor mark. */
-  glyph?: "wiki" | "memory" | "screen";
+  glyph?: "agent" | "memory";
   /** What the call took, in the app's own format. */
   took: string;
 }
 
 export interface Turn {
-  /** What the person said, or typed. */
+  /** What the person said. */
   said: string;
+  /** Whether it was spoken (voice mode) or typed. */
+  voice: boolean;
   /** The model's reasoning, in its own words. */
   thought: string;
   thoughtSeconds: number;
   steps: Step[];
   /** The answer. A leading "- " makes a bullet, as in the app's Markdown. */
   answer: string[];
-  /** The closing line of a finished turn. */
-  elapsed: string;
-  outTokens: string;
 }
 
-/** Who answered, on each surface. Both are real product configurations. */
-export const VOICE_ENGINE = {
-  provider: "Gemini Live",
-  model: "gemini-3.1-flash-live",
-} as const;
+/** Who answers in voice mode, and what the typed chat runs on. */
+export const VOICE_ENGINE = { provider: "OpenAI", model: "GPT-Live" } as const;
+export const CHAT_ENGINE = { model: "Opus 5.5", effort: "high" } as const;
 
-export const CHAT_ENGINE = {
-  provider: "Anthropic Claude",
-  model: "Opus 5",
-  effort: "high",
-} as const;
-
-/** The wake word the bar's hint offers. The app fills the configured one in. */
+/** The wake word the composer's hint offers. The app fills the configured one in. */
 export const WAKE_PHRASE = "Hey Jarvis";
 
+/** The person the demo app belongs to — a placeholder, never a real user. */
+export const USER_NAME = "Alex";
+
 // ---------------------------------------------------------------------------
-// The voice rerun — hands busy, one thing to decide
+// Scene 1 — the chat, in voice mode
 // ---------------------------------------------------------------------------
 
-export const VOICE_TURNS: Turn[] = [
+export const CHAT_TURNS: Turn[] = [
   {
     said: "Hey Jarvis — what does my morning look like?",
+    voice: true,
     thought:
-      "Fourteen unread, and almost all of it is newsletters. Two things are " +
-      "real: the Kessler invoice has a deadline today, and the design review " +
-      "has been moved on top of the standup. The clash is the only thing he " +
-      "has to decide, so lead with that and keep the rest to one line.",
-    thoughtSeconds: 5,
+      "Fourteen unread, almost all newsletters. Two things are real: the " +
+      "Kessler invoice is due today, and the design review moved on top of " +
+      "the standup. Lead with the clash.",
+    thoughtSeconds: 4,
     steps: [
       { label: "gmail", summary: "unread since 07:00 — 14 messages", logo: gmailLogo, took: "0.4s" },
       { label: "calendar", summary: "today — 6 events", logo: googleCalendarLogo, took: "0.3s" },
     ],
     answer: [
-      "Three things. The Kessler invoice is due at five. The design review moved to half two — and it now sits on top of your standup. The other twelve are newsletters.",
+      "Two things. The Kessler invoice is due at five, and the design review now sits on top of your standup. The other twelve are newsletters.",
     ],
-    elapsed: "11s",
-    outTokens: "480",
   },
   {
-    said: "Move the standup to three and tell the team why.",
+    said: "The login test is failing again. Have an agent fix it and open a PR.",
+    voice: true,
     thought:
-      "Standup is Thursdays at half two, four people. Three o'clock clears the " +
-      "review. Marek usually has a client call in the early afternoon, so I " +
-      "check free/busy before I move anything — a note about a meeting somebody " +
-      "cannot make is worse than no note.",
-    thoughtSeconds: 6,
+      "The last CI run on main failed in login.spec — a timeout after the " +
+      "session refactor. That is a coding job in the web-app repo, so it goes " +
+      "to Scout in the Agentic IDE with the failing run attached, not into " +
+      "this call.",
+    thoughtSeconds: 5,
     steps: [
-      {
-        label: "calendar",
-        summary: "freebusy · 15:00 — all four free",
-        logo: googleCalendarLogo,
-        took: "0.5s",
-      },
-      { label: "calendar", summary: "standup → 15:00", logo: googleCalendarLogo, took: "0.6s" },
-      { label: "slack", summary: "#team — note to 4 people", logo: slackLogo, took: "0.4s" },
+      { label: "github", summary: "actions · main — login.spec failed", logo: githubLogo, took: "0.6s" },
+      { label: "agents.dispatch", summary: "Scout · Claude Code — fix login.spec, open a PR", glyph: "agent", took: "0.2s" },
     ],
     answer: [
-      "Standup is at three from today. I told the four of them the design review took the half-two slot. Marek's client call ends at quarter to, so he makes it.",
+      "Scout is on it in the Agentic IDE. It will fix the test, run the suite and open a pull request — I'll tell you when it's ready to review.",
     ],
-    elapsed: "18s",
-    outTokens: "610",
   },
 ];
-
-// ---------------------------------------------------------------------------
-// The chat rerun — typed, because it ends in something written down
-// ---------------------------------------------------------------------------
-
-export const CHAT_TURNS: Turn[] = [
-  {
-    said: "Summarise what the team shipped last week and put it in the wiki.",
-    thought:
-      "Linear for what actually closed, Slack for what was announced — the two " +
-      "disagree often enough to be worth reading both. Eleven issues, but only " +
-      "four of them are things a person outside the team would notice. The wiki " +
-      "page should say what changed for a user, not which tickets moved.",
-    thoughtSeconds: 9,
-    steps: [
-      { label: "linear", summary: "closed · last 7 days — 11 issues", logo: linearLogo, took: "0.6s" },
-      { label: "slack", summary: "#releases — 4 announcements", logo: slackLogo, took: "0.4s" },
-      { label: "wiki.write", summary: "Shipped — week 35", glyph: "wiki", took: "0.9s" },
-    ],
-    answer: [
-      "Eleven issues closed. Four of them are things a user will notice:",
-      "- Dictation punctuates German properly — it had been running on an English prompt.",
-      "- The spend page opens in a tenth of a second instead of eight.",
-      "- Plugins survive an expired token: they ask for a new one instead of failing quietly.",
-      "- Two crashes on wake-up, both the same stale audio device.",
-      "The page is in the wiki under Shipped — week 35.",
-    ],
-    elapsed: "24s",
-    outTokens: "1.1k",
-  },
-  {
-    said: "Good. Post the four user-facing ones in #general.",
-    thought:
-      "Only the four — the rest is internal and nobody outside the team can act " +
-      "on it. No ticket numbers: they mean nothing to the people reading that " +
-      "channel. One line each, and the wiki link at the end for whoever wants " +
-      "the whole list.",
-    thoughtSeconds: 4,
-    steps: [
-      { label: "slack", summary: "#general — draft, 4 lines", logo: slackLogo, took: "0.3s" },
-      { label: "slack", summary: "posted · #general", logo: slackLogo, took: "0.5s" },
-    ],
-    answer: [
-      "Posted. Four lines, no ticket numbers, with the wiki page linked at the end.",
-    ],
-    elapsed: "9s",
-    outTokens: "180",
-  },
-];
-
-// ---------------------------------------------------------------------------
-// The frames
-// ---------------------------------------------------------------------------
 
 /**
  * Where the live turn is. The turns before it are always finished, so a frame
  * only has to describe the last one.
- *
- * `spoken` is the person's line landing and nothing else yet — on the voice
- * surface it is the words arriving from the microphone, on the chat surface
- * the message that was just sent.
  */
-export type Phase = "spoken" | "thinking" | "steps" | "answering" | "done";
+export type Phase = "listening" | "thinking" | "steps" | "answering" | "done";
 
-export interface Frame {
+export interface ChatFrame {
   phase: Phase;
   /** How many step rows of the live turn are on screen. */
   steps: number;
-  /** Whether the answer is being written. */
-  answer: boolean;
   /** How long this frame holds before the next. */
   duration: number;
 }
 
 /**
- * The last frame of each script is what a visitor with
- * `prefers-reduced-motion` sees immediately, so it has to read as complete on
- * its own — no half-written answer, no spinner.
+ * The last frame is what a visitor with `prefers-reduced-motion` sees
+ * immediately, so it has to read as complete on its own — no half-written
+ * answer, no spinner.
  */
-export const VOICE_SCRIPT: Frame[] = [
-  { phase: "spoken", steps: 0, answer: false, duration: 2400 },
-  { phase: "thinking", steps: 0, answer: false, duration: 3400 },
-  { phase: "steps", steps: 1, answer: false, duration: 1100 },
-  { phase: "steps", steps: 2, answer: false, duration: 1100 },
-  { phase: "steps", steps: 3, answer: false, duration: 1300 },
-  { phase: "answering", steps: 3, answer: true, duration: 4600 },
-  { phase: "done", steps: 3, answer: true, duration: 5200 },
+export const CHAT_SCRIPT: ChatFrame[] = [
+  { phase: "listening", steps: 0, duration: 2600 },
+  { phase: "thinking", steps: 0, duration: 3000 },
+  { phase: "steps", steps: 1, duration: 1100 },
+  { phase: "steps", steps: 2, duration: 1300 },
+  { phase: "answering", steps: 2, duration: 3800 },
+  { phase: "done", steps: 2, duration: 2600 },
 ];
 
-export const CHAT_SCRIPT: Frame[] = [
-  { phase: "spoken", steps: 0, answer: false, duration: 2200 },
-  { phase: "thinking", steps: 0, answer: false, duration: 3600 },
-  { phase: "steps", steps: 1, answer: false, duration: 1200 },
-  { phase: "steps", steps: 2, answer: false, duration: 1400 },
-  { phase: "answering", steps: 2, answer: true, duration: 3800 },
-  { phase: "done", steps: 2, answer: true, duration: 5200 },
-];
-
-export function scriptFor(surface: Surface): Frame[] {
-  return surface === "voice" ? VOICE_SCRIPT : CHAT_SCRIPT;
-}
-
-export function turnsFor(surface: Surface): Turn[] {
-  return surface === "voice" ? VOICE_TURNS : CHAT_TURNS;
-}
+// ---------------------------------------------------------------------------
+// Scene 2 — the Agentic IDE
+// ---------------------------------------------------------------------------
 
 /**
- * A fixed amplitude array for the Jarvis bar's waveform. No microphone is ever
- * opened — `docs/hero.md` forbids `getUserMedia` in the hero, and a permission
- * prompt on a landing page is a conversion killer besides.
- *
- * Read as a loop: the bar walks a window across it, so the wave travels
- * instead of pulsing in place.
+ * One line in an agent's pane, in the CLI's own shapes:
+ * a prompt, prose, a tool call with its result, a diff line, or the closing
+ * mark of a finished task.
+ */
+export type PaneLine =
+  | { kind: "prompt"; text: string }
+  | { kind: "text"; text: string }
+  | { kind: "tool"; name: string; arg: string; result?: string; fail?: boolean }
+  | { kind: "add" | "del"; text: string }
+  | { kind: "done"; text: string };
+
+export interface Pane {
+  agent: string;
+  cli: "claude" | "codex" | "gemini";
+  cliLabel: string;
+  task: string;
+  lines: PaneLine[];
+}
+
+export const PANES: Pane[] = [
+  {
+    agent: "Scout",
+    cli: "claude",
+    cliLabel: "Claude Code",
+    task: "Fix login.spec and open a PR",
+    lines: [
+      { kind: "prompt", text: "Fix the failing login test on main and open a PR." },
+      { kind: "tool", name: "Bash", arg: "npm test -- login.spec", result: "1 failed · timeout after 5000 ms", fail: true },
+      { kind: "text", text: "The test waits for the old session cookie. The refactor renamed it." },
+      { kind: "tool", name: "Edit", arg: "tests/login.spec.ts" },
+      { kind: "del", text: "await page.waitForCookie(\"sid\")" },
+      { kind: "add", text: "await page.waitForCookie(\"session\")" },
+      { kind: "tool", name: "Bash", arg: "npm test", result: "248 passed" },
+      { kind: "tool", name: "Bash", arg: "gh pr create --fill", result: "github.com/acme/web-app/pull/214" },
+      { kind: "done", text: "Pull request 214 is ready for review." },
+    ],
+  },
+  {
+    agent: "Atlas",
+    cli: "codex",
+    cliLabel: "Codex",
+    task: "Update dependencies",
+    lines: [
+      { kind: "prompt", text: "Bring the dependencies up to date, one commit per major." },
+      { kind: "tool", name: "shell", arg: "npm outdated", result: "7 packages behind" },
+      { kind: "text", text: "Two majors: vite 8 and react-router 8. Starting with vite." },
+      { kind: "tool", name: "shell", arg: "npm install vite@8", result: "added 3, changed 41" },
+      { kind: "tool", name: "shell", arg: "npm run build", result: "built in 4.2s" },
+      { kind: "text", text: "Vite is done. Moving on to react-router." },
+    ],
+  },
+  {
+    agent: "Quill",
+    cli: "gemini",
+    cliLabel: "Gemini CLI",
+    task: "Write the release notes",
+    lines: [
+      { kind: "prompt", text: "Draft the release notes for everything merged this week." },
+      { kind: "tool", name: "ReadFolder", arg: "CHANGELOG.md, 12 merged PRs" },
+      { kind: "text", text: "Twelve PRs, five a user will notice. Grouping them by what changed for the reader." },
+      { kind: "tool", name: "WriteFile", arg: "docs/release-notes.md", result: "38 lines" },
+      { kind: "done", text: "Draft saved. Waiting for review." },
+    ],
+  },
+];
+
+export interface IdeFrame {
+  /** How many lines of each pane are on screen, by pane. */
+  lines: [number, number, number];
+  duration: number;
+}
+
+/** The panes advance at different speeds, the way three agents really do. */
+export const IDE_SCRIPT: IdeFrame[] = [
+  { lines: [1, 2, 1], duration: 900 },
+  { lines: [2, 3, 2], duration: 1100 },
+  { lines: [3, 3, 3], duration: 1200 },
+  { lines: [4, 4, 3], duration: 1000 },
+  { lines: [6, 4, 4], duration: 1200 },
+  { lines: [7, 5, 4], duration: 1300 },
+  { lines: [8, 5, 5], duration: 1200 },
+  { lines: [9, 6, 5], duration: 4200 },
+];
+
+/**
+ * A fixed amplitude array for the voice-mode waveform. No microphone is ever
+ * opened — `docs/hero.md` forbids `getUserMedia` in the hero.
  */
 export const WAVEFORM: number[] = [
   0.18, 0.32, 0.51, 0.74, 0.62, 0.88, 0.71, 0.45, 0.63, 0.82, 0.95, 0.77, 0.58,

@@ -239,108 +239,88 @@ ratio moves, which is exactly what the backdrop makes visible.
 
 **One window.** Never two.
 
-This was two overlapping windows — a chat with a voice panel tucked under its
-lower right — until 2026-08-29. It made a better picture than the product. The
-app's front page is a SINGLE section with a single `Voice | Chat` switch at the
-top of its sidebar, and the app's own source says why in as many words
-(`lib/homeSurface.ts`): "not two sections: both talk to the same assistant and
-share one history". Two floating windows told a visitor there were two things.
-
-So the window IS the front page, and the switch inside it is what moves between
-the halves. The depth the overlap used to carry now comes from the backdrop
-behind the window.
+The window is the app as it ships. Until 2026-10-01 the app's front page was
+two faces behind a `Voice | Chat` switch, and the demo cloned that switch. The
+app merged them into ONE chat with a voice mode inside it ("voice mode is a
+state of the chat, not another place", the app's `navGroups.ts`), and grew the
+Agentic IDE, its own agents and a new sidebar. A demo still showing the switch
+showed a product that no longer exists, so on 2026-10-02 the window was rebuilt
+on today's app: same window, two of its sections.
 
 | Piece | Size |
 |---|---|
 | Window | 90% of stage width, centred (maintainer sized it, 2026-08-29) |
-| Sidebar | 244 design px, the switch at its top |
-| Reading column | 700 design px, centred in the stage area |
+| Sidebar | 232 design px — search, New chat, the primary sections, Agents, Recent |
+| Reading column | 660 design px, centred in the chat scene |
+| IDE | three agent panes side by side under a workspace bar |
 
-The window: `--radius-lg`, 1px hairline, a title bar with three circles left and
-a centred title, `overflow: hidden`.
+The window: `--radius-lg`, 1px hairline, the app's top bar (sidebar toggle and
+history arrows left, the product name centred, theme and reload right),
+`overflow: hidden`.
 
-Both surfaces show the END of a conversation, so its beginning runs off the top
-of the column. That edge is **faded, not cut** — the app fades a thought that
-has outgrown its window the same way, and it is the difference between reading
-as "scrolled" and reading as "broken".
+Both scenes show the END of their work, so the beginning runs off the top.
+That edge is **faded, not cut** — the app fades a thought that has outgrown its
+window the same way, and it is the difference between reading as "scrolled"
+and reading as "broken".
 
-### The sidebar shows the whole section list
+### The sidebar is the app's sidebar
 
-The one place "shorten everything" is wrong. The sidebar carries the app's
-**entire** list — its order, its grouping, its labels
-(`components/layout/navGroups.ts`) — and lets it run past the bottom edge under
-the same fade.
-
-A shortened list of five rows left the lower half of the sidebar empty, and
-that empty half does not read as brevity. It reads as an app with five sections
-and a rendering bug (maintainer, 2026-08-29). The real list is also the honest
-picture: the app's own sidebar overruns and scrolls there.
+The rows are the app's primary list in its order (`Sidebar.tsx`,
+`primaryIds`), then the "Agents" group with the user's agents and their live
+status, then "Recent". The list runs past the bottom edge under a fade, the way
+the app's own column scrolls. A shortened list over a hand of dead space reads
+as an app with five sections and a rendering bug (maintainer, 2026-08-29).
 
 ---
 
 ## Interaction
 
-**The `Voice | Chat` switch is the one live control.** Everything else inside
-the window is real markup that does nothing, the way a screenshot does nothing.
+**Two sidebar rows are live: "New chat" and "Agentic IDE".** They move between
+the two scenes the way the real rows move between sections. Everything else
+inside the window is real markup that does nothing, the way a screenshot does
+nothing.
 
-- Left alone, the stage plays the voice rerun, hands over to the chat one, and
-  comes back. A visitor sees both without touching anything
-- The first press of the switch stops the **hand-over** for good. From then on
-  the chosen surface loops, and the stage never changes surface by itself again
-- Real hover states on rows and tabs
-- Optional: stage tilt on `mousemove`, at most 6 degrees, spring-damped. More
-  reads as cheap
+- Left alone, the stage plays the chat, follows the hand-off into the Agentic
+  IDE, and comes back. A visitor sees both without touching anything
+- The first press of a live row stops the **hand-over** for good. From then on
+  the chosen scene loops, and the stage never changes scene by itself again
+- Real hover states on rows
 
-The rule this obeys is still "the demo must not move out from under the
-visitor's hand" — applied where it actually bites. **Freezing the rerun on the
-first click would be the wrong reading of it:** pressing "Chat" is a request to
-watch the chat rerun, and answering it with a still frame looks broken.
-
-```tsx
-useEffect(() => {
-  if (reduced) return;
-  const id = setTimeout(() => {
-    const next = step + 1;
-    if (next < script.length) return setStep(next);
-    setStep(0);
-    if (!tookOver) setSurface((s) => (s === "voice" ? "chat" : "voice"));
-  }, script[step].duration);
-  return () => clearTimeout(id);
-}, [step, script, tookOver, reduced]);
-```
+The rule this obeys is "the demo must not move out from under the visitor's
+hand" — applied where it bites. Freezing the scene on the first click would be
+the wrong reading of it: pressing "Agentic IDE" is a request to watch the
+agents work, and answering it with a still frame looks broken.
 
 ---
 
-## The two reruns
+## The two scenes
 
-Each surface replays a conversation that already happened, continuing into one
-live turn. Both are written down in `demoScript.ts` and nowhere else.
+One errand, followed across the app. Both are written down in `demoScript.ts`
+and nowhere else.
 
-- One `Frame[]` per surface, each frame with a `duration`. A frame describes
-  only the LIVE turn — its phase, how many tool rows are on screen, whether the
-  answer is being written. The turns before it are always finished
-- **Both show the reasoning.** The thinking streams in a scratchpad while it
-  runs and folds to "Thought for Ns" over its own tool rows once it is done,
-  which is what the app does and what makes an answer trustworthy rather than
-  magical. A rerun without it is a demo of a chat box
+- **Chat, in voice mode.** The person talks; the composer is the call (state
+  word, waveform, "Back to typing", stop). A finished turn sits above: what
+  does my morning look like. The live turn asks for an agent to fix a failing
+  test — Jarvis reads the failed run on GitHub and dispatches the job to Scout.
+  When the turn ends the composer returns to its typed face: the round +, the
+  permission stance as words, the model as a plain word with the effort muted
+- **Agentic IDE.** Three coding-agent CLIs side by side in one workspace —
+  Claude Code, Codex, Gemini CLI — each in its own pane with its own task. They
+  advance at different speeds. Scout finishes with a pull request; one agent is
+  still working when the loop ends, because that is what a real workspace
+  looks like
+- **Both show the work.** The chat streams its reasoning and folds it to
+  "Thought for Ns" over the tool rows; the panes show each tool call and its
+  result in the CLI's own shapes. A demo without that is a demo of a text box
 - Waveform from a fixed amplitude array. **No `getUserMedia`**, no audio input,
-  no permission prompt. A microphone prompt in the hero is a conversion killer
-  and is usually blocked without a user gesture anyway
-- Words arrive as a typewriter, ~22ms per character
-- Content is **shorter** than the real app's: fewer rows, fewer options, larger
-  type. The demo is read from three metres away, not at working distance
+  no permission prompt
+- Words arrive as a typewriter. Content is **shorter** than the real app's:
+  fewer rows, larger type. The demo is read from three metres away
 
-**The two are deliberately different jobs.** Voice is the thing you say while
-your hands are busy — move the meeting, tell the team. Chat is the thing you
-type because it ends in something written down — a summary, a page, a post. A
-visitor who watches both should come away knowing they are one assistant with
-two ways in, not two products. Giving both halves the same errand wastes the
-second rerun.
-
-The bar's state words and hints are the app's own locale strings, verbatim
-(`voice_state.*`, `home.hint_*`). Colour comes from the `--app-*` tokens, which
-are the running app's dark-theme variables. Never a literal in the component:
-the clone is supposed to drift only when the app drifts.
+Colour comes from the `--app-*` tokens, which are the running app's dark-theme
+variables (re-read from the app's `index.css` on 2026-10-02, the neutral v4
+theme). Never a literal in the component: the clone is supposed to drift only
+when the app drifts.
 
 ### Where the view comes from — an open debt
 
@@ -370,8 +350,8 @@ known one.
 ## Accessibility
 
 - The stage gets `aria-hidden="true"`
-- Beside it, a `<p class="sr-only">` describing what is shown — both reruns,
-  since the switch that reveals the second one is unreachable by keyboard
+- Beside it, a `<p class="sr-only">` describing what is shown — both scenes,
+  since the rows that switch between them are unreachable by keyboard
 - Every interactive element inside the stage: `tabIndex={-1}`
 - `prefers-reduced-motion`: no autoplay, no typewriter, no tilt — render the
   final frame directly
@@ -388,7 +368,7 @@ known one.
 - Screenshots, video, canvas, or image sequences for the mockup
 - Text in the mockup that is not real text in the DOM
 - Responsive styling inside the stage
-- A second floating window, or any window that is not the app's front page
+- A second floating window, or a window that is not the app as it ships
 - Network requests from the demo
 - `getUserMedia` or any permission prompt in the hero
 - A bespoke `max-width` on the section instead of a step from `layout.md`
