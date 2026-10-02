@@ -250,8 +250,8 @@ on today's app: same window, two of its sections.
 | Piece | Size |
 |---|---|
 | Window | 90% of stage width, centred (maintainer sized it, 2026-08-29) |
-| Sidebar | 232 design px — search, New chat, the primary sections, Agents, Recent |
-| Reading column | 660 design px, centred in the chat scene |
+| Sidebar | 248 design px — search, New chat, the primary sections, Agents, Recent |
+| Reading column | 700 design px, centred in the chat scene; composer 620 |
 | IDE | three agent panes side by side under a workspace bar |
 
 The window: `--radius-lg`, 1px hairline, the app's top bar (sidebar toggle and
@@ -298,12 +298,17 @@ agents work, and answering it with a still frame looks broken.
 One errand, followed across the app. Both are written down in `demoScript.ts`
 and nowhere else.
 
-- **Chat, in voice mode.** The person talks; the composer is the call (state
-  word, waveform, "Back to typing", stop). A finished turn sits above: what
-  does my morning look like. The live turn asks for an agent to fix a failing
-  test — Jarvis reads the failed run on GitHub and dispatches the job to Scout.
-  When the turn ends the composer returns to its typed face: the round +, the
-  permission stance as words, the model as a plain word with the effort muted
+- **Chat, in voice mode.** It opens on the empty front page — the pet, the
+  greeting, the hint and the composer with its white "Start" pill. The person
+  speaks; the turn plays on the app's rail: the model's words as prose, each
+  call as one row (service, call, argument in mono, time, a terse result
+  underneath), the pet as the live "Working" line. It ends the way the app
+  ends a turn: the work folded behind "Worked for 9s · Used GitHub and
+  Agents", the reply in a grey bubble, "Done · Details" under it
+- **Drawn at the app's own sizes, not blown up.** The window is a real app
+  size (1360 design px) scaled down, and the type is the app's — 13px trace
+  rows, 14.5px messages. Enlarged type in a smaller window read as a zoomed-in
+  crop of the app rather than the app (maintainer, 2026-10-02)
 - **Agentic IDE.** Three coding-agent CLIs side by side in one workspace —
   Claude Code, Codex, Gemini CLI — each in its own pane with its own task. They
   advance at different speeds. Scout finishes with a pull request; one agent is

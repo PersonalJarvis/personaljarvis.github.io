@@ -12,9 +12,9 @@ import { AnthropicMark } from "@/components/logos/AnthropicMark";
 import { GeminiMark } from "@/components/logos/GeminiMark";
 import { OpenAiMark } from "@/components/logos/OpenAiMark";
 import {
-  CHAT_ENGINE,
   CHAT_SCRIPT,
-  CHAT_TURNS,
+  CHAT_STAMP,
+  CHAT_TURN,
   IDE_SCRIPT,
   PANES,
   USER_NAME,
@@ -57,7 +57,7 @@ import "./demo-stage.css";
  */
 
 const CHROME_H = 38;
-const BODY_H = 598;
+const BODY_H = 720;
 
 /**
  * The stage, in design pixels: the window plus the air around it, and nothing
@@ -67,15 +67,17 @@ const BODY_H = 598;
  * numbers close to this ratio, so the fit stays on the width axis and the
  * window keeps growing with the page.
  */
-const WINDOW_W = 1152;
+const WINDOW_W = 1360;
 const WINDOW_H = CHROME_H + BODY_H;
-const WINDOW_X = 64;
-const WINDOW_Y = 48;
+const WINDOW_X = 76;
+const WINDOW_Y = 56;
 const STAGE_W = WINDOW_X * 2 + WINDOW_W;
 const STAGE_H = WINDOW_Y * 2 + WINDOW_H;
-const SIDEBAR_W = 232;
+const SIDEBAR_W = 248;
 /** The app's centred reading column, at this window's scale. */
-const COLUMN_W = 660;
+const COLUMN_W = 700;
+/** The composer is a touch narrower than the column, as in the app. */
+const COMPOSER_W = 620;
 
 /**
  * The app's own dark theme, by token. Never a literal here: the whole point
@@ -248,6 +250,8 @@ const PATH = {
   agent: "M12 8V4H8M4 12h16v8H4zM2 16h2M20 16h2M9 15.5v1M15 15.5v1",
   bookmark: "M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z",
   stop: "M7 7h10v10H7z",
+  keyboard: "M3 6h18v12H3zM7 10h.01M11 10h.01M15 10h.01M7 14h10",
+  sparkles: "M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z",
   shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
   download: "M12 3v12M7 10l5 5 5-5M5 21h14",
   settings:
@@ -447,7 +451,7 @@ function SidebarRow({
     border: "none",
     padding: "6px 10px",
     fontFamily: "inherit",
-    fontSize: 13.5,
+    fontSize: 13,
     textAlign: "left",
     color: C.fg,
     background: active ? C.muted : "transparent",
@@ -591,7 +595,7 @@ function Sidebar({
               gap: 11,
               borderRadius: 8,
               padding: "5px 10px",
-              fontSize: 13.5,
+              fontSize: 13,
               color: C.fg,
             }}
           >
@@ -658,204 +662,310 @@ function Sidebar({
 }
 
 // ---------------------------------------------------------------------------
-// Scene 1 — the chat
+// Scene 1 — the front page
 // ---------------------------------------------------------------------------
+//
+// Measured against the app's own chat (`components/agentchat/WorkTrace.tsx`,
+// `TraceTimeline.tsx`, `WorkTrace.css`), at the app's own sizes: trace rows are
+// 13px on a 24px line, details 12px, the user's line and the reply 14.5px.
+// The window is drawn at a real app size and scaled down, so the type keeps
+// the app's proportion to the window instead of being blown up for the hero.
 
-/** One tool call: a row, never a box of its own. */
-function StepRow({ step, running }: { step: Step; running: boolean }) {
+/**
+ * A node on the turn's thread: a 16px column centred on the row's first line.
+ * The thread itself is the hairline down the left of `TraceRail`.
+ */
+function TraceNode({ children }: { children: ReactNode }) {
   return (
-    <div
-      className="demo-row"
-      style={{ display: "flex", alignItems: "center", gap: 9, borderRadius: 7, padding: "3px 6px", fontSize: 13 }}
+    <span
+      style={{
+        position: "relative",
+        zIndex: 1,
+        display: "grid",
+        placeItems: "center",
+        width: 16,
+        height: 24,
+        flexShrink: 0,
+        background: C.bg,
+        color: C.dim,
+      }}
     >
-      <span style={{ display: "grid", placeItems: "center", width: 16, height: 16, flexShrink: 0, color: C.dim }}>
-        {step.logo ? (
-          <img src={step.logo} alt="" width={14} height={14} style={{ width: 14, height: 14 }} />
-        ) : (
-          <Glyph path={step.glyph === "memory" ? PATH.bookmark : PATH.agent} size={14} />
-        )}
-      </span>
-      <span style={{ fontFamily: MONO, fontWeight: 500, color: C.fg, flexShrink: 0 }}>{step.label}</span>
-      <span
-        style={{
-          flex: 1,
-          minWidth: 0,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-          fontFamily: MONO,
-          fontSize: 12,
-          color: soft(C.dim, 85),
-        }}
-      >
-        {step.summary}
-      </span>
-      {running ? (
-        <Spinner />
-      ) : (
-        <span style={{ flexShrink: 0, fontFamily: MONO, fontSize: 11, color: soft(C.dim, 65) }}>{step.took}</span>
-      )}
+      {children}
+    </span>
+  );
+}
+
+/** One step on the thread: node, then whatever the step says. */
+function TraceStep({ node, children }: { node: ReactNode; children: ReactNode }) {
+  return (
+    <div style={{ display: "flex", gap: 10, padding: "4px 0", minWidth: 0 }}>
+      <TraceNode>{node}</TraceNode>
+      <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
     </div>
   );
 }
 
-/**
- * The turn's reasoning, the way the app shows it: open while it runs, folded
- * to "Thought for Ns" over its own tool rows once it is done.
- */
-function ReasoningBlock({ turn, frame, live, reduced }: { turn: Turn; frame: ChatFrame; live: boolean; reduced: boolean }) {
-  const thinking = live && frame.phase === "thinking";
-  const streamed = useTypewriter(turn.thought, thinking && !reduced, reduced);
-  const running = live && frame.phase === "steps";
-  const shown = turn.steps.slice(0, live ? frame.steps : turn.steps.length);
-
+/** The thread: steps hung on one hairline, the way the app's rail draws a turn. */
+function TraceRail({ children }: { children: ReactNode }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      {thinking ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, padding: "2px 0" }}>
-          <LiveCore />
-          <span className="demo-shimmer" style={{ fontWeight: 500 }}>
-            Thinking for {turn.thoughtSeconds}s
-          </span>
-        </div>
-      ) : (
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: C.dim, padding: "2px 0" }}>
-          <Glyph path={PATH.chevron} size={13} />
-          <span>Thought for {turn.thoughtSeconds}s</span>
-        </div>
-      )}
+    <div style={{ position: "relative", display: "flex", flexDirection: "column" }}>
+      <span
+        style={{
+          position: "absolute",
+          left: 7.5,
+          top: 16,
+          bottom: 16,
+          width: 1,
+          background: C.border,
+        }}
+        aria-hidden="true"
+      />
+      {children}
+    </div>
+  );
+}
 
-      {thinking ? (
-        <div
+const DOT = <span style={{ width: 5, height: 5, borderRadius: 999, background: soft(C.dim, 70) }} />;
+
+/** One tool call on the thread: the call, its argument, the time, the result. */
+function StepRow({ step, running }: { step: Step; running: boolean }) {
+  return (
+    <TraceStep
+      node={
+        step.logo ? (
+          <img src={step.logo} alt="" width={14} height={14} style={{ width: 14, height: 14 }} />
+        ) : (
+          <Glyph path={PATH.agent} size={14} />
+        )
+      }
+    >
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontSize: 13, lineHeight: "24px" }}>
+        <span style={{ color: soft(C.fg, 85), flexShrink: 0 }}>{step.label}</span>
+        <span
           style={{
-            marginLeft: 6,
-            borderLeft: `1px solid ${C.border}`,
-            paddingLeft: 13,
-            maxHeight: 84,
+            flex: 1,
+            minWidth: 0,
             overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-end",
-            fontSize: 13,
-            lineHeight: 1.55,
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            fontFamily: MONO,
+            fontSize: 12.5,
             color: C.dim,
           }}
         >
-          <span>
-            {reduced ? turn.thought : streamed}
-            {!reduced && <Caret />}
+          {step.arg}
+        </span>
+        {running ? (
+          <span style={{ alignSelf: "center" }}>
+            <Spinner size={11} />
           </span>
-        </div>
-      ) : (
-        shown.map((step, i) => (
-          <StepRow key={`${step.label}-${i}`} step={step} running={running && i === shown.length - 1} />
-        ))
-      )}
-    </div>
+        ) : (
+          <span style={{ flexShrink: 0, fontSize: 12, color: C.dim }}>{step.took}</span>
+        )}
+      </div>
+      {!running && <div style={{ fontSize: 12, lineHeight: "20px", color: C.dim }}>{step.result}</div>}
+    </TraceStep>
   );
 }
 
-/** The answer, typed out — plain text on the page, the way the app sets it. */
-function Answer({ turn, live, reduced }: { turn: Turn; live: boolean; reduced: boolean }) {
-  const full = turn.answer.join("\n");
-  const streamed = useTypewriter(full, live && !reduced, reduced);
-  const text = live && !reduced ? streamed : full;
-  const caret = live && !reduced && text.length < full.length;
-  return (
-    <p style={{ margin: 0, fontSize: 15.5, lineHeight: 1.6, color: C.fg }}>
-      {text}
-      {caret && <Caret />}
-    </p>
-  );
-}
-
-/** The person's line — a soft grey bubble on the right; a mic mark when spoken. */
-function UserBubble({ text, voice, arriving }: { text: string; voice: boolean; arriving: boolean }) {
+/** The person's line — a soft grey bubble on the right. */
+function UserBubble({ text, arriving }: { text: string; arriving: boolean }) {
   return (
     <div style={{ display: "flex", justifyContent: "flex-end" }}>
       <div
         style={{
           maxWidth: "80%",
-          display: "flex",
-          alignItems: "baseline",
-          gap: 8,
-          borderRadius: 16,
+          borderRadius: 18,
           background: C.muted,
-          padding: "9px 14px",
-          fontSize: 15,
-          lineHeight: 1.5,
+          padding: "9px 16px",
+          fontSize: 14.5,
+          lineHeight: "22px",
           color: arriving ? C.dim : C.fg,
         }}
       >
-        {voice && (
-          <span style={{ transform: "translateY(2px)" }}>
-            <Glyph path={PATH.mic} size={13} color={C.dim} />
-          </span>
-        )}
-        <span>
-          {text}
-          {arriving && <Caret />}
-        </span>
+        {text}
+        {arriving && <Caret />}
       </div>
     </div>
   );
 }
 
-function ChatTurnView({ turn, frame, live, reduced }: { turn: Turn; frame: ChatFrame; live: boolean; reduced: boolean }) {
-  const listening = live && frame.phase === "listening";
-  const heard = useTypewriter(turn.said, listening && !reduced, reduced, 34);
-  const said = listening && !reduced ? heard : turn.said;
-  const answered = !live || frame.phase === "answering" || frame.phase === "done";
-
+/** The reply — a grey bubble on the left, the app's conversation look. */
+function AnswerBubble({ turn, live, reduced }: { turn: Turn; live: boolean; reduced: boolean }) {
+  const streamed = useTypewriter(turn.answer, live && !reduced, reduced);
+  const text = live && !reduced ? streamed : turn.answer;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <UserBubble text={said} voice={turn.voice} arriving={listening && !reduced} />
-      {!listening && <ReasoningBlock turn={turn} frame={frame} live={live} reduced={reduced} />}
-      {answered && <Answer turn={turn} live={live && frame.phase === "answering"} reduced={reduced} />}
+    <div
+      style={{
+        width: "fit-content",
+        maxWidth: "85%",
+        borderRadius: 18,
+        borderBottomLeftRadius: 6,
+        background: C.muted,
+        padding: "10px 16px",
+        fontSize: 14.5,
+        lineHeight: "23px",
+        color: C.fg,
+      }}
+    >
+      {text}
+      {live && !reduced && text.length < turn.answer.length && <Caret />}
     </div>
   );
 }
 
-/** The greeting the front page opens with, faded once a chat is on screen. */
+/**
+ * The live state line — the thread's last node while the turn works. On the
+ * front page the node is the user's pet at work rather than a spinner.
+ */
+function WorkingLine({ seconds }: { seconds: number }) {
+  return (
+    <TraceStep node={<img src={jarvisLogo} alt="" width={16} height={16} className="demo-core" style={{ width: 16, height: 16 }} />}>
+      <div style={{ display: "flex", gap: 8, fontSize: 12, lineHeight: "24px", color: C.dim }}>
+        <span className="demo-shimmer">Working</span>
+        <span>{seconds}s</span>
+      </div>
+    </TraceStep>
+  );
+}
+
+function ChatTurnView({ turn, frame, reduced }: { turn: Turn; frame: ChatFrame; reduced: boolean }) {
+  const { phase } = frame;
+  const listening = phase === "listening";
+  const heard = useTypewriter(turn.said, listening && !reduced, reduced, 34);
+  const thinking = phase === "thinking";
+  const thought = useTypewriter(turn.thought, thinking && !reduced, reduced);
+  const done = phase === "done";
+  const working = phase === "thinking" || phase === "steps";
+  const answered = phase === "answering" || done;
+  const shown = turn.steps.slice(0, frame.steps);
+  const elapsed = phase === "thinking" ? 2 : phase === "steps" ? 4 + frame.steps : 8;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <UserBubble text={listening && !reduced ? heard : turn.said} arriving={listening && !reduced} />
+
+      {!listening && !done && (
+        <TraceRail>
+          <TraceStep node={DOT}>
+            <div style={{ fontSize: 13, lineHeight: "21px", padding: "1px 0", color: soft(C.fg, 85) }}>
+              {thinking && !reduced ? thought : turn.thought}
+              {thinking && !reduced && <Caret />}
+            </div>
+          </TraceStep>
+          {shown.map((step, i) => (
+            <StepRow key={step.label} step={step} running={phase === "steps" && i === shown.length - 1} />
+          ))}
+          {working && <WorkingLine seconds={elapsed} />}
+        </TraceRail>
+      )}
+
+      {done && (
+        // The finished turn folds its work behind one line, the way the app
+        // does: "Worked for 9s · Used GitHub and Agents", the reply below it.
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, lineHeight: "20px", color: C.dim }}>
+          <img src={turn.steps[0].logo} alt="" width={13} height={13} style={{ width: 13, height: 13 }} />
+          <span style={{ color: soft(C.fg, 85) }}>Worked for {turn.worked}</span>
+          <span>· {turn.summary}</span>
+          <Glyph path={PATH.chevronDown} size={12} />
+        </div>
+      )}
+
+      {answered && <AnswerBubble turn={turn} live={phase === "answering"} reduced={reduced} />}
+
+      {done && (
+        <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: -6, fontSize: 12, color: C.dim }}>
+          <Glyph path={PATH.check} size={13} />
+          <span>Done</span>
+          <span>{turn.worked}</span>
+          <span style={{ opacity: 0.5 }}>·</span>
+          <span>Details</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** The greeting the empty front page opens with: the pet, one line, one hint. */
 function Greeting() {
   const greeting = useGreeting();
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 8,
-        opacity: 0.6,
-        marginBottom: 4,
-      }}
-    >
-      <img src={jarvisLogo} alt="" width={30} height={30} style={{ width: 30, height: 30 }} />
-      <span style={{ fontSize: 26, letterSpacing: "-0.4px", color: C.fg }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, textAlign: "center" }}>
+      <img src={jarvisLogo} alt="" width={40} height={40} style={{ width: 40, height: 40 }} />
+      <span style={{ fontSize: 24, letterSpacing: "-0.3px", color: C.fg }}>
         {greeting}, {USER_NAME}
+      </span>
+      <span style={{ maxWidth: 330, fontSize: 13, lineHeight: "19px", color: C.dim }}>
+        Say your wake word or press Start — the conversation shows up here.
       </span>
     </div>
   );
 }
 
-/** The voice-mode state word for a point in the rerun. */
-function voiceState(phase: Phase): { word: string; amp: number } {
-  switch (phase) {
-    case "listening":
-      return { word: "Listening", amp: 1 };
-    case "thinking":
-    case "steps":
-      return { word: "Thinking", amp: 0.36 };
-    default:
-      return { word: "Speaking", amp: 0.8 };
-  }
+/**
+ * The front page's composer. It opens on voice: a quiet field with the wake
+ * word as its hint and one white "Start" pill. In a call the field says what
+ * the call is doing and the pill ends it. The route that answers is named
+ * underneath, as the app does.
+ */
+function Composer({ phase }: { phase: Phase }) {
+  const inCall = phase !== "home" && phase !== "done";
+  const word =
+    phase === "listening" ? "Listening…" : phase === "answering" ? "Speaking…" : "Thinking…";
+  return (
+    <div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 11,
+          borderRadius: 14,
+          border: `1px solid ${C.border}`,
+          background: C.card,
+          padding: "7px 7px 7px 14px",
+          fontSize: 14,
+        }}
+      >
+        <Glyph path={PATH.keyboard} size={15} color={C.dim} />
+        {inCall ? (
+          <span style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, color: C.fg }}>
+            <LiveCore size={7} />
+            <span style={{ width: 92 }}>{word}</span>
+            <Waveform amp={phase === "listening" ? 1 : phase === "answering" ? 0.75 : 0.3} />
+          </span>
+        ) : (
+          <span style={{ flex: 1, color: soft(C.dim, 85) }}>Say “{WAKE_PHRASE}” or press Start</span>
+        )}
+        <Glyph path={PATH.sparkles} size={15} color={C.dim} />
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            borderRadius: 999,
+            background: C.fg,
+            color: C.bg,
+            padding: "6px 13px",
+            fontSize: 13,
+            fontWeight: 500,
+          }}
+        >
+          <Glyph path={inCall ? PATH.stop : PATH.mic} size={12} filled={inCall} />
+          {inCall ? "End" : "Start"}
+        </span>
+      </div>
+      <div style={{ padding: "6px 4px 0", textAlign: "right", fontSize: 11.5, color: soft(C.fg, 80) }}>
+        {VOICE_ENGINE.label}
+      </div>
+    </div>
+  );
 }
 
 function Waveform({ amp }: { amp: number }) {
-  const bars = 64;
+  const bars = 56;
   return (
-    <div
-      style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 30, flex: 1, minWidth: 0 }}
+    <span
+      style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", height: 22, minWidth: 0 }}
       aria-hidden="true"
     >
       {Array.from({ length: bars }, (_, i) => {
@@ -866,128 +976,47 @@ function Waveform({ amp }: { amp: number }) {
             className="demo-wave-bar"
             style={{
               display: "block",
-              width: 3,
+              width: 2,
               borderRadius: 999,
-              height: Math.max(3, Math.round(a * amp * 30)),
-              background: amp > 0.3 ? soft(C.fg, 85) : soft(C.dim, 55),
+              height: Math.max(2, Math.round(a * amp * 22)),
+              background: amp > 0.3 ? soft(C.fg, 80) : soft(C.dim, 55),
               animationDelay: `${(i % WAVEFORM.length) * -34}ms`,
             }}
           />
         );
       })}
-    </div>
-  );
-}
-
-/**
- * The composer, in one of its two faces. In voice mode the row is the call:
- * the state word, the wave, "Back to typing" and the stop button. Typed, it is
- * one quiet row — the round +, the permission stance as words, the model as a
- * plain word with the effort muted beside it, the mic and the voice button.
- */
-function Composer({ phase }: { phase: Phase }) {
-  const voice = phase !== "done";
-  const state = voiceState(phase);
-  const round = (children: ReactNode, filled: boolean): ReactNode => (
-    <span
-      style={{
-        display: "grid",
-        placeItems: "center",
-        width: 30,
-        height: 30,
-        borderRadius: 999,
-        flexShrink: 0,
-        background: filled ? C.fg : "transparent",
-        border: filled ? "none" : `1px solid ${C.border}`,
-        color: filled ? C.bg : C.dim,
-      }}
-    >
-      {children}
     </span>
-  );
-
-  return (
-    <div>
-      <div style={{ borderRadius: 18, border: `1px solid ${C.border}`, background: C.card, padding: voice ? "10px 10px 10px 16px" : "12px 10px 10px 14px" }}>
-        {voice ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8, width: 92, fontSize: 13, color: C.fg }}>
-              <LiveCore size={8} />
-              {state.word}
-            </span>
-            <Waveform amp={state.amp} />
-            <span style={{ fontSize: 12.5, color: C.dim, whiteSpace: "nowrap" }}>Back to typing</span>
-            {round(<Glyph path={PATH.stop} size={12} filled />, true)}
-          </div>
-        ) : (
-          <>
-            <div style={{ fontSize: 15, color: soft(C.dim, 85), padding: "2px 4px 12px" }}>Ask anything</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              {round(<Glyph path={PATH.plus} size={15} />, false)}
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, color: C.dim }}>
-                <Glyph path={PATH.shield} size={13} />
-                Ask before acting
-              </span>
-              <span style={{ flex: 1 }} />
-              <span style={{ fontSize: 12.5, color: C.fg }}>{CHAT_ENGINE.model}</span>
-              <span style={{ fontSize: 12.5, color: C.dim }}>{CHAT_ENGINE.effort}</span>
-              <span style={{ width: 4 }} />
-              <Glyph path={PATH.mic} size={15} color={C.dim} />
-              {round(<Glyph path={PATH.wave} size={15} />, true)}
-            </div>
-          </>
-        )}
-      </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          alignItems: "center",
-          gap: 6,
-          padding: "7px 6px 0",
-          fontSize: 11.5,
-          color: C.dim,
-          minHeight: 22,
-        }}
-      >
-        {voice ? (
-          <>
-            <Mark size={12}>
-              <OpenAiMark className="demo-mark" />
-            </Mark>
-            {VOICE_ENGINE.provider} {VOICE_ENGINE.model}
-          </>
-        ) : (
-          <>Say “{WAKE_PHRASE}” any time</>
-        )}
-      </div>
-    </div>
   );
 }
 
 function ChatScene({ frame, reduced }: { frame: ChatFrame; reduced: boolean }) {
-  const [past, live] = CHAT_TURNS;
+  if (frame.phase === "home") {
+    return (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 26, paddingBottom: 40 }}>
+        <Greeting />
+        <div style={{ width: COMPOSER_W }}>
+          <Composer phase={frame.phase} />
+        </div>
+      </div>
+    );
+  }
   return (
     <>
       <div
         className="demo-lane"
         style={{ flex: 1, minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}
       >
-        <div style={{ width: COLUMN_W, margin: "0 auto", padding: "18px 0 10px", display: "flex", flexDirection: "column", gap: 22 }}>
-          <Greeting />
-          <ChatTurnView turn={past} frame={DONE_FRAME} live={false} reduced={reduced} />
-          <ChatTurnView turn={live} frame={frame} live reduced={reduced} />
+        <div style={{ width: COLUMN_W, margin: "0 auto", padding: "18px 0 18px", display: "flex", flexDirection: "column", gap: 18 }}>
+          <div style={{ textAlign: "center", fontSize: 11.5, color: C.dim }}>{CHAT_STAMP}</div>
+          <ChatTurnView turn={CHAT_TURN} frame={frame} reduced={reduced} />
         </div>
       </div>
-      <div style={{ width: COLUMN_W, margin: "0 auto", padding: "0 0 8px" }}>
+      <div style={{ width: COMPOSER_W, margin: "0 auto", padding: "0 0 14px" }}>
         <Composer phase={frame.phase} />
       </div>
     </>
   );
 }
-
-/** Everything a turn that already happened is: finished, whole, quiet. */
-const DONE_FRAME: ChatFrame = { phase: "done", steps: 99, duration: 0 };
 
 // ---------------------------------------------------------------------------
 // Scene 2 — the Agentic IDE
@@ -1193,7 +1222,7 @@ function IdeScene({ frame }: { frame: IdeFrame }) {
 /** Who the sidebar shows as working, for a point in either scene. */
 function agentStatuses(scene: Scene, chat: ChatFrame, ide: IdeFrame): Record<string, AgentStatus> {
   if (scene === "chat") {
-    const dispatched = chat.phase !== "listening" && chat.phase !== "thinking" && chat.steps >= 2;
+    const dispatched = chat.steps >= 2;
     return { Scout: dispatched ? "working" : "idle", Atlas: "working", Quill: "working" };
   }
   const out: Record<string, AgentStatus> = {};

@@ -17,47 +17,44 @@
  */
 
 import githubLogo from "@/assets/brands/github.svg?url";
-import gmailLogo from "@/assets/brands/gmail.svg?url";
-import googleCalendarLogo from "@/assets/brands/google_calendar.svg?url";
 
 /** Which scene is on screen. Each is a section of the app's sidebar. */
 export type Scene = "chat" | "ide";
 
 /**
- * One tool call, drawn as a ROW and never a card — the app's rule, because a
- * run of six calls in six boxes is a wall.
- *
- * `label` is the agent's own name for it, never a prettied-up rename. `logo` is
- * the service's real mark where a service was called; a call into the product
- * itself has no logo and wears the feature's glyph instead.
+ * One step of the turn's timeline, the way the app's trace draws it
+ * (`components/agentchat/TraceTimeline.tsx`): a node, the tool's own name, its
+ * argument in mono, the time it took at the right, and a terse result
+ * underneath. `logo` is the service's real mark; a call into the product
+ * itself wears a glyph instead.
  */
 export interface Step {
+  /** "GitHub · List runs" — the service, then the call. */
   label: string;
-  summary: string;
+  /** The call's argument, in mono. */
+  arg: string;
+  /** The terse result line under the row. */
+  result: string;
   /** The vendor's own SVG, bundled. Absent for the product's own tools. */
   logo?: string;
-  /** Which glyph stands in when there is no vendor mark. */
-  glyph?: "agent" | "memory";
-  /** What the call took, in the app's own format. */
   took: string;
 }
 
 export interface Turn {
   /** What the person said. */
   said: string;
-  /** Whether it was spoken (voice mode) or typed. */
-  voice: boolean;
-  /** The model's reasoning, in its own words. */
+  /** The model's own words between the calls, shown as prose on the thread. */
   thought: string;
-  thoughtSeconds: number;
   steps: Step[];
-  /** The answer. A leading "- " makes a bullet, as in the app's Markdown. */
-  answer: string[];
+  /** The reply. */
+  answer: string;
+  /** The folded header: "Worked for 9s · Used GitHub and Agents". */
+  worked: string;
+  summary: string;
 }
 
-/** Who answers in voice mode, and what the typed chat runs on. */
-export const VOICE_ENGINE = { provider: "OpenAI", model: "GPT-Live" } as const;
-export const CHAT_ENGINE = { model: "Opus 5.5", effort: "high" } as const;
+/** Who answers in voice mode. The app names the route under the composer. */
+export const VOICE_ENGINE = { label: "OpenAI GPT-Live (ChatGPT subscription)" } as const;
 
 /** The wake word the composer's hint offers. The app fills the configured one in. */
 export const WAKE_PHRASE = "Hey Jarvis";
@@ -65,55 +62,37 @@ export const WAKE_PHRASE = "Hey Jarvis";
 /** The person the demo app belongs to — a placeholder, never a real user. */
 export const USER_NAME = "Alex";
 
+/** The date stamp the app sets over a conversation once it has started. */
+export const CHAT_STAMP = "Today 09:14";
+
 // ---------------------------------------------------------------------------
-// Scene 1 — the chat, in voice mode
+// Scene 1 — the front page, in a voice call
 // ---------------------------------------------------------------------------
 
-export const CHAT_TURNS: Turn[] = [
-  {
-    said: "Hey Jarvis — what does my morning look like?",
-    voice: true,
-    thought:
-      "Fourteen unread, almost all newsletters. Two things are real: the " +
-      "Kessler invoice is due today, and the design review moved on top of " +
-      "the standup. Lead with the clash.",
-    thoughtSeconds: 4,
-    steps: [
-      { label: "gmail", summary: "unread since 07:00 — 14 messages", logo: gmailLogo, took: "0.4s" },
-      { label: "calendar", summary: "today — 6 events", logo: googleCalendarLogo, took: "0.3s" },
-    ],
-    answer: [
-      "Two things. The Kessler invoice is due at five, and the design review now sits on top of your standup. The other twelve are newsletters.",
-    ],
-  },
-  {
-    said: "The login test is failing again. Have an agent fix it and open a PR.",
-    voice: true,
-    thought:
-      "The last CI run on main failed in login.spec — a timeout after the " +
-      "session refactor. That is a coding job in the web-app repo, so it goes " +
-      "to Scout in the Agentic IDE with the failing run attached, not into " +
-      "this call.",
-    thoughtSeconds: 5,
-    steps: [
-      { label: "github", summary: "actions · main — login.spec failed", logo: githubLogo, took: "0.6s" },
-      { label: "agents.dispatch", summary: "Scout · Claude Code — fix login.spec, open a PR", glyph: "agent", took: "0.2s" },
-    ],
-    answer: [
-      "Scout is on it in the Agentic IDE. It will fix the test, run the suite and open a pull request — I'll tell you when it's ready to review.",
-    ],
-  },
-];
+export const CHAT_TURN: Turn = {
+  said: "The login test is failing again. Have an agent fix it and open a PR.",
+  thought:
+    "The last run on main failed in login.spec. That is a coding job in the " +
+    "web-app repo, so it goes to Scout in the Agentic IDE with the failed run attached.",
+  steps: [
+    { label: "GitHub · List runs", arg: "main --status failure", result: "1 failed — login.spec, timeout", logo: githubLogo, took: "0.6s" },
+    { label: "Agents · Dispatch", arg: "Scout", result: "Claude Code · fix login.spec, open a PR", took: "0.2s" },
+  ],
+  answer:
+    "Scout is on it in the Agentic IDE. It will fix the test, run the suite and open a pull request — I'll tell you when it's ready to review.",
+  worked: "9s",
+  summary: "Used GitHub and Agents",
+};
 
 /**
- * Where the live turn is. The turns before it are always finished, so a frame
- * only has to describe the last one.
+ * Where the turn is. `home` is the empty front page — the greeting and the
+ * composer — before anything has been said.
  */
-export type Phase = "listening" | "thinking" | "steps" | "answering" | "done";
+export type Phase = "home" | "listening" | "thinking" | "steps" | "answering" | "done";
 
 export interface ChatFrame {
   phase: Phase;
-  /** How many step rows of the live turn are on screen. */
+  /** How many step rows are on screen. */
   steps: number;
   /** How long this frame holds before the next. */
   duration: number;
@@ -125,12 +104,13 @@ export interface ChatFrame {
  * answer, no spinner.
  */
 export const CHAT_SCRIPT: ChatFrame[] = [
-  { phase: "listening", steps: 0, duration: 2600 },
+  { phase: "home", steps: 0, duration: 2600 },
+  { phase: "listening", steps: 0, duration: 3000 },
   { phase: "thinking", steps: 0, duration: 3000 },
-  { phase: "steps", steps: 1, duration: 1100 },
-  { phase: "steps", steps: 2, duration: 1300 },
-  { phase: "answering", steps: 2, duration: 3800 },
-  { phase: "done", steps: 2, duration: 2600 },
+  { phase: "steps", steps: 1, duration: 1200 },
+  { phase: "steps", steps: 2, duration: 1400 },
+  { phase: "answering", steps: 2, duration: 3600 },
+  { phase: "done", steps: 2, duration: 3200 },
 ];
 
 // ---------------------------------------------------------------------------
