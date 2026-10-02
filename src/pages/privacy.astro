@@ -15,6 +15,12 @@
  *   videos         BuiltInPublic.astro creates the youtube-nocookie.com iframe
  *                  only when the visitor presses play; posters are local.
  *   nothing else   no cookies, no analytics, no web fonts from a CDN, no forms.
+ *
+ * The app section describes the desktop app's Google connections, read from
+ * the app repo: jarvis/marketplace/auth/oauth_pkce_loopback.py (sign-in on
+ * Google's page, tokens), jarvis/marketplace/token_store.py (OS credential
+ * store), jarvis/marketplace/revoke.py (disconnect) and the native Google
+ * tools under jarvis/plugins/tool/ (direct calls to Google's APIs).
  */
 import LegalPage from "@/components/LegalPage.astro";
 import { IMPRINT_HREF, OPERATOR } from "@/lib/legal";
@@ -35,6 +41,11 @@ import { IMPRINT_HREF, OPERATOR } from "@/lib/legal";
       press play on a video — YouTube.
     </li>
     <li>We never receive a record of your visit ourselves.</li>
+    <li>
+      The Personal Jarvis app keeps Google data you connect on your own
+      computer; we never receive it. See
+      <a href="#app-google-data">the app and your Google data</a>.
+    </li>
   </ul>
 
   <h2>Who is responsible</h2>
@@ -118,6 +129,46 @@ import { IMPRINT_HREF, OPERATOR } from "@/lib/legal";
     Downloads and the source code are on GitHub; the site also links to X,
     Discord and YouTube. Once you follow such a link, the privacy policy of
     that provider applies.
+  </p>
+
+  <h2 id="app-google-data">The Personal Jarvis app and your Google data</h2>
+  <p>
+    The Personal Jarvis desktop app can connect to your Google account —
+    Gmail, Google Drive, Google Calendar, YouTube and Google Cloud — only when
+    you click Connect in the app and approve access on Google's own sign-in
+    page. Each service is connected separately.
+  </p>
+  <p>
+    <strong>What the app accesses.</strong> Only the Google services you
+    connect, and only to carry out what you ask Jarvis to do — for example
+    reading your calendar to answer "what is on today", or adding a song to a
+    YouTube playlist you named.
+  </p>
+  <p>
+    <strong>Where the data goes.</strong> The app runs on your own computer.
+    It fetches Google data directly from Google's APIs, and it stores the
+    access and refresh tokens in your operating system's credential store on
+    that computer. We, the developer, never receive, store or see your Google
+    data or tokens. When you ask Jarvis about your data, the relevant excerpt
+    is sent to the AI model provider you chose in the app, solely to answer
+    that request; that provider's own privacy policy applies.
+  </p>
+  <p>
+    <strong>What we never do.</strong> We do not sell Google user data, use it
+    for advertising, transfer it to data brokers, or use it to train or
+    improve generalized artificial intelligence or machine-learning models.
+  </p>
+  <p>
+    <strong>Limited Use.</strong> Personal Jarvis' use and transfer of
+    information received from Google APIs adheres to the
+    <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>,
+    including the Limited Use requirements.
+  </p>
+  <p>
+    <strong>Revoking access.</strong> Disconnect the service in the app, or
+    remove Personal Jarvis at
+    <a href="https://myaccount.google.com/connections">myaccount.google.com/connections</a>.
+    Disconnecting deletes the stored tokens from your computer.
   </p>
 
   <h2>Contacting us</h2>
