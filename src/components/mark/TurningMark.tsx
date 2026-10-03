@@ -546,7 +546,17 @@ export function TurningMark({ className }: Props) {
   }, []);
 
   /**
-   * The host fills whatever box it is given and centres the canvas in it.
+   * The host fills whatever box it is given, and the canvas fills the host.
+   *
+   * THE CANVAS IS TAKEN OUT OF THE FLOW, and that is the fix for a mark that
+   * ran out of its column through the section's rail (maintainer, 2026-10-03).
+   * The canvas carries an explicit pixel size measured from the host. In the
+   * flow, that size became the host's minimum content size — a grid item's
+   * automatic minimum — so once the canvas had been measured wide (a wider
+   * window, a layout that settled late) the host could never shrink below it,
+   * and every later measurement read back the canvas's own width: 600px drawn
+   * in a 475px column. Absolute, it adds nothing to the host's size, so the
+   * host is always the column and the canvas always follows it.
    * That belongs here rather than in a class the caller has to remember: the
    * canvas is sized from this element's rect, so an element with no height
    * silently renders a one-pixel mark.
@@ -574,16 +584,18 @@ export function TurningMark({ className }: Props) {
       className={className}
       aria-hidden="true"
       style={{
-        display: "grid",
-        placeItems: "center",
+        position: "relative",
         width: "100%",
         height: "100%",
+        minWidth: 0,
+        minHeight: 0,
+        overflow: "hidden",
         cursor: "grab",
         touchAction: "pan-y",
         userSelect: "none",
       }}
     >
-      <canvas ref={canvasRef} style={{ display: "block" }} />
+      <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, display: "block" }} />
     </div>
   );
 }
