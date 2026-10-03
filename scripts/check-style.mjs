@@ -34,6 +34,15 @@ const WIDTH_OWNERS = [
 /** Files allowed to name a raw colour. */
 const TOKEN_OWNERS = [join("src", "styles", "tokens.css")];
 
+/**
+ * The hero demo's clone of the app (docs/hero.md, "The app's own markup").
+ * Its markup is copied from the app's components and its stylesheet is the
+ * app's compiled CSS, synced by scripts/sync-app-ui.mjs. The app's design
+ * system governs it, not this site's — holding a copy to this site's rules
+ * would make it stop being a copy.
+ */
+const CLONE_DIRS = [join("src", "components", "demo", "app")];
+
 /** Where a bespoke `max-w-*` is a layout violation rather than a UI primitive. */
 const SECTION_DIRS = [join("src", "sections"), join("src", "pages"), join("src", "app")];
 
@@ -124,6 +133,7 @@ function main() {
 
   for (const file of files) {
     const rel = relative(ROOT, file);
+    if (CLONE_DIRS.some((d) => rel.startsWith(d + sep))) continue;
     scanned += 1;
     const isWidthOwner = WIDTH_OWNERS.includes(rel);
 

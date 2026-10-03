@@ -235,122 +235,87 @@ ratio moves, which is exactly what the backdrop makes visible.
 
 ---
 
-## Window composition
+## The window is a clone of the app
 
-**One window.** Never two.
+**One window, and it is the app's own markup under the app's own stylesheet.**
+Drawn versions of the app drifted every time the app changed, and the
+maintainer judges the demo against the running app (2026-10-03: "noch kein
+1 zu 1 digitaler Klon"). So the window is no longer drawn:
 
-The window is the app as it ships. Until 2026-10-01 the app's front page was
-two faces behind a `Voice | Chat` switch, and the demo cloned that switch. The
-app merged them into ONE chat with a voice mode inside it ("voice mode is a
-state of the chat, not another place", the app's `navGroups.ts`), and grew the
-Agentic IDE, its own agents and a new sidebar. A demo still showing the switch
-showed a product that no longer exists, so on 2026-10-02 the window was rebuilt
-on today's app: same window, two of its sections.
+- **Markup** — `src/components/demo/app/` copies the JSX and the class names of
+  the app's components at HEAD: the shell (App.tsx), the sidebar (Sidebar.tsx,
+  SidebarSearchBar, SidebarAgents, RecentChats, ChatKindMark), the caption strip
+  (TopBar, SectionNavButtons, ThemeToggle), the front page in voice mode
+  (VoiceStage, Greeting, VoiceComposer, VoiceGlow's CSS light, the rail look of
+  WorkTrace and TraceTimeline) and the Agentic IDE (IdeScene.tsx). Each file
+  names the app components it copies. Only the data is the demo's.
+- **Style** — `app.css` is the app's compiled stylesheet, cut down to the
+  classes the clone uses by `scripts/sync-app-ui.mjs`. Never edit it by hand.
+- **Isolation** — `AppFrame` renders the clone into an empty iframe through a
+  React portal. The app's sheet styles `html`, `body`, `:root` and carries
+  Tailwind's reset; in a document of its own it applies exactly as in the app
+  and cannot touch this site. No src, no network request.
+- **Icons and fonts** — `scripts/gen-app-icons.mjs` writes the lucide icons at
+  the app's pinned version (ISC) and copies the app's own section icons. Inter
+  and JetBrains Mono (both SIL OFL 1.1) are the app's two font files, declared
+  inside the frame. The pet is Gigi, the app's built-in default, from its own
+  sprite sheet — never the maintainer's chosen pet.
+- **The window edge** is the only thing the app does not draw (the operating
+  system does): `.demo-window` in `demo-stage.css`, on this site's tokens.
 
-| Piece | Size |
-|---|---|
-| Window | 90% of stage width, centred (maintainer sized it, 2026-08-29) |
-| Sidebar | 248 design px — search, New chat, the primary sections, Agents, Recent |
-| Reading column | 700 design px, centred in the chat scene; composer 620 |
-| IDE | three agent panes side by side under a workspace bar |
+The style gate exempts `src/components/demo/app/` (scripts/check-style.mjs,
+`CLONE_DIRS`): the app's design system governs a copy of the app, not this
+site's.
 
-The window: `--radius-lg`, 1px hairline, the app's top bar (sidebar toggle and
-history arrows left, the product name centred, theme and reload right),
-`overflow: hidden`.
+**When the app's UI changes**, update the copied markup from the app's
+components, then run both scripts against a fresh app build:
 
-Both scenes show the END of their work, so the beginning runs off the top.
-That edge is **faded, not cut** — the app fades a thought that has outgrown its
-window the same way, and it is the difference between reading as "scrolled"
-and reading as "broken".
+```
+node scripts/gen-app-icons.mjs <app>/jarvis/ui/web/frontend
+node scripts/sync-app-ui.mjs   <app>/jarvis/ui/web/dist/assets
+```
 
-### The sidebar is the app's sidebar
+### Size
 
-The rows are the app's primary list in its order (`Sidebar.tsx`,
-`primaryIds`), then the "Agents" group with the user's agents and their live
-status, then "Recent". The list runs past the bottom edge under a fade, the way
-the app's own column scrolls. A shortened list over a hand of dead space reads
-as an app with five sections and a rendering bug (maintainer, 2026-08-29).
+The window is a real app window, 1360 x 758 CSS px, laid out at that size and
+scaled down with the stage — so the app's 14 to 16 px type keeps its
+proportion to the window. Type enlarged for the hero read as a zoomed-in crop
+of the app (maintainer, 2026-10-02).
 
 ---
 
 ## Interaction
 
 **Two sidebar rows are live: "New chat" and "Agentic IDE".** They move between
-the two scenes the way the real rows move between sections. Everything else
-inside the window is real markup that does nothing, the way a screenshot does
-nothing.
+the two scenes the way the real rows move between sections. Everything else is
+real markup that does nothing, the way a screenshot does nothing.
 
-- Left alone, the stage plays the chat, follows the hand-off into the Agentic
-  IDE, and comes back. A visitor sees both without touching anything
-- The first press of a live row stops the **hand-over** for good. From then on
-  the chosen scene loops, and the stage never changes scene by itself again
-- Real hover states on rows
-
-The rule this obeys is "the demo must not move out from under the visitor's
-hand" — applied where it bites. Freezing the scene on the first click would be
-the wrong reading of it: pressing "Agentic IDE" is a request to watch the
-agents work, and answering it with a still frame looks broken.
+- Left alone, the stage plays the front page, follows the hand-off into the
+  Agentic IDE, and comes back
+- The first press of a live row stops the **hand-over** for good; the chosen
+  scene keeps looping. Freezing it would answer "show me the agents" with a
+  still frame, which looks broken
 
 ---
 
 ## The two scenes
 
-One errand, followed across the app. Both are written down in `demoScript.ts`
-and nowhere else.
+One errand, followed across the app. The scripts are `app/frontPageScript.ts`
+and the IDE's own data in `app/IdeScene.tsx`.
 
-- **Chat, in voice mode.** It opens on the empty front page — the pet, the
-  greeting, the hint and the composer with its white "Start" pill. The person
-  speaks; the turn plays on the app's rail: the model's words as prose, each
-  call as one row (service, call, argument in mono, time, a terse result
-  underneath), the pet as the live "Working" line. It ends the way the app
-  ends a turn: the work folded behind "Worked for 9s · Used GitHub and
-  Agents", the reply in a grey bubble, "Done · Details" under it
-- **Drawn at the app's own sizes, not blown up.** The window is a real app
-  size (1360 design px) scaled down, and the type is the app's — 13px trace
-  rows, 14.5px messages. Enlarged type in a smaller window read as a zoomed-in
-  crop of the app rather than the app (maintainer, 2026-10-02)
-- **Agentic IDE.** Three coding-agent CLIs side by side in one workspace —
-  Claude Code, Codex, Gemini CLI — each in its own pane with its own task. They
-  advance at different speeds. Scout finishes with a pull request; one agent is
-  still working when the loop ends, because that is what a real workspace
-  looks like
-- **Both show the work.** The chat streams its reasoning and folds it to
-  "Thought for Ns" over the tool rows; the panes show each tool call and its
-  result in the CLI's own shapes. A demo without that is a demo of a text box
-- Waveform from a fixed amplitude array. **No `getUserMedia`**, no audio input,
-  no permission prompt
-- Words arrive as a typewriter. Content is **shorter** than the real app's:
-  fewer rows, larger type. The demo is read from three metres away
-
-Colour comes from the `--app-*` tokens, which are the running app's dark-theme
-variables (re-read from the app's `index.css` on 2026-10-02, the neutral v4
-theme). Never a literal in the component: the clone is supposed to drift only
-when the app drifts.
-
-### Where the view comes from — an open debt
-
-The original spec said: import the voice view from a shared `packages/ui/voice/`
-package, never copy it, and never import the app-level container (which drags in
-auth, fetching, sockets and permissions).
-
-**That import is not possible today.** There is no shared package: the app and
-this site are separate repositories with separate histories, and this site
-cannot import from the app checkout it happens to sit inside — that would couple
-a public repo's source into a private site's build.
-
-So the demo window is a deliberate, slimmed-down rebuild, and the *reason* for
-the original rule still stands: it will drift from the real app. Two ways out,
-whenever it matters enough:
-
-1. Publish the view as a small package from the app repo and depend on it here.
-2. Keep the rebuild, and treat drift as intended — the demo is already meant to
-   be shorter and larger than the real UI.
-
-Until one is chosen, whoever changes the app front page should glance at this
-demo — both halves of it now. That is a weak guarantee, and it is written down here so it is at least a
-known one.
-
----
+- **The front page, in voice mode.** It opens empty — Gigi, the greeting, the
+  hint and the voice composer with its Start pill and the soft light rising
+  from the bottom. The person speaks (their words arrive in the italic bubble),
+  the turn's work runs on the rail — a streaming thought, then one quiet line
+  per call with the service's real logo, Gigi working on the state line — and
+  the answer is said out loud: words not yet spoken stay grey and light up as
+  the voice reaches them, Gigi talking under it. Jarvis hands the coding part
+  to Scout
+- **The Agentic IDE.** Scout (Claude Code), Atlas (Codex) and Quill (Gemini
+  CLI) work side by side in one workspace; Scout ends with a pull request,
+  one agent is still working when the loop ends
+- No `getUserMedia`, no audio, no WebGL: the voice light is the app's own CSS
+  fallback, driven by a synthetic level instead of a microphone
 
 ## Accessibility
 
@@ -371,6 +336,8 @@ known one.
 - Scaling the stage on width alone
 - A backdrop whose licence is not recorded in this file
 - Screenshots, video, canvas, or image sequences for the mockup
+- Hand-drawn imitations of the app's UI inside the window — copy the app's
+  markup and sync its stylesheet instead
 - Text in the mockup that is not real text in the DOM
 - Responsive styling inside the stage
 - A second floating window, or a window that is not the app as it ships
