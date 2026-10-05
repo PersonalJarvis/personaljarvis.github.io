@@ -1,4 +1,4 @@
-# Unit tests for the Google token broker Worker (workers/google-token-broker).
+# Unit tests for the OAuth token broker Worker (workers/token-broker).
 #
 # Only tests run here. Deploying needs a Cloudflare credential that this
 # repository does not hold on purpose; see the Worker's README.
@@ -6,10 +6,10 @@ name: token-broker
 
 on:
   pull_request:
-    paths: ["workers/google-token-broker/**", ".github/workflows/token-broker.yml"]
+    paths: ["workers/token-broker/**", ".github/workflows/token-broker.yml"]
   push:
     branches: [main]
-    paths: ["workers/google-token-broker/**", ".github/workflows/token-broker.yml"]
+    paths: ["workers/token-broker/**", ".github/workflows/token-broker.yml"]
   workflow_dispatch:
 
 permissions:
@@ -23,4 +23,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node --test workers/google-token-broker/test/broker.test.mjs
+      - run: node --test workers/token-broker/test/broker.test.mjs

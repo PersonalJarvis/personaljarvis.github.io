@@ -1,23 +1,28 @@
-// Google OAuth token broker for Personal Jarvis desktop installs.
+// OAuth token broker for Personal Jarvis installs.
 //
-// Google's token endpoint refuses a code exchange or a refresh for the shared
-// "Personal Jarvis" Desktop client unless the request carries the client
-// secret, even with PKCE. That secret must never ship inside the app, so the
-// app sends the two token grants here instead. This Worker adds the client id
-// and secret, forwards the request to Google, and returns Google's answer —
-// status and JSON body — unchanged.
+// Some providers refuse a code exchange or a refresh for the app's shared
+// OAuth client unless the request carries the client secret, even with PKCE.
+// That secret must never ship inside an installable app, so the app sends the
+// two token grants here instead. This Worker adds the provider's client id and
+// secret, forwards the request, and returns the provider's answer — status and
+// body — unchanged.
+//
+//   POST /oauth/google/token   Google: loopback redirect_uri + PKCE required
+//   POST /oauth/slack/token    Slack: redirect_uri must be this Worker's own
+//                              /oauth/slack/callback, PKCE required
+//   GET  /oauth/slack/callback Slack only allows https redirect URLs for a
+//                              distributed app, so its browser redirect lands
+//                              here and is bounced to the desktop app's local
+//                              listener with only code, state and error.
 //
 // What it deliberately does NOT do:
 //   - store anything: no database, no KV, no tokens kept between requests;
 //   - log anything: no console output, observability is off in wrangler.toml;
-//   - accept browsers: no CORS headers, POST only, tiny bodies;
-//   - accept arbitrary redirects: an authorization code is only exchanged for a
-//     loopback redirect_uri (the desktop app's own local callback) and only
-//     together with a PKCE code_verifier, so a code phished for a web redirect
-//     cannot be redeemed here.
-
-export const ROUTE = "/oauth/google/token";
-export const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
+//   - accept browsers on the token routes: no CORS headers, POST only, tiny
+//     bodies;
+//   - accept arbitrary redirects: an authorization code is only exchanged
+//     together with a PKCE code_verifier and the redirect_uri the provider
+//     entry allows, so a code phished for another redirect cannot be redeemed.
 
 const MAX_REQUEST_BYTES = 8 * 1024;
 const MAX_UPSTREAM_BYTES = 64 * 1024;
@@ -25,10 +30,35 @@ const UPSTREAM_TIMEOUT_MS = 15_000;
 
 // RFC 7636 section 4.1: 43-128 characters from the unreserved set.
 const CODE_VERIFIER = /^[A-Za-z0-9._~-]{43,128}$/;
-// Authorization codes and refresh tokens are opaque printable ASCII.
+// Authorization codes, states and refresh tokens are opaque printable ASCII.
 const OPAQUE_TOKEN = /^[\x21-\x7e]{1,2048}$/;
 // Explicit port required; the host must be a loopback literal or localhost.
 const LOOPBACK_PREFIX = /^http:\/\/(127\.0\.0\.1|localhost|\[::1\]):(\d{1,5})(?=[/?]|$)/i;
+
+/**
+ * One entry per provider. `redirect` decides which redirect_uri an
+ * authorization_code grant may carry: `loopback` (the desktop app's own local
+ * listener, as for Google Desktop clients) or `callback` (exactly this
+ * Worker's /oauth/<provider>/callback, whose GET bounces to `localCallback`).
+ */
+export const PROVIDERS = {
+  google: {
+    tokenUrl: "https://oauth2.googleapis.com/token",
+    clientIdVar: "GOOGLE_CLIENT_ID",
+    secretVar: "GOOGLE_CLIENT_SECRET",
+    redirect: "loopback",
+  },
+  slack: {
+    tokenUrl: "https://slack.com/api/oauth.v2.access",
+    clientIdVar: "SLACK_CLIENT_ID",
+    secretVar: "SLACK_CLIENT_SECRET",
+    redirect: "callback",
+    localCallback: "http://127.0.0.1:3118/oauth/callback",
+  },
+};
+
+const ROUTE = /^\/oauth\/([a-z]+)\/(token|callback)$/;
+const BOUNCED_PARAMS = ["code", "state", "error"];
 
 const ALLOWED_FIELDS = {
   authorization_code: new Set(["grant_type", "code", "code_verifier", "redirect_uri", "client_id"]),
@@ -74,6 +104,11 @@ export function isLoopbackRedirect(value) {
   }
   if (url.protocol !== "http:" || url.username || url.password || url.hash) return false;
   return ["127.0.0.1", "localhost", "[::1]"].includes(url.hostname);
+}
+
+/** The https callback this Worker serves for `name`, on the request's origin. */
+export function brokerCallback(requestUrl, name) {
+  return `${new URL(requestUrl).origin}/oauth/${name}/callback`;
 }
 
 async function readBounded(stream, limit, onOverflow) {
@@ -144,8 +179,12 @@ async function readFields(request) {
   );
 }
 
-/** Validate the grant and build the form sent to Google (secret excluded). */
-export function buildGrant(fields, clientId) {
+/**
+ * Validate the grant and build the form sent to the provider (secret
+ * excluded). `allowedRedirect` is the exact https callback for `callback`
+ * providers and ignored for `loopback` ones.
+ */
+export function buildGrant(fields, provider, clientId, allowedRedirect) {
   const grantType = fields.get("grant_type");
   const allowed = ALLOWED_FIELDS[grantType];
   if (!allowed) {
@@ -171,8 +210,11 @@ export function buildGrant(fields, clientId) {
     if (!CODE_VERIFIER.test(verifier ?? "")) {
       throw new BrokerError(400, "invalid_request", "A PKCE code_verifier is required");
     }
-    if (!isLoopbackRedirect(redirect)) {
+    if (provider.redirect === "loopback" && !isLoopbackRedirect(redirect)) {
       throw new BrokerError(400, "invalid_request", "redirect_uri must be an http loopback address with a port");
+    }
+    if (provider.redirect === "callback" && redirect !== allowedRedirect) {
+      throw new BrokerError(400, "invalid_request", "redirect_uri must be this broker's callback");
     }
     form.set("code", code);
     form.set("code_verifier", verifier);
@@ -199,25 +241,44 @@ async function rateLimited(request, env) {
   }
 }
 
-async function broker(request, env) {
-  const url = new URL(request.url);
-  if (url.pathname !== ROUTE) return oauthError(404, "not_found", "Not found");
+/** Bounce a provider's browser redirect to the desktop app's local listener. */
+function bounce(url, provider) {
+  const target = new URL(provider.localCallback);
+  for (const name of BOUNCED_PARAMS) {
+    const values = url.searchParams.getAll(name);
+    if (values.length === 0) continue;
+    if (values.length > 1 || !OPAQUE_TOKEN.test(values[0])) {
+      return oauthError(400, "invalid_request", `Malformed parameter: ${name}`);
+    }
+    target.searchParams.set(name, values[0]);
+  }
+  return new Response(null, { status: 302, headers: { ...BASE_HEADERS, Location: target.href } });
+}
+
+async function exchange(request, env, name, provider) {
   if (request.method !== "POST") {
     return oauthError(405, "invalid_request", "POST only", { Allow: "POST" });
   }
-  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+  const clientId = env[provider.clientIdVar];
+  const secret = env[provider.secretVar];
+  if (!clientId || !secret) {
     return oauthError(503, "temporarily_unavailable", "Broker is not configured");
   }
   if (await rateLimited(request, env)) {
     return oauthError(429, "temporarily_unavailable", "Too many requests", { "Retry-After": "60" });
   }
-  const form = buildGrant(await readFields(request), env.GOOGLE_CLIENT_ID);
-  form.set("client_id", env.GOOGLE_CLIENT_ID);
-  form.set("client_secret", env.GOOGLE_CLIENT_SECRET);
+  const form = buildGrant(
+    await readFields(request),
+    provider,
+    clientId,
+    brokerCallback(request.url, name),
+  );
+  form.set("client_id", clientId);
+  form.set("client_secret", secret);
 
   let upstream;
   try {
-    upstream = await fetch(GOOGLE_TOKEN_URL, {
+    upstream = await fetch(provider.tokenUrl, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -228,13 +289,13 @@ async function broker(request, env) {
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
   } catch {
-    return oauthError(502, "temporarily_unavailable", "Google's token endpoint is unreachable");
+    return oauthError(502, "temporarily_unavailable", "The provider's token endpoint is unreachable");
   }
   let text;
   try {
     text = await readBounded(upstream.body, MAX_UPSTREAM_BYTES, () => new Error("upstream too large"));
   } catch {
-    return oauthError(502, "temporarily_unavailable", "Google's answer could not be read");
+    return oauthError(502, "temporarily_unavailable", "The provider's answer could not be read");
   }
   return new Response(text, {
     status: upstream.status,
@@ -245,10 +306,23 @@ async function broker(request, env) {
   });
 }
 
+async function route(request, env) {
+  const url = new URL(request.url);
+  const match = ROUTE.exec(url.pathname);
+  const provider = match && Object.hasOwn(PROVIDERS, match[1]) ? PROVIDERS[match[1]] : null;
+  if (!provider) return oauthError(404, "not_found", "Not found");
+  if (match[2] === "token") return exchange(request, env, match[1], provider);
+  if (provider.redirect !== "callback") return oauthError(404, "not_found", "Not found");
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return oauthError(405, "invalid_request", "GET only", { Allow: "GET" });
+  }
+  return bounce(url, provider);
+}
+
 export default {
   async fetch(request, env) {
     try {
-      return await broker(request, env);
+      return await route(request, env);
     } catch (error) {
       if (error instanceof BrokerError) {
         return oauthError(error.status, error.error, error.message, error.headers);

@@ -62,9 +62,10 @@ scheduled refreshes to fail while the browser's star count kept increasing.
 
 ## The one piece of server code
 
-`workers/google-token-broker/` is a Cloudflare Worker on
-`token.personaljarvis.ai`, not part of the Pages build. It adds the Google
-client secret to the desktop app's token requests so the app never ships it.
+`workers/token-broker/` is a Cloudflare Worker on `token.personaljarvis.ai`,
+not part of the Pages build. It adds the Google and Slack client secrets to
+the desktop app's token requests so the app never ships them, and it is the
+https redirect target the Slack app registers.
 A push does not deploy it; `wrangler deploy` from that folder does. Its
 README covers the rules, the secret and the live check.
 

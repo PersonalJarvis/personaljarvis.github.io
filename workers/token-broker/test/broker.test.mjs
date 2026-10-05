@@ -1,14 +1,23 @@
-// Run with: node --test workers/google-token-broker/test/
+// Run with: node --test workers/token-broker/test/broker.test.mjs
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, test } from "node:test";
 
-import worker, { GOOGLE_TOKEN_URL, ROUTE, isLoopbackRedirect } from "../src/index.mjs";
+import worker, { PROVIDERS, isLoopbackRedirect } from "../src/index.mjs";
 
-const ENDPOINT = `https://token.example.test${ROUTE}`;
+const ORIGIN = "https://token.example.test";
+const ENDPOINT = `${ORIGIN}/oauth/google/token`;
+const GOOGLE_TOKEN_URL = PROVIDERS.google.tokenUrl;
 const CLIENT_ID = "123-test.apps.googleusercontent.com";
 const SECRET = "test-secret-value";
+const SLACK_ID = "111.222";
+const SLACK_SECRET = "slack-secret-value";
 const VERIFIER = "v".repeat(43);
-const env = () => ({ GOOGLE_CLIENT_ID: CLIENT_ID, GOOGLE_CLIENT_SECRET: SECRET });
+const env = () => ({
+  GOOGLE_CLIENT_ID: CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: SECRET,
+  SLACK_CLIENT_ID: SLACK_ID,
+  SLACK_CLIENT_SECRET: SLACK_SECRET,
+});
 
 let calls;
 let answer;
@@ -218,4 +227,101 @@ test("the per-address rate limit answers 429 without calling Google", async () =
 test("error answers never echo the secret", async () => {
   const response = await worker.fetch(post(codeGrant({ redirect_uri: "https://evil.example/" })), env());
   assert.equal((await response.text()).includes(SECRET), false);
+});
+
+// --- Slack: https callback bounce + token exchange -------------------------
+
+const SLACK_TOKEN = `${ORIGIN}/oauth/slack/token`;
+const SLACK_CALLBACK = `${ORIGIN}/oauth/slack/callback`;
+
+test("slack exchange requires the broker's own callback and injects the Slack client", async () => {
+  answer = () =>
+    new Response('{"ok":false,"error":"invalid_code"}', {
+      status: 200,
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    });
+  const response = await worker.fetch(
+    post(codeGrant({ redirect_uri: SLACK_CALLBACK }), { url: SLACK_TOKEN }),
+    env(),
+  );
+  assert.equal(response.status, 200);
+  assert.equal(await response.text(), '{"ok":false,"error":"invalid_code"}');
+  assert.equal(calls[0].url, "https://slack.com/api/oauth.v2.access");
+  assert.deepEqual(Object.fromEntries(calls[0].form), {
+    grant_type: "authorization_code",
+    code: "4/0AbCdEf-test",
+    code_verifier: VERIFIER,
+    redirect_uri: SLACK_CALLBACK,
+    client_id: SLACK_ID,
+    client_secret: SLACK_SECRET,
+  });
+});
+
+test("slack exchange refuses loopback and foreign redirects", async () => {
+  for (const redirect of [
+    "http://127.0.0.1:3118/oauth/callback",
+    "https://evil.example/oauth/slack/callback",
+    `${ORIGIN}/oauth/google/callback`,
+    `${SLACK_CALLBACK}?x=1`,
+  ]) {
+    const response = await worker.fetch(post(codeGrant({ redirect_uri: redirect }), { url: SLACK_TOKEN }), env());
+    assert.equal(response.status, 400, redirect);
+  }
+  assert.equal(calls.length, 0);
+});
+
+test("slack refresh goes to Slack with the Slack secret", async () => {
+  await worker.fetch(post({ grant_type: "refresh_token", refresh_token: "xoxe-1-test" }, { url: SLACK_TOKEN }), env());
+  assert.deepEqual(Object.fromEntries(calls[0].form), {
+    grant_type: "refresh_token",
+    refresh_token: "xoxe-1-test",
+    client_id: SLACK_ID,
+    client_secret: SLACK_SECRET,
+  });
+});
+
+test("google refuses the slack callback as a redirect", async () => {
+  const response = await worker.fetch(post(codeGrant({ redirect_uri: SLACK_CALLBACK })), env());
+  assert.equal(response.status, 400);
+  assert.equal(calls.length, 0);
+});
+
+test("a provider without its secret is unconfigured, the other keeps working", async () => {
+  const partial = { GOOGLE_CLIENT_ID: CLIENT_ID, GOOGLE_CLIENT_SECRET: SECRET, SLACK_CLIENT_ID: SLACK_ID };
+  const slack = await worker.fetch(post(codeGrant({ redirect_uri: SLACK_CALLBACK }), { url: SLACK_TOKEN }), partial);
+  assert.equal(slack.status, 503);
+  const google = await worker.fetch(post(codeGrant()), partial);
+  assert.equal(google.status, 400);
+  assert.equal(calls.length, 1);
+});
+
+test("the slack callback bounces only code, state and error to the local listener", async () => {
+  const response = await worker.fetch(
+    new Request(`${SLACK_CALLBACK}?code=abc.123&state=s-1&extra=drop&error_description=x`),
+    env(),
+  );
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get("Cache-Control"), "no-store");
+  const location = new URL(response.headers.get("Location"));
+  assert.equal(`${location.origin}${location.pathname}`, "http://127.0.0.1:3118/oauth/callback");
+  assert.deepEqual(Object.fromEntries(location.searchParams), { code: "abc.123", state: "s-1" });
+  assert.equal(calls.length, 0);
+});
+
+test("the slack callback passes a denial through and refuses repeats", async () => {
+  const denied = await worker.fetch(new Request(`${SLACK_CALLBACK}?error=access_denied&state=s-1`), env());
+  assert.deepEqual(Object.fromEntries(new URL(denied.headers.get("Location")).searchParams), {
+    error: "access_denied",
+    state: "s-1",
+  });
+  const repeated = await worker.fetch(new Request(`${SLACK_CALLBACK}?code=a&code=b`), env());
+  assert.equal(repeated.status, 400);
+  const posted = await worker.fetch(new Request(SLACK_CALLBACK, { method: "POST", body: "x" }), env());
+  assert.equal(posted.status, 405);
+});
+
+test("google has no callback route and unknown providers 404", async () => {
+  assert.equal((await worker.fetch(new Request(`${ORIGIN}/oauth/google/callback?code=a`), env())).status, 404);
+  assert.equal((await worker.fetch(post(codeGrant(), { url: `${ORIGIN}/oauth/github/token` }), env())).status, 404);
+  assert.equal((await worker.fetch(post(codeGrant(), { url: `${ORIGIN}/oauth/constructor/token` }), env())).status, 404);
 });

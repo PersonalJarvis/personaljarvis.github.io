@@ -1,5 +1,5 @@
-# Google OAuth token broker. Deployed by hand with wrangler; see README.md.
-name = "personaljarvis-google-token-broker"
+# OAuth token broker. Deployed by hand with wrangler; see README.md.
+name = "personaljarvis-token-broker"
 main = "src/index.mjs"
 # Keep the site's Astro tsconfig out of the Worker build.
 tsconfig = "tsconfig.json"
@@ -12,10 +12,12 @@ pattern = "token.personaljarvis.ai"
 custom_domain = true
 
 [vars]
-# Public client id of the shared "Personal Jarvis" Google Desktop client. Not a
-# secret: every Google sign-in address contains it. The client SECRET is set
-# with `wrangler secret put GOOGLE_CLIENT_SECRET` and never appears in source.
+# Public client ids of the shared "Personal Jarvis" OAuth clients. Not secrets:
+# every sign-in address contains them. The client SECRETS are set with
+# `wrangler secret put GOOGLE_CLIENT_SECRET` / `SLACK_CLIENT_SECRET` and never
+# appear in source.
 GOOGLE_CLIENT_ID = "940985062784-4t8h10q3ggt6b1317ajjb9u0eriop2m7.apps.googleusercontent.com"
+SLACK_CLIENT_ID = "11871821947191.12101850377302"
 
 # No logs, no traces: request and response bodies carry OAuth codes and tokens.
 [observability]
