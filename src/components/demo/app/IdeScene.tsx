@@ -15,7 +15,8 @@
  * terminal settings — JetBrains Mono Medium at the default 15 px
  * (paneFont.FONT_DEFAULT, terminalFont.TERMINAL_FONT_WEIGHT), the dark terminal
  * theme's colours (terminalThemes.DARK_TERMINAL_THEME) — showing what each CLI
- * prints, in its own shapes, as far as plain text can.
+ * prints, in its own shapes; box, block and symbol glyphs are drawn per cell
+ * the way xterm draws them.
  *
  * Content is placeholder only: an invented "web-app" project and three agents.
  */
@@ -86,22 +87,30 @@ const TILE_ACTION = ACTION_CLASS.replace("h-7 w-7", "h-6 w-6").replace(" rounded
 // ---------------------------------------------------------------------------
 
 /** One run of terminal text: its colour, weight and background. */
-type Seg = { t: string; c?: string; b?: boolean; bg?: string; dim?: boolean };
+type Seg = { t: string; c?: string; b?: boolean; bg?: string };
 type Row = Seg[];
 
 const s = (t: string, c?: string, extra: Omit<Seg, "t" | "c"> = {}): Seg => ({ t, c, ...extra });
 const blank: Row = [];
 
-/** Width of the boxes the CLIs draw — the pane is ~37 columns at 15 px. */
-const COLS = 36;
+/** Columns a pane holds: ~334 px of text area over a 9 px cell. */
+const COLS = 37;
+
+/** xterm's cell: JetBrains Mono advances 0.6 em, so 9 px at 15 px. */
+const CELL_PX = 9;
+/** The x and y of a line drawn through the middle of a cell. */
+const MID_X = 4;
+const MID_Y = 10;
+
+const DIM = T.brightBlack;
 
 function len(row: Row): number {
   return row.reduce((n, seg) => n + [...seg.t].length, 0);
 }
 
-/** A rounded box the way the CLIs draw them with box-drawing characters. */
-function box(inner: Row[], border: string): Row[] {
-  const span = COLS - 2;
+/** A rounded box the way the CLIs draw them, the full width of the pane. */
+function box(inner: Row[], border: string, width = COLS): Row[] {
+  const span = width - 2;
   return [
     [s(`╭${"─".repeat(span)}╮`, border)],
     ...inner.map((row) => [
@@ -114,12 +123,28 @@ function box(inner: Row[], border: string): Row[] {
   ];
 }
 
-/** A row with a background band across the pane's full width (Codex's own lines). */
+/** A row with a background band across the pane's full width. */
 function band(row: Row, bg: string): Row {
-  return [...row.map((seg) => ({ ...seg, bg })), s(" ".repeat(Math.max(0, COLS + 1 - len(row))), undefined, { bg })];
+  return [...row.map((seg) => ({ ...seg, bg })), s(" ".repeat(Math.max(0, COLS - len(row))), undefined, { bg })];
 }
 
-const CLAUDE = "#d97757";
+/** A horizontal rule across the whole pane (Claude Code's input frame). */
+const rule = (c: string): Row => [s("─".repeat(COLS + 8), c)];
+
+/** One colour per character, interpolated across the stops (Gemini's logo). */
+function gradient(text: string, stops: string[], from: number, total: number): Row {
+  const rgb = stops.map((hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)));
+  return [...text].map((ch, i) => {
+    const p = Math.min(1, (from + i) / Math.max(1, total - 1)) * (rgb.length - 1);
+    const k = Math.min(rgb.length - 2, Math.floor(p));
+    const f = p - k;
+    const c = rgb[k].map((v, j) => Math.round(v + (rgb[k + 1][j] - v) * f));
+    return s(ch, `rgb(${c.join(",")})`);
+  });
+}
+
+const CLAUDE = "#d77757";
+const GEMINI_STOPS = ["#4796e4", "#847ace", "#c3677f"];
 
 /** One pane's script: its rows in chunks, and how many chunks each step shows. */
 interface PaneScript {
@@ -132,6 +157,8 @@ interface PaneScript {
   shown: number[];
   /** The status line under the work while the agent is busy, per step. */
   working: (step: number) => Row | null;
+  /** What the CLI prints once the turn is over, if anything. */
+  doneLine?: Row;
   /** The input area the CLI keeps at the end of its output. */
   input: Row[];
   /** Done once its last chunk is on screen. */
@@ -141,6 +168,7 @@ interface PaneScript {
   since: string;
 }
 
+/** Claude Code 2.x at a narrow width: the compact header, ● turns, ⎿ results. */
 const SCOUT: PaneScript = {
   name: "scout",
   title: "Fix login.spec and open a PR",
@@ -151,70 +179,71 @@ const SCOUT: PaneScript = {
   since: "12s",
   chunks: [
     [
-      ...box(
-        [
-          [s(" "), s("✻", CLAUDE), s(" Welcome to "), s("Claude Code", undefined, { b: true }), s("!")],
-          [],
-          [s("   /help for help, /status for", T.brightBlack)],
-          [s("   your current setup", T.brightBlack)],
-          [],
-          [s("   cwd: ~/code/web-app", T.brightBlack)],
-        ],
-        CLAUDE,
-      ),
+      [s(" ▐▛███▜▌", CLAUDE), s("   "), s("Claude Code", undefined, { b: true }), s(" v2.1.289", DIM)],
+      [s("▝▜█████▛▘", CLAUDE), s("  Opus 5.5 · Claude Max", DIM)],
+      [s("  ▘▘ ▝▝", CLAUDE), s("    ~/code/web-app", DIM)],
       blank,
     ],
     [
-      [s("> Fix the failing login test on", T.brightBlack)],
-      [s("  main and open a PR.", T.brightBlack)],
+      band([s("❯ ", DIM), s("Fix the failing login test on")], "rgba(255,255,255,0.07)"),
+      band([s("  main and open a PR.")], "rgba(255,255,255,0.07)"),
       blank,
     ],
     [[s("●"), s(" I'll run the failing test first.")], blank],
     [
       [s("●", T.green), s(" "), s("Bash", undefined, { b: true }), s("(npm test -- login.spec)")],
-      [s("  ⎿  ", T.brightBlack), s("FAIL", T.red, { b: true }), s(" tests/login.spec.ts", T.red)],
-      [s("     Timeout after 5000 ms", T.brightBlack)],
+      [s("  ⎿  ", DIM), s("FAIL", T.red, { b: true }), s(" tests/login.spec.ts")],
+      [s("     Timeout after 5000 ms", DIM)],
       blank,
     ],
     [
-      [s("●"), s(" The test waits for the old")],
-      [s("  session cookie; the refactor")],
-      [s("  renamed it to "), s("session", T.cyan), s(".")],
+      [s("●"), s(" The test waits for the old "), s("sid", T.brightBlue)],
+      [s("  cookie; the refactor renamed it")],
+      [s("  to "), s("session", T.brightBlue), s(".")],
       blank,
     ],
     [
       [s("●", T.green), s(" "), s("Update", undefined, { b: true }), s("(tests/login.spec.ts)")],
-      [s("  ⎿  ", T.brightBlack), s("Updated with 1 addition and")],
-      [s("     1 removal")],
-      [s("     12 ", T.brightBlack), s("- waitForCookie(\"sid\")    ", "#ffd7dc", { bg: "rgba(252,107,131,0.22)" })],
-      [s("     12 ", T.brightBlack), s("+ waitForCookie(\"session\")", "#d2f2dc", { bg: "rgba(63,162,102,0.26)" })],
+      [s("  ⎿  ", DIM), s("Updated "), s("tests/login.spec.ts", undefined, { b: true })],
+      [s("     with "), s("1", undefined, { b: true }), s(" addition and "), s("1", undefined, { b: true }), s(" removal")],
+      band([s("      12 ", DIM), s("-  waitForCookie(\"sid\");")], "rgba(252,107,131,0.24)"),
+      band([s("      12 ", DIM), s("+  waitForCookie(\"session\");")], "rgba(63,162,102,0.28)"),
       blank,
     ],
     [
       [s("●", T.green), s(" "), s("Bash", undefined, { b: true }), s("(npm test)")],
-      [s("  ⎿  ", T.brightBlack), s("248 passed", T.green), s(" (31s)", T.brightBlack)],
+      [s("  ⎿  ", DIM), s("Tests: "), s("248 passed", T.green), s(", 248 total")],
+      [s("     Time:  31.4 s", DIM)],
       blank,
     ],
     [
       [s("●", T.green), s(" "), s("Bash", undefined, { b: true }), s("(gh pr create --fill)")],
-      [s("  ⎿  ", T.brightBlack), s("…/acme/web-app/pull/214", T.blue)],
+      [s("  ⎿  ", DIM), s("https://github.com/acme/web-")],
+      [s("     app/pull/214")],
       blank,
     ],
     [
-      [s("●"), s(" Pull request 214 is open and")],
-      [s("  the suite is green. Ready for")],
-      [s("  your review.")],
+      [s("●"), s(" PR #214 is open and the suite is")],
+      [s("  green. Ready for your review.")],
       blank,
     ],
   ],
   shown: [2, 3, 4, 5, 6, 7, 8, 9, 9],
-  working: (step) => [s("✻", CLAUDE), s(" Working… ", CLAUDE), s(`(${8 + step * 5}s · esc to interrupt)`, T.brightBlack)],
+  working: (step) => [
+    s(["✢", "✳", "✶", "✻", "✽"][step % 5], CLAUDE),
+    s(" Fixing the test… ", CLAUDE),
+    s(`(${8 + step * 5}s · esc to interrupt)`, DIM),
+  ],
+  doneLine: [s("✻ Sautéed for 52s", DIM)],
   input: [
-    ...box([[s(" > ", T.brightBlack)]], T.brightBlack),
-    [s("  ? for shortcuts", T.brightBlack)],
+    rule(DIM),
+    [s("❯ ")],
+    rule(DIM),
+    [s("  ⏵⏵ accept edits on", T.magenta), s(" (shift+tab)", DIM)],
   ],
 };
 
+/** Codex CLI: the session box, › prompts on a band, • Ran / └ results. */
 const ATLAS: PaneScript = {
   name: "atlas",
   title: "Update dependencies",
@@ -227,55 +256,74 @@ const ATLAS: PaneScript = {
     [
       ...box(
         [
-          [s(" >_ ", T.brightBlack), s("OpenAI Codex", undefined, { b: true })],
+          [s(" "), s(">_", DIM), s(" "), s("OpenAI Codex", undefined, { b: true }), s(" (v0.160.0)", DIM)],
           [],
-          [s(" model:     ", T.brightBlack), s("gpt-5-codex"), s("  /model", T.cyan)],
-          [s(" directory: ", T.brightBlack), s("~/code/web-app")],
+          [s(" model:     ", DIM), s("gpt-6-astra"), s("  /model", T.cyan)],
+          [s(" directory: ", DIM), s("~/code/web-app")],
         ],
-        T.brightBlack,
+        DIM,
       ),
       blank,
     ],
     [
-      band([s("› ", T.brightBlack), s("Bring the dependencies up to")], "rgba(255,255,255,0.06)"),
-      band([s("  date, one commit per major.")], "rgba(255,255,255,0.06)"),
+      band([s("› ", DIM, { b: true }), s("Bring the dependencies up to")], "rgba(255,255,255,0.07)"),
+      band([s("  date, one commit per major.")], "rgba(255,255,255,0.07)"),
       blank,
     ],
     [
       [s("• ", T.green), s("Ran", undefined, { b: true }), s(" npm outdated")],
-      [s("  └ 7 packages behind", T.brightBlack)],
+      [s("  └ ", DIM), s("Package  Current  Wanted  Latest", DIM)],
+      [s("    vite     7.3.1    7.3.1   8.0.2", DIM)],
+      [s("    … +6 lines", DIM)],
       blank,
     ],
     [
-      [s("• Two majors: vite 8 and")],
-      [s("  react-router 8. Vite first.")],
+      [s("• "), s("Two majors are behind: "), s("vite", T.cyan), s(" 8")],
+      [s("  and "), s("react-router", T.cyan), s(" 8. Vite first.")],
       blank,
     ],
     [
       [s("• ", T.green), s("Ran", undefined, { b: true }), s(" npm install vite@8")],
-      [s("  └ added 3, changed 41", T.brightBlack)],
+      [s("  └ ", DIM), s("added 3 packages, changed 41", DIM)],
       blank,
     ],
     [
       [s("• ", T.green), s("Ran", undefined, { b: true }), s(" npm run build")],
-      [s("  └ built in 4.2s", T.brightBlack)],
+      [s("  └ ", DIM), s("✓ built in 4.21s", DIM)],
       blank,
     ],
     [
-      [s("• Vite is done and committed.")],
-      [s("  Moving on to react-router.")],
+      [s("• "), s("Vite 8 builds clean and is")],
+      [s("  committed. Next: react-router.")],
       blank,
     ],
   ],
   shown: [2, 2, 3, 4, 4, 5, 6, 7, 7],
-  working: (step) => [s("◦ ", T.brightBlack), s("Working", undefined, { b: true }), s(` (${10 + step * 4}s • esc to interrupt)`, T.brightBlack)],
+  working: (step) => [
+    s("• ", DIM),
+    s("Working", undefined, { b: true }),
+    s(` (${10 + step * 4}s • esc to interrupt)`, DIM),
+  ],
   input: [
-    band([s("› ", T.cyan, { b: true }), s("Ask Codex to do anything", T.brightBlack)], "rgba(255,255,255,0.06)"),
+    band([s("› ", undefined, { b: true }), s("Ask Codex to do anything", DIM)], "rgba(255,255,255,0.07)"),
     blank,
-    [s("  88% context left", T.brightBlack)],
+    [s("  88% context left · ? for shortcuts", DIM)],
   ],
 };
 
+/** The short logo Gemini CLI prints when the terminal is too narrow for the word. */
+const GEMINI_LOGO = [
+  " ███            █████████",
+  "░░░███         ███░░░░░███",
+  "  ░░░███      ███     ░░░",
+  "    ░░░███   ░███",
+  "     ███░    ░███    █████",
+  "   ███░      ░░███  ░░███",
+  " ███░         ░░█████████",
+  "░░░            ░░░░░░░░░",
+];
+
+/** Gemini CLI: the gradient logo, tips, bordered tool boxes, ✦ answers. */
 const QUILL: PaneScript = {
   name: "quill",
   title: "Draft the release notes",
@@ -286,56 +334,66 @@ const QUILL: PaneScript = {
   since: "20s",
   chunks: [
     [
+      ...GEMINI_LOGO.map((line) => gradient(line, GEMINI_STOPS, 0, 27)),
+      blank,
       [s("Tips for getting started:")],
-      [s("1. Ask questions, edit files, or", T.brightBlack)],
-      [s("   run commands.", T.brightBlack)],
-      [s("2. Be specific for the best", T.brightBlack)],
-      [s("   results.", T.brightBlack)],
+      [s("1. Ask questions, edit files, or run")],
+      [s("   commands.")],
+      [s("2. Be specific for the best results.")],
+      [s("3. "), s("/help", T.magenta), s(" for more information.")],
       blank,
     ],
     [
-      [s("> ", T.brightBlack), s("Draft the release notes for", T.brightBlack)],
-      [s("  everything merged this week.", T.brightBlack)],
-      blank,
-    ],
-    [
-      ...box(
-        [
-          [s(" ✓ ", T.green), s(" ReadFolder", undefined, { b: true }), s(" .")],
-          [s("    Listed 14 item(s).", T.brightBlack)],
-        ],
-        T.brightBlack,
-      ),
-      blank,
-    ],
-    [
-      [s("✦ ", T.brightMagenta), s("Twelve PRs merged; five of them")],
-      [s("  change something a user will")],
-      [s("  notice.")],
+      ...box([[s(" > ", DIM), s("Draft the release notes for")], [s("   everything merged this week.")]], DIM),
       blank,
     ],
     [
       ...box(
         [
-          [s(" ✓ ", T.green), s(" WriteFile", undefined, { b: true }), s(" release-notes.md")],
-          [s("    Wrote 38 lines.", T.brightBlack)],
+          [s(" ✓", T.green), s("  "), s("ReadFolder", undefined, { b: true }), s(" .", DIM)],
+          [],
+          [s("    Listed 14 item(s).", DIM)],
         ],
-        T.brightBlack,
+        DIM,
       ),
       blank,
     ],
     [
-      [s("✦ ", T.brightMagenta), s("Draft saved in docs/. It leads")],
-      [s("  with the five user-facing")],
-      [s("  changes.")],
+      [s("✦ ", T.magenta), s("Twelve PRs merged this week; five")],
+      [s("  of them change something a user")],
+      [s("  will notice.")],
+      blank,
+    ],
+    [
+      ...box(
+        [
+          [s(" ✓", T.green), s("  "), s("WriteFile", undefined, { b: true }), s(" Writing to docs/rel…", DIM)],
+          [],
+          [s("    1 # Release notes", DIM)],
+          [s("    2 ", DIM), s("## What changes for you")],
+        ],
+        DIM,
+      ),
+      blank,
+    ],
+    [
+      [s("✦ ", T.magenta), s("The draft is in "), s("docs/release-", T.brightMagenta)],
+      [s("notes.md", T.brightMagenta), s(". It leads with the five")],
+      [s("  user-facing changes.")],
       blank,
     ],
   ],
   shown: [2, 2, 3, 3, 4, 4, 5, 6, 6],
-  working: (step) => [s("⠏ ", T.brightBlue), s("Thinking…", T.brightBlue), s(` (esc to cancel, ${3 + step * 3}s)`, T.brightBlack)],
+  working: (step) => [
+    s(["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇"][step % 9], T.cyan),
+    s(" Reading the PRs", T.cyan),
+    s(` (esc to cancel, ${3 + step * 3}s)`, DIM),
+  ],
   input: [
-    ...box([[s(" > ", T.brightMagenta), s("  Type your message or @file", T.brightBlack)]], T.brightBlack),
-    [s("~/code/web-app ", T.brightBlue), s("(main*)", T.magenta)],
+    ...box([[s(" > ", T.magenta), s("  Type your message or @path/to/", DIM)], [s("    file", DIM)]], T.blue),
+    [s("~/code/web-app", T.blue), s(" (main*)", T.magenta)],
+    [s("no sandbox", T.red), s(" (see /docs)", DIM)],
+    [s("gemini-3-pro", T.blue), s(" (97% context left)", DIM)],
   ],
 };
 
@@ -349,23 +407,143 @@ function paneDone(pane: PaneScript, step: number): boolean {
   return pane.finishes && pane.shown[step] >= pane.chunks.length;
 }
 
-function TerminalRow({ row }: { row: Row }) {
-  return (
-    <div style={{ height: ROW_PX, whiteSpace: "pre", overflow: "hidden" }}>
-      {row.length === 0
-        ? " "
-        : row.map((seg, i) => (
+// ---------------------------------------------------------------------------
+// Cells xterm draws itself
+// ---------------------------------------------------------------------------
+//
+// The site ships JetBrains Mono's Latin subset only, so box-drawing, block and
+// symbol characters would fall back to another font, with its own advance and
+// height — boxes then stop meeting at the corners. xterm does not use the font
+// for most of these either: it draws box and block characters as geometry
+// filling the cell (customGlyphs). The clone does the same, and gives every
+// other non-Latin glyph exactly one cell.
+
+type Line = { l?: number; r?: number; t?: number; b?: number; w?: number; h?: number; edges: string; radius?: string };
+
+/** Lines inside a 9 x 20 cell, per box-drawing character. */
+const BOX_LINES: Record<string, Line[]> = {
+  "─": [{ l: 0, r: 0, t: MID_Y, h: 1, edges: "" }],
+  "│": [{ l: MID_X, w: 1, t: 0, b: 0, edges: "" }],
+  "╭": [{ l: MID_X, r: 0, t: MID_Y, b: 0, edges: "tl", radius: "borderTopLeftRadius" }],
+  "╮": [{ l: 0, w: MID_X + 1, t: MID_Y, b: 0, edges: "tr", radius: "borderTopRightRadius" }],
+  "╰": [{ l: MID_X, r: 0, t: 0, h: MID_Y + 1, edges: "bl", radius: "borderBottomLeftRadius" }],
+  "╯": [{ l: 0, w: MID_X + 1, t: 0, h: MID_Y + 1, edges: "br", radius: "borderBottomRightRadius" }],
+  "└": [{ l: MID_X, r: 0, t: 0, h: MID_Y + 1, edges: "bl" }],
+  "⎿": [{ l: MID_X, w: CELL_PX - MID_X, t: 1, h: MID_Y + 2, edges: "bl" }],
+};
+
+/** Filled quadrants (top-left, top-right, bottom-left, bottom-right) per block character. */
+const BLOCKS: Record<string, [number, number, number, number]> = {
+  "█": [1, 1, 1, 1],
+  "▌": [1, 0, 1, 0],
+  "▐": [0, 1, 0, 1],
+  "▀": [1, 1, 0, 0],
+  "▄": [0, 0, 1, 1],
+  "▛": [1, 1, 1, 0],
+  "▜": [1, 1, 0, 1],
+  "▙": [1, 0, 1, 1],
+  "▟": [0, 1, 1, 1],
+  "▘": [1, 0, 0, 0],
+  "▝": [0, 1, 0, 0],
+  "▖": [0, 0, 1, 0],
+  "▗": [0, 0, 0, 1],
+};
+
+const CELL_STYLE: CSSProperties = {
+  position: "relative",
+  display: "inline-block",
+  width: CELL_PX,
+  height: ROW_PX,
+  verticalAlign: "top",
+};
+
+function Cell({ ch, color }: { ch: string; color: string }) {
+  const lines = BOX_LINES[ch];
+  if (lines) {
+    return (
+      <span style={CELL_STYLE}>
+        {lines.map((ln, i) => {
+          const edge = (side: string) => (ln.edges.includes(side) ? `1px solid ${color}` : undefined);
+          return (
             <span
               key={i}
               style={{
-                color: seg.c,
-                fontWeight: seg.b ? 700 : undefined,
-                background: seg.bg,
+                position: "absolute",
+                boxSizing: "border-box",
+                left: ln.l,
+                right: ln.r,
+                top: ln.t,
+                bottom: ln.b,
+                width: ln.w,
+                height: ln.h,
+                background: ln.edges ? undefined : color,
+                borderTop: edge("t"),
+                borderBottom: edge("b"),
+                borderLeft: edge("l"),
+                borderRight: edge("r"),
+                ...(ln.radius ? { [ln.radius]: 5 } : {}),
               }}
-            >
-              {seg.t}
-            </span>
-          ))}
+            />
+          );
+        })}
+      </span>
+    );
+  }
+  const quads = BLOCKS[ch];
+  if (quads) {
+    return (
+      <span style={CELL_STYLE}>
+        {quads.map((on, i) =>
+          on ? (
+            <span
+              key={i}
+              style={{
+                position: "absolute",
+                background: color,
+                left: i % 2 ? "50%" : 0,
+                width: "50%",
+                top: i < 2 ? 0 : "50%",
+                height: "50%",
+              }}
+            />
+          ) : null,
+        )}
+      </span>
+    );
+  }
+  if (ch === "░") {
+    return <span style={{ ...CELL_STYLE, background: color, opacity: 0.28 }} />;
+  }
+  return <span style={{ ...CELL_STYLE, textAlign: "center", overflow: "visible" }}>{ch}</span>;
+}
+
+/** Latin-1 is in the shipped font subset; anything else is drawn as a cell. */
+const isFontGlyph = (ch: string) => ch.codePointAt(0)! <= 0xff;
+
+function SegText({ seg }: { seg: Seg }) {
+  const parts: ReactNode[] = [];
+  let run = "";
+  for (const ch of seg.t) {
+    if (isFontGlyph(ch)) {
+      run += ch;
+      continue;
+    }
+    if (run) parts.push(run);
+    run = "";
+    parts.push(<Cell key={parts.length} ch={ch} color={seg.c ?? T.foreground} />);
+  }
+  if (run) parts.push(run);
+  return (
+    <span style={{ color: seg.c, fontWeight: seg.b ? 700 : undefined, background: seg.bg }}>
+      {parts}
+    </span>
+  );
+}
+
+function TerminalRow({ row }: { row: Row }) {
+  return (
+    <div style={{ height: ROW_PX, whiteSpace: "pre", overflow: "hidden" }}>
+      {row.length === 0 ? " " : row.map((seg, i) => <SegText key={i} seg={seg} />)}
     </div>
   );
 }
@@ -378,8 +556,10 @@ function TerminalRow({ row }: { row: Row }) {
  */
 function TerminalBody({ pane, step }: { pane: PaneScript; step: number }) {
   const rows: Row[] = pane.chunks.slice(0, pane.shown[step]).flat();
-  const working = !paneDone(pane, step) ? pane.working(step) : null;
+  const done = paneDone(pane, step);
+  const working = !done ? pane.working(step) : null;
   if (working) rows.push(working, blank);
+  else if (pane.doneLine) rows.push(pane.doneLine, blank);
   rows.push(...pane.input);
   return (
     <div
