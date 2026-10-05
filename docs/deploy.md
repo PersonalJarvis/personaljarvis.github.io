@@ -60,6 +60,15 @@ for profile edits/unstars. Tests of browser fixtures do not verify hosted
 Actions permissions. The old missing `STARGAZERS_TOKEN` check caused all
 scheduled refreshes to fail while the browser's star count kept increasing.
 
+## The one piece of server code
+
+`workers/token-broker/` is a Cloudflare Worker on `token.personaljarvis.ai`,
+not part of the Pages build. It adds the Google and Slack client secrets to
+the desktop app's token requests so the app never ships them, and it is the
+https redirect target the Slack app registers.
+A push does not deploy it; `wrangler deploy` from that folder does. Its
+README covers the rules, the secret and the live check.
+
 ## DNS
 
 Four `A` records at the apex to GitHub's Pages addresses, a `CNAME` on `www`,
