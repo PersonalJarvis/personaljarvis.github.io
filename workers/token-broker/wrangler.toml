@@ -14,10 +14,12 @@ custom_domain = true
 [vars]
 # Public client ids of the shared "Personal Jarvis" OAuth clients. Not secrets:
 # every sign-in address contains them. The client SECRETS are set with
-# `wrangler secret put GOOGLE_CLIENT_SECRET` / `SLACK_CLIENT_SECRET` and never
+# `wrangler secret put GOOGLE_CLIENT_SECRET` / `SLACK_CLIENT_SECRET` /
+# `FIGMA_CLIENT_SECRET` and never
 # appear in source.
 GOOGLE_CLIENT_ID = "940985062784-4t8h10q3ggt6b1317ajjb9u0eriop2m7.apps.googleusercontent.com"
 SLACK_CLIENT_ID = "11871821947191.12101850377302"
+FIGMA_CLIENT_ID = "QnSTQR5QK5hAOjxBmp6sIY"
 
 # No logs, no traces: request and response bodies carry OAuth codes and tokens.
 [observability]

@@ -11,12 +11,16 @@ const CLIENT_ID = "123-test.apps.googleusercontent.com";
 const SECRET = "test-secret-value";
 const SLACK_ID = "111.222";
 const SLACK_SECRET = "slack-secret-value";
+const FIGMA_ID = "FigmaTestClient01";
+const FIGMA_SECRET = "figma-secret-value";
 const VERIFIER = "v".repeat(43);
 const env = () => ({
   GOOGLE_CLIENT_ID: CLIENT_ID,
   GOOGLE_CLIENT_SECRET: SECRET,
   SLACK_CLIENT_ID: SLACK_ID,
   SLACK_CLIENT_SECRET: SLACK_SECRET,
+  FIGMA_CLIENT_ID: FIGMA_ID,
+  FIGMA_CLIENT_SECRET: FIGMA_SECRET,
 });
 
 let calls;
@@ -324,4 +328,48 @@ test("google has no callback route and unknown providers 404", async () => {
   assert.equal((await worker.fetch(new Request(`${ORIGIN}/oauth/google/callback?code=a`), env())).status, 404);
   assert.equal((await worker.fetch(post(codeGrant(), { url: `${ORIGIN}/oauth/github/token` }), env())).status, 404);
   assert.equal((await worker.fetch(post(codeGrant(), { url: `${ORIGIN}/oauth/constructor/token` }), env())).status, 404);
+});
+
+// --- Figma: Basic client auth + separate refresh endpoint ------------------
+
+const FIGMA_TOKEN = `${ORIGIN}/oauth/figma/token`;
+const FIGMA_BASIC = `Basic ${btoa(`${FIGMA_ID}:${FIGMA_SECRET}`)}`;
+
+test("figma exchange sends the client as Basic auth, never in the body", async () => {
+  const response = await worker.fetch(
+    post(codeGrant({ redirect_uri: "http://127.0.0.1:3127/oauth/callback" }), { url: FIGMA_TOKEN }),
+    env(),
+  );
+  assert.equal(response.status, 400);
+  assert.equal(calls[0].url, "https://api.figma.com/v1/oauth/token");
+  assert.equal(calls[0].init.headers.Authorization, FIGMA_BASIC);
+  assert.deepEqual(Object.fromEntries(calls[0].form), {
+    grant_type: "authorization_code",
+    code: "4/0AbCdEf-test",
+    code_verifier: VERIFIER,
+    redirect_uri: "http://127.0.0.1:3127/oauth/callback",
+  });
+});
+
+test("figma refresh goes to Figma's refresh endpoint with only the token", async () => {
+  await worker.fetch(post({ grant_type: "refresh_token", refresh_token: "figr_test" }, { url: FIGMA_TOKEN }), env());
+  assert.equal(calls[0].url, "https://api.figma.com/v1/oauth/refresh");
+  assert.equal(calls[0].init.headers.Authorization, FIGMA_BASIC);
+  assert.deepEqual(Object.fromEntries(calls[0].form), { refresh_token: "figr_test" });
+});
+
+test("figma refuses web redirects and a foreign client id", async () => {
+  const web = await worker.fetch(
+    post(codeGrant({ redirect_uri: "https://evil.example/cb" }), { url: FIGMA_TOKEN }),
+    env(),
+  );
+  assert.equal(web.status, 400);
+  const foreign = await worker.fetch(post(codeGrant({ client_id: "other" }), { url: FIGMA_TOKEN }), env());
+  assert.equal(foreign.status, 400);
+  assert.equal(calls.length, 0);
+});
+
+test("google and slack never get a Basic header", async () => {
+  await worker.fetch(post(codeGrant()), env());
+  assert.equal(calls[0].init.headers.Authorization, undefined);
 });
