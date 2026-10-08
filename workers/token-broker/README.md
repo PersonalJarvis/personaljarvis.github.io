@@ -9,6 +9,7 @@ on a client secret, without the app ever carrying that secret.
 | `POST /oauth/google/token` | Google | Code exchange + refresh for the shared Google Desktop client |
 | `POST /oauth/slack/token` | Slack | Code exchange + refresh for the shared Slack app |
 | `GET /oauth/slack/callback` | Slack | Browser redirect target; bounces to the app's local listener |
+| `POST /oauth/figma/token` | Figma | Code exchange + refresh for the shared Figma app |
 
 ## Why it exists
 
@@ -23,6 +24,12 @@ URLs, so Slack cannot send the browser straight to the app's loopback listener.
 Tokens obtained through a web redirect need the client secret for exchange
 and refresh.
 
+**Figma.** Figma's token endpoint takes the client id and secret in an HTTP
+Basic header for both the code exchange and the refresh, even with PKCE, and
+refreshes at its own `/v1/oauth/refresh` endpoint. The Worker sends the code
+exchange to `api.figma.com/v1/oauth/token` and a refresh, with only the
+refresh token in the body, to `api.figma.com/v1/oauth/refresh`.
+
 A secret shipped inside an installable app is not a secret, so the app sends
 exactly two grants here and this Worker adds the secret.
 
@@ -30,7 +37,7 @@ exactly two grants here and this Worker adds the secret.
 
 | Grant | Required fields | Redirect rule |
 | --- | --- | --- |
-| `authorization_code` | `code`, `code_verifier`, `redirect_uri` | Google: `http://127.0.0.1:<port>/…`, `http://localhost:<port>/…` or `http://[::1]:<port>/…`. Slack: exactly `https://token.personaljarvis.ai/oauth/slack/callback` |
+| `authorization_code` | `code`, `code_verifier`, `redirect_uri` | Google and Figma: `http://127.0.0.1:<port>/…`, `http://localhost:<port>/…` or `http://[::1]:<port>/…`. Slack: exactly `https://token.personaljarvis.ai/oauth/slack/callback` |
 | `refresh_token` | `refresh_token` | — |
 
 The PKCE verifier is mandatory for every code exchange. `client_id` may be
@@ -76,10 +83,12 @@ cd workers/token-broker
 wrangler deploy                              # code + custom domain
 wrangler secret put GOOGLE_CLIENT_SECRET     # paste at the prompt
 wrangler secret put SLACK_CLIENT_SECRET      # paste at the prompt
+wrangler secret put FIGMA_CLIENT_SECRET      # paste at the prompt
 ```
 
 The secrets come from the Google Cloud console (Clients, then the "Personal
-Jarvis" Desktop client) and from the Slack app's Basic Information page. To
+Jarvis" Desktop client), from the Slack app's Basic Information page and from
+the Figma app's OAuth credentials (shown once when the app is created). To
 rotate a secret, run the same `secret put` again. No code change and no app
 release are needed.
 

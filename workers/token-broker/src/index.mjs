@@ -10,6 +10,9 @@
 //   POST /oauth/google/token   Google: loopback redirect_uri + PKCE required
 //   POST /oauth/slack/token    Slack: redirect_uri must be this Worker's own
 //                              /oauth/slack/callback, PKCE required
+//   POST /oauth/figma/token    Figma: loopback redirect_uri + PKCE required;
+//                              the client goes in a Basic header and a
+//                              refresh is sent to Figma's /v1/oauth/refresh
 //   GET  /oauth/slack/callback Slack only allows https redirect URLs for a
 //                              distributed app, so its browser redirect lands
 //                              here and is bounced to the desktop app's local
@@ -54,6 +57,16 @@ export const PROVIDERS = {
     secretVar: "SLACK_CLIENT_SECRET",
     redirect: "callback",
     localCallback: "http://127.0.0.1:3118/oauth/callback",
+  },
+  // Figma takes the client in an HTTP Basic header and refreshes at its own
+  // endpoint, which expects only the refresh token in the body.
+  figma: {
+    tokenUrl: "https://api.figma.com/v1/oauth/token",
+    refreshUrl: "https://api.figma.com/v1/oauth/refresh",
+    clientIdVar: "FIGMA_CLIENT_ID",
+    secretVar: "FIGMA_CLIENT_SECRET",
+    redirect: "loopback",
+    clientAuth: "basic",
   },
 };
 
@@ -273,17 +286,27 @@ async function exchange(request, env, name, provider) {
     clientId,
     brokerCallback(request.url, name),
   );
-  form.set("client_id", clientId);
-  form.set("client_secret", secret);
+  const headers = {
+    Accept: "application/json",
+    "Content-Type": "application/x-www-form-urlencoded",
+  };
+  const isRefresh = form.get("grant_type") === "refresh_token";
+  const targetUrl = isRefresh && provider.refreshUrl ? provider.refreshUrl : provider.tokenUrl;
+  if (isRefresh && provider.refreshUrl) form.delete("grant_type");
+  if (provider.clientAuth === "basic") {
+    // RFC 6749 section 2.3.1: both parts form-encoded before base64.
+    const pair = `${encodeURIComponent(clientId)}:${encodeURIComponent(secret)}`;
+    headers.Authorization = `Basic ${btoa(pair)}`;
+  } else {
+    form.set("client_id", clientId);
+    form.set("client_secret", secret);
+  }
 
   let upstream;
   try {
-    upstream = await fetch(provider.tokenUrl, {
+    upstream = await fetch(targetUrl, {
       method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
+      headers,
       body: form.toString(),
       redirect: "manual",
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
